@@ -43,6 +43,8 @@ export const updateSettings = async (req, res) => {
             background_color,
             text_color,
             accent_color,
+            heading_font,
+            body_font,
             description,
             opening_hours
         } = req.body;
@@ -53,12 +55,14 @@ export const updateSettings = async (req, res) => {
            background_color = COALESCE($2, background_color),
            text_color = COALESCE($3, text_color),
            accent_color = COALESCE($4, accent_color),
-           description = COALESCE($5, description),
-           opening_hours = COALESCE($6, opening_hours),
+           heading_font = COALESCE($5, heading_font),
+           body_font = COALESCE($6, body_font),
+           description = COALESCE($7, description),
+           opening_hours = COALESCE($8, opening_hours),
            updated_at = NOW()
-       WHERE user_id = $7
+       WHERE user_id = $9
        RETURNING *`,
-            [primary_color, background_color, text_color, accent_color, description, opening_hours, userId]
+            [primary_color, background_color, text_color, accent_color, heading_font, body_font, description, opening_hours, userId]
         );
 
         res.json({

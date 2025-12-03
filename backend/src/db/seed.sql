@@ -8,7 +8,7 @@ VALUES (
     'Platform Admin',
     'admin@menuplatform.com',
     'admin',
-    '$2b$10$rZ5YhqKX4qvKJ8YhqKX4qO7YhqKX4qvKJ8YhqKX4qvKJ8YhqKX4qO',
+    '$2b$10$gC1Vjuf7Ox.q/Z6VPVwMs.BIpWQseqLXGWQTH9r7vApjpgCgz0/la',
     'admin'
 ) ON CONFLICT (email) DO NOTHING;
 
@@ -20,4 +20,4 @@ VALUES (
 
 SELECT 'Admin user seeded successfully!' AS message;
 SELECT 'Email: admin@menuplatform.com' AS credentials;
-SELECT 'Password: Admin123!' AS password;
+SELECT 'Password: admin123' AS password;

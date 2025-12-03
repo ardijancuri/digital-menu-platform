@@ -44,6 +44,8 @@ CREATE TABLE menu_settings (
     background_color TEXT DEFAULT '#ffffff',
     text_color TEXT DEFAULT '#111827',
     accent_color TEXT DEFAULT '#3b82f6',
+    heading_font TEXT DEFAULT 'Playfair Display',
+    body_font TEXT DEFAULT 'Poppins',
     description TEXT,
     opening_hours TEXT,
     updated_at TIMESTAMP DEFAULT NOW()
