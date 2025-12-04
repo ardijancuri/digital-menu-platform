@@ -43,8 +43,19 @@ export const updateSettings = async (req, res) => {
             background_color,
             text_color,
             accent_color,
-            heading_font,
-            body_font,
+            category_bg_color,
+            item_card_bg_color,
+            border_color,
+            header_bg_color,
+            category_title_color,
+            product_name_color,
+            description_text_color,
+            price_color,
+            category_icon_color,
+            business_name_font,
+            category_font,
+            product_name_font,
+            description_font,
             description,
             opening_hours
         } = req.body;
@@ -55,14 +66,30 @@ export const updateSettings = async (req, res) => {
            background_color = COALESCE($2, background_color),
            text_color = COALESCE($3, text_color),
            accent_color = COALESCE($4, accent_color),
-           heading_font = COALESCE($5, heading_font),
-           body_font = COALESCE($6, body_font),
-           description = COALESCE($7, description),
-           opening_hours = COALESCE($8, opening_hours),
+           category_bg_color = COALESCE($5, category_bg_color),
+           item_card_bg_color = COALESCE($6, item_card_bg_color),
+           border_color = COALESCE($7, border_color),
+           header_bg_color = COALESCE($8, header_bg_color),
+           category_title_color = COALESCE($9, category_title_color),
+           product_name_color = COALESCE($10, product_name_color),
+           description_text_color = COALESCE($11, description_text_color),
+           price_color = COALESCE($12, price_color),
+           category_icon_color = COALESCE($13, category_icon_color),
+           business_name_font = COALESCE($14, business_name_font),
+           category_font = COALESCE($15, category_font),
+           product_name_font = COALESCE($16, product_name_font),
+           description_font = COALESCE($17, description_font),
+           description = COALESCE($18, description),
+           opening_hours = COALESCE($19, opening_hours),
            updated_at = NOW()
-       WHERE user_id = $9
+       WHERE user_id = $20
        RETURNING *`,
-            [primary_color, background_color, text_color, accent_color, heading_font, body_font, description, opening_hours, userId]
+            [primary_color, background_color, text_color, accent_color,
+                category_bg_color, item_card_bg_color, border_color, header_bg_color,
+                category_title_color, product_name_color, description_text_color, price_color,
+                category_icon_color,
+                business_name_font, category_font, product_name_font, description_font,
+                description, opening_hours, userId]
         );
 
         res.json({

@@ -11,7 +11,11 @@ export const getPublicMenu = async (req, res) => {
         const userResult = await query(
             `SELECT u.id, u.business_name, u.slug, u.is_active,
               m.logo_url, m.primary_color, m.background_color, 
-              m.text_color, m.accent_color, m.heading_font, m.body_font,
+              m.text_color, m.accent_color, 
+              m.category_bg_color, m.item_card_bg_color, m.border_color, m.header_bg_color,
+              m.category_title_color, m.product_name_color, m.description_text_color, m.price_color,
+              m.category_icon_color,
+              m.business_name_font, m.category_font, m.product_name_font, m.description_font,
               m.description, m.opening_hours
        FROM users u
        LEFT JOIN menu_settings m ON u.id = m.user_id
@@ -69,8 +73,19 @@ export const getPublicMenu = async (req, res) => {
                     background_color: menuData.background_color,
                     text_color: menuData.text_color,
                     accent_color: menuData.accent_color,
-                    heading_font: menuData.heading_font,
-                    body_font: menuData.body_font
+                    category_bg_color: menuData.category_bg_color,
+                    item_card_bg_color: menuData.item_card_bg_color,
+                    border_color: menuData.border_color,
+                    header_bg_color: menuData.header_bg_color,
+                    category_title_color: menuData.category_title_color,
+                    product_name_color: menuData.product_name_color,
+                    description_text_color: menuData.description_text_color,
+                    price_color: menuData.price_color,
+                    category_icon_color: menuData.category_icon_color,
+                    business_name_font: menuData.business_name_font,
+                    category_font: menuData.category_font,
+                    product_name_font: menuData.product_name_font,
+                    description_font: menuData.description_font
                 },
                 categories
             }

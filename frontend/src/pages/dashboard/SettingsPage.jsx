@@ -52,10 +52,6 @@ const SettingsPage = () => {
         setSaving(true);
         try {
             await userAPI.updateSettings({
-                primary_color: settings.primary_color,
-                background_color: settings.background_color,
-                text_color: settings.text_color,
-                accent_color: settings.accent_color,
                 description: settings.description,
                 opening_hours: settings.opening_hours,
             });
@@ -131,40 +127,6 @@ const SettingsPage = () => {
                 </div>
             </div>
 
-            {/* Theme Colors */}
-            <div className="card-flat mb-6">
-                <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
-                    <i className="fas fa-palette text-blue-600"></i>
-                    Theme Colors
-                </h3>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <ColorPicker
-                        label="Primary Color"
-                        value={settings.primary_color}
-                        onChange={(value) => handleColorChange('primary_color', value)}
-                        name="primary_color"
-                    />
-                    <ColorPicker
-                        label="Background Color"
-                        value={settings.background_color}
-                        onChange={(value) => handleColorChange('background_color', value)}
-                        name="background_color"
-                    />
-                    <ColorPicker
-                        label="Text Color"
-                        value={settings.text_color}
-                        onChange={(value) => handleColorChange('text_color', value)}
-                        name="text_color"
-                    />
-                    <ColorPicker
-                        label="Accent Color"
-                        value={settings.accent_color}
-                        onChange={(value) => handleColorChange('accent_color', value)}
-                        name="accent_color"
-                    />
-                </div>
-            </div>
-
             {/* Save Button */}
             <Button onClick={handleSave} variant="primary" loading={saving} className="w-full">
                 <i className="fas fa-save mr-2"></i>
@@ -175,3 +137,4 @@ const SettingsPage = () => {
 };
 
 export default SettingsPage;
+

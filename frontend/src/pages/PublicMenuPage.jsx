@@ -16,11 +16,13 @@ const PublicMenuPage = () => {
     useEffect(() => {
         if (menu) {
             // Load Google Fonts dynamically
-            const headingFont = menu.theme.heading_font || 'Playfair Display';
-            const bodyFont = menu.theme.body_font || 'Poppins';
+            const businessNameFont = menu.theme.business_name_font || 'Montserrat';
+            const categoryFont = menu.theme.category_font || 'Roboto Condensed';
+            const productNameFont = menu.theme.product_name_font || 'Montserrat';
+            const descriptionFont = menu.theme.description_font || 'Quicksand';
 
             const link = document.createElement('link');
-            link.href = `https://fonts.googleapis.com/css2?family=${headingFont.replace(' ', '+')}:wght@400;600;700&family=${bodyFont.replace(' ', '+')}:wght@300;400;500;600&display=swap`;
+            link.href = `https://fonts.googleapis.com/css2?family=${businessNameFont.replace(/ /g, '+')}:wght@400;600;700&family=${categoryFont.replace(/ /g, '+')}:wght@400;600;700&family=${productNameFont.replace(/ /g, '+')}:wght@400;600;700&family=${descriptionFont.replace(/ /g, '+')}:wght@300;400;500;600&display=swap`;
             link.rel = 'stylesheet';
             document.head.appendChild(link);
 
@@ -58,7 +60,7 @@ const PublicMenuPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
                     <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4"></div>
                     <p className="text-gray-600 text-lg font-medium">Loading menu...</p>
@@ -69,7 +71,7 @@ const PublicMenuPage = () => {
 
     if (error || !menu) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="text-center">
                     <i className="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">Menu Not Found</h1>
@@ -86,56 +88,45 @@ const PublicMenuPage = () => {
 
     const primaryColor = menu.theme.primary_color || '#6366f1';
     const accentColor = menu.theme.accent_color || '#8b5cf6';
-    const headingFont = menu.theme.heading_font || 'Playfair Display';
-    const bodyFont = menu.theme.body_font || 'Poppins';
+    const categoryBgColor = menu.theme.category_bg_color || '#f9fafb';
+    const itemCardBgColor = menu.theme.item_card_bg_color || '#ffffff';
+    const borderColor = menu.theme.border_color || '#e5e7eb';
+    const headerBgColor = menu.theme.header_bg_color || '#ffffff';
+    const categoryTitleColor = menu.theme.category_title_color || '#1f2937';
+    const productNameColor = menu.theme.product_name_color || '#1f2937';
+    const descriptionTextColor = menu.theme.description_text_color || '#6b7280';
+    const priceColor = menu.theme.price_color || '#3b82f6';
+    const categoryIconColor = menu.theme.category_icon_color || '#3b82f6';
+    const businessNameFont = menu.theme.business_name_font || 'Montserrat';
+    const categoryFont = menu.theme.category_font || 'Roboto Condensed';
+    const productNameFont = menu.theme.product_name_font || 'Montserrat';
+    const descriptionFont = menu.theme.description_font || 'Quicksand';
 
     return (
         <div className="min-h-screen" style={styles}>
             {/* Header */}
-            <header className="relative overflow-hidden">
-                <div
-                    className="absolute inset-0 opacity-5"
-                    style={{
-                        backgroundImage: `linear-gradient(135deg, ${primaryColor} 0%, ${accentColor} 100%)`,
-                    }}
-                ></div>
-                <div className="container mx-auto px-4 py-12 relative">
+            <header className="border-b" style={{ borderColor: borderColor, backgroundColor: headerBgColor }}>
+                <div className="container mx-auto px-4 py-6">
                     <div className="text-center max-w-3xl mx-auto">
                         {menu.logo_url && (
                             <img
                                 src={menu.logo_url}
                                 alt={menu.business_name}
-                                className="h-20 w-auto mx-auto object-contain mb-6"
+                                className="h-12 w-auto mx-auto object-contain"
                             />
                         )}
                         {!menu.logo_url && (
                             <h1
-                                className="text-6xl font-bold mb-4 tracking-tight"
+                                className="text-3xl font-bold"
                                 style={{
                                     color: primaryColor,
-                                    fontFamily: headingFont,
+                                    fontFamily: businessNameFont,
                                 }}
                             >
                                 {menu.business_name}
                             </h1>
                         )}
-                        {menu.description && (
-                            <p
-                                className="text-xl mb-4 opacity-80 leading-relaxed"
-                                style={{ fontFamily: bodyFont }}
-                            >
-                                {menu.description}
-                            </p>
-                        )}
-                        {menu.opening_hours && (
-                            <div
-                                className="flex items-center justify-center gap-2 text-base opacity-70"
-                                style={{ fontFamily: bodyFont }}
-                            >
-                                <i className="fas fa-clock"></i>
-                                <span>{menu.opening_hours}</span>
-                            </div>
-                        )}
+
                     </div>
                 </div>
             </header>
@@ -145,12 +136,12 @@ const PublicMenuPage = () => {
                 {menu.categories.length === 0 ? (
                     <div className="text-center py-20">
                         <i className="fas fa-utensils text-6xl opacity-20 mb-4"></i>
-                        <p className="text-xl opacity-60" style={{ fontFamily: bodyFont }}>
+                        <p className="text-xl opacity-60" style={{ fontFamily: descriptionFont }}>
                             No categories available yet
                         </p>
                     </div>
                 ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {menu.categories.map((category) => {
                             const isExpanded = expandedCategories.has(category.id);
                             const categoryItems = category.items || [];
@@ -158,54 +149,44 @@ const PublicMenuPage = () => {
                             return (
                                 <div
                                     key={category.id}
-                                    className="rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl"
+                                    className="rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg"
                                     style={{
                                         backgroundColor: '#ffffff',
-                                        border: `2px solid ${primaryColor}15`,
+                                        border: `1px solid ${borderColor}`,
                                     }}
                                 >
                                     {/* Category Header */}
                                     <button
                                         onClick={() => toggleCategory(category.id)}
-                                        className="w-full px-6 py-5 flex items-center justify-between transition-all duration-200 hover:bg-opacity-5"
+                                        className="w-full px-5 py-4 flex items-center justify-between transition-all duration-200"
                                         style={{
-                                            backgroundColor: `${primaryColor}08`,
+                                            backgroundColor: categoryBgColor,
                                         }}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div
-                                                className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-md"
-                                                style={{
-                                                    background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`,
-                                                }}
-                                            >
-                                                <i className="fas fa-utensils text-lg"></i>
-                                            </div>
-                                            <h2
-                                                className="text-3xl font-bold text-left"
-                                                style={{
-                                                    color: primaryColor,
-                                                    fontFamily: headingFont,
-                                                }}
-                                            >
-                                                {category.name}
-                                            </h2>
-                                        </div>
+                                        <h2
+                                            className="text-xl font-bold text-left"
+                                            style={{
+                                                color: categoryTitleColor,
+                                                fontFamily: categoryFont,
+                                            }}
+                                        >
+                                            {category.name}
+                                        </h2>
                                         <div className="flex items-center gap-3">
                                             <span
-                                                className="text-sm font-semibold px-3 py-1 rounded-full"
+                                                className="text-xs font-semibold px-2 py-1 rounded-full"
                                                 style={{
                                                     backgroundColor: `${accentColor}15`,
                                                     color: accentColor,
-                                                    fontFamily: bodyFont,
+                                                    fontFamily: descriptionFont,
                                                 }}
                                             >
                                                 {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'items'}
                                             </span>
                                             <i
-                                                className={`fas fa-chevron-down text-xl transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''
+                                                className={`fas fa-chevron-down text-lg transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''
                                                     }`}
-                                                style={{ color: primaryColor }}
+                                                style={{ color: categoryIconColor }}
                                             ></i>
                                         </div>
                                     </button>
@@ -220,18 +201,19 @@ const PublicMenuPage = () => {
                                     >
                                         {categoryItems.length === 0 ? (
                                             <div className="px-6 py-12 text-center">
-                                                <p className="text-gray-400" style={{ fontFamily: bodyFont }}>
+                                                <p className="text-gray-400" style={{ fontFamily: descriptionFont }}>
                                                     No items in this category yet
                                                 </p>
                                             </div>
                                         ) : (
-                                            <div className="p-6 grid md:grid-cols-2 gap-6">
+                                            <div className="p-5 grid md:grid-cols-2 gap-5">
                                                 {categoryItems.map((item) => (
                                                     <div
                                                         key={item.id}
-                                                        className="group relative bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                                                        className="group relative rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
                                                         style={{
-                                                            border: `1px solid ${primaryColor}10`,
+                                                            backgroundColor: itemCardBgColor,
+                                                            border: `1px solid ${borderColor}`,
                                                         }}
                                                     >
                                                         {item.image_url && (
@@ -239,20 +221,14 @@ const PublicMenuPage = () => {
                                                                 <img
                                                                     src={item.image_url}
                                                                     alt={item.name}
-                                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                                                 />
-                                                                <div
-                                                                    className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
-                                                                    style={{
-                                                                        background: `linear-gradient(135deg, ${primaryColor}, ${accentColor})`,
-                                                                    }}
-                                                                ></div>
                                                                 {item.tag && (
                                                                     <span
                                                                         className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
                                                                         style={{
                                                                             backgroundColor: accentColor,
-                                                                            fontFamily: bodyFont,
+                                                                            fontFamily: descriptionFont,
                                                                         }}
                                                                     >
                                                                         {item.tag}
@@ -260,13 +236,13 @@ const PublicMenuPage = () => {
                                                                 )}
                                                             </div>
                                                         )}
-                                                        <div className="p-5">
+                                                        <div className="p-4">
                                                             <div className="flex items-start justify-between mb-2">
                                                                 <h3
-                                                                    className="text-xl font-bold flex-1"
+                                                                    className="text-lg font-bold flex-1"
                                                                     style={{
                                                                         color: primaryColor,
-                                                                        fontFamily: headingFont,
+                                                                        fontFamily: productNameFont,
                                                                     }}
                                                                 >
                                                                     {item.name}
@@ -276,7 +252,7 @@ const PublicMenuPage = () => {
                                                                         className="px-2 py-1 rounded-full text-xs font-bold text-white ml-2"
                                                                         style={{
                                                                             backgroundColor: accentColor,
-                                                                            fontFamily: bodyFont,
+                                                                            fontFamily: descriptionFont,
                                                                         }}
                                                                     >
                                                                         {item.tag}
@@ -285,17 +261,20 @@ const PublicMenuPage = () => {
                                                             </div>
                                                             {item.description && (
                                                                 <p
-                                                                    className="text-gray-600 mb-3 leading-relaxed text-sm"
-                                                                    style={{ fontFamily: bodyFont }}
+                                                                    className="mb-3 leading-relaxed text-sm"
+                                                                    style={{
+                                                                        color: descriptionTextColor,
+                                                                        fontFamily: descriptionFont
+                                                                    }}
                                                                 >
                                                                     {item.description}
                                                                 </p>
                                                             )}
                                                             <div
-                                                                className="text-2xl font-bold"
+                                                                className="text-xl font-bold"
                                                                 style={{
-                                                                    color: accentColor,
-                                                                    fontFamily: bodyFont,
+                                                                    color: priceColor,
+                                                                    fontFamily: productNameFont,
                                                                 }}
                                                             >
                                                                 ${parseFloat(item.price).toFixed(2)}
@@ -316,7 +295,7 @@ const PublicMenuPage = () => {
             {/* Footer */}
             <footer className="border-t mt-20 py-8" style={{ borderColor: `${primaryColor}20` }}>
                 <div className="container mx-auto px-4 text-center opacity-60">
-                    <p className="text-sm" style={{ fontFamily: bodyFont }}>
+                    <p className="text-sm" style={{ fontFamily: descriptionFont }}>
                         <i className="fas fa-utensils mr-2"></i>
                         Powered by MenuPlatform
                     </p>
@@ -327,4 +306,3 @@ const PublicMenuPage = () => {
 };
 
 export default PublicMenuPage;
-
