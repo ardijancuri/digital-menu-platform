@@ -1,27 +1,62 @@
 import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import '../styles/landing.css';
 
 const LandingPage = () => {
+    useEffect(() => {
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animationPlayState = 'running';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('[class*="animate-"]').forEach(el => {
+            el.style.animationPlayState = 'paused';
+            observer.observe(el);
+        });
+
+        // Navbar scroll effect
+        const handleScroll = () => {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar?.classList.add('scrolled');
+            } else {
+                navbar?.classList.remove('scrolled');
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     return (
-        <div className="min-h-screen bg-white">
-            {/* Navigation */}
-            <nav className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-                <div className="container mx-auto px-4 py-4">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <i className="fas fa-utensils text-3xl text-blue-600"></i>
-                            <span className="text-2xl font-bold text-gray-900">MenuPlatform</span>
+        <div style={{ background: '#ffffff' }}>
+            {/* Navbar */}
+            <nav className="navbar">
+                <div className="container" style={{ padding: '1.5rem 2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
+                                M
+                            </div>
+                            <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>MenuPlatform</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <Link to="/login" className="nav-link hidden md:flex items-center">
-                                <i className="fas fa-sign-in-alt mr-2"></i>
-                                Restaurant Login
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                            <Link to="/login" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem', fontWeight: '500' }}>
+                                Sign In
                             </Link>
-                            <Link to="/login" className="md:hidden text-blue-600 text-xl">
-                                <i className="fas fa-sign-in-alt"></i>
-                            </Link>
-                            <Link to="/admin/login" className="nav-link hidden md:flex items-center">
-                                <i className="fas fa-user-shield mr-2"></i>
-                                Admin
+                            <Link to="/apply">
+                                <button className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9375rem' }}>
+                                    Get Started
+                                </button>
                             </Link>
                         </div>
                     </div>
@@ -29,248 +64,270 @@ const LandingPage = () => {
             </nav>
 
             {/* Hero Section */}
-            <section className="gradient-bg text-white py-20 md:py-32 relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-20 left-10 w-72 h-72 bg-blue-400 rounded-full blur-3xl mix-blend-multiply filter opacity-70 animate-blob"></div>
-                    <div className="absolute top-20 right-10 w-72 h-72 bg-cyan-400 rounded-full blur-3xl mix-blend-multiply filter opacity-70 animate-blob animation-delay-2000"></div>
-                    <div className="absolute -bottom-8 left-20 w-72 h-72 bg-sky-400 rounded-full blur-3xl mix-blend-multiply filter opacity-70 animate-blob animation-delay-4000"></div>
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <div className="inline-block mb-6">
-                            <span className="bg-white/20 backdrop-blur-sm px-6 py-2 rounded-full text-sm font-semibold uppercase tracking-wider border border-white/30">
-                                Digital Menu Solution
+            <section className="section-padding" style={{ marginTop: '80px', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
+                <div className="container">
+                    <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
+                        <div className="animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>
+                            <span style={{ display: 'inline-block', padding: '0.5rem 1rem', background: '#f5f5f5', borderRadius: '100px', fontSize: '0.875rem', fontWeight: '500', color: '#666', letterSpacing: '0.05em' }}>
+                                DIGITAL MENU PLATFORM
                             </span>
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
-                            Transform Your Restaurant
-                            <span className="block mt-2 text-blue-200">Into Digital Excellence</span>
+                        <h1 className="heading-xl animate-fade-in-up delay-100" style={{ color: '#000', marginBottom: '2rem' }}>
+                            The Modern Way to
+                            <br />
+                            <span style={{ color: '#0066ff' }}>Showcase Your Menu</span>
                         </h1>
 
-                        <p className="text-lg md:text-2xl mb-10 text-blue-100 max-w-3xl mx-auto font-light leading-relaxed">
-                            Create stunning digital menus, manage your offerings effortlessly, and provide your customers with an exceptional dining experience.
+                        <p className="body-lg animate-fade-in-up delay-200" style={{ maxWidth: '600px', margin: '0 auto 3rem' }}>
+                            Create beautiful digital menus in minutes. No coding required.
+                            Perfect for restaurants, cafes, and bars.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row justify-center gap-4 px-4">
-                            <Link to="/apply" className="w-full sm:w-auto">
-                                <button className="btn btn-outline text-lg px-8 py-4 w-full sm:w-auto hover:bg-white hover:text-blue-700 border-2">
-                                    <i className="fas fa-rocket mr-2"></i>
-                                    Get Started Free
+                        <div className="animate-fade-in-up delay-300" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <Link to="/apply">
+                                <button className="btn-primary" style={{ padding: '1.25rem 2.5rem' }}>
+                                    Start Free Trial
                                 </button>
                             </Link>
-                            <Link to="/login" className="w-full sm:w-auto">
-                                <button className="btn bg-white text-blue-700 hover:bg-blue-50 text-lg px-8 py-4 w-full sm:w-auto shadow-lg">
-                                    <i className="fas fa-sign-in-alt mr-2"></i>
-                                    Sign In
+                            <Link to="/login">
+                                <button className="btn-secondary" style={{ padding: '1.25rem 2.5rem' }}>
+                                    View Demo
                                 </button>
                             </Link>
                         </div>
 
-                        <div className="mt-12 flex flex-wrap justify-center items-center gap-4 md:gap-8 text-sm md:text-base text-blue-100">
-                            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                <i className="fas fa-check-circle text-green-400"></i>
-                                <span>No Credit Card Required</span>
+                        <div className="animate-fade-in delay-400" style={{ marginTop: '4rem', display: 'flex', gap: '3rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ No credit card</div>
                             </div>
-                            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                <i className="fas fa-check-circle text-green-400"></i>
-                                <span>Setup in 5 Minutes</span>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ 5 min setup</div>
                             </div>
-                            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm">
-                                <i className="fas fa-check-circle text-green-400"></i>
-                                <span>24/7 Support</span>
+                            <div style={{ textAlign: 'center' }}>
+                                <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ Free forever</div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Stats Section */}
+            <section style={{ background: '#fafafa', padding: '3rem 0' }}>
+                <div className="container">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem' }}>
+                        <div className="stat-card animate-scale-in">
+                            <div className="stat-number">500+</div>
+                            <div className="stat-label">Restaurants</div>
+                        </div>
+                        <div className="stat-card animate-scale-in delay-100">
+                            <div className="stat-number">50K+</div>
+                            <div className="stat-label">Menu Views</div>
+                        </div>
+                        <div className="stat-card animate-scale-in delay-200">
+                            <div className="stat-number">99.9%</div>
+                            <div className="stat-label">Uptime</div>
+                        </div>
+                        <div className="stat-card animate-scale-in delay-300">
+                            <div className="stat-number">24/7</div>
+                            <div className="stat-label">Support</div>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section className="py-20 bg-gray-50">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-16">
-                        <h2 className="section-title">Everything You Need to Succeed</h2>
-                        <p className="section-subtitle max-w-2xl mx-auto">Powerful features designed for modern restaurants, cafes, and bars</p>
+            <section className="section-padding">
+                <div className="container">
+                    <div style={{ maxWidth: '600px', marginBottom: '4rem' }}>
+                        <div className="accent-line animate-slide-in-left"></div>
+                        <h2 className="heading-lg animate-fade-in-up" style={{ color: '#000', marginBottom: '1rem' }}>
+                            Everything you need,
+                            <br />nothing you don't
+                        </h2>
+                        <p className="body-lg animate-fade-in-up delay-100">
+                            Simple, powerful features designed for modern restaurants
+                        </p>
                     </div>
 
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
-                                <i className="fas fa-palette"></i>
-                            </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Custom Branding</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Customize colors, upload your logo, and create a menu that perfectly matches your restaurant's identity and style.
-                            </p>
-                        </div>
-
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
+                    <div className="grid-auto">
+                        <div className="feature-card animate-fade-in-up delay-100">
+                            <div className="feature-icon">
                                 <i className="fas fa-mobile-alt"></i>
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Mobile Optimized</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Beautiful responsive design that looks perfect on smartphones, tablets, and desktops for all your customers.
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Mobile First</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Optimized for smartphones. Your customers get a perfect experience on any device.
                             </p>
                         </div>
 
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
+                        <div className="feature-card animate-fade-in-up delay-200">
+                            <div className="feature-icon">
                                 <i className="fas fa-bolt"></i>
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Real-Time Updates</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Update menu items, prices, and availability instantly. Changes go live immediately for your customers.
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Instant Updates</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Change prices and items in real-time. Updates go live immediately.
                             </p>
                         </div>
 
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
-                                <i className="fas fa-images"></i>
+                        <div className="feature-card animate-fade-in-up delay-300">
+                            <div className="feature-icon">
+                                <i className="fas fa-palette"></i>
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Rich Media</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Upload high-quality images for your dishes to entice customers and showcase your culinary creations.
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Your Brand</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Customize colors, fonts, and layout to match your restaurant's identity.
                             </p>
                         </div>
 
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
+                        <div className="feature-card animate-fade-in-up delay-400">
+                            <div className="feature-icon">
+                                <i className="fas fa-qrcode"></i>
+                            </div>
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>QR Codes</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Generate QR codes for contactless menu access. Print and place on tables.
+                            </p>
+                        </div>
+
+                        <div className="feature-card animate-fade-in-up delay-500">
+                            <div className="feature-icon">
                                 <i className="fas fa-chart-line"></i>
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Analytics Ready</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Track menu performance and customer preferences to make data-driven decisions for your business.
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Analytics</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Track views and popular items. Make data-driven menu decisions.
                             </p>
                         </div>
 
-                        <div className="feature-card group">
-                            <div className="feature-icon group-hover:from-blue-600 group-hover:to-blue-800">
+                        <div className="feature-card animate-fade-in-up delay-600">
+                            <div className="feature-icon">
                                 <i className="fas fa-shield-alt"></i>
                             </div>
-                            <h3 className="text-2xl font-bold mb-3 text-gray-900">Secure & Reliable</h3>
-                            <p className="text-gray-600 leading-relaxed">
-                                Enterprise-grade security and 99.9% uptime guarantee to keep your menu always accessible.
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Secure</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Enterprise-grade security. Your data is encrypted and protected.
                             </p>
                         </div>
                     </div>
                 </div>
             </section>
 
-            {/* How It Works */}
-            <section className="py-20 bg-white">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-16">
-                        <h2 className="section-title">Get Started in 3 Simple Steps</h2>
-                        <p className="section-subtitle">Launch your digital menu in minutes</p>
+            {/* How it Works */}
+            <section className="section-padding" style={{ background: '#fafafa' }}>
+                <div className="container">
+                    <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+                        <h2 className="heading-lg animate-fade-in-up" style={{ color: '#000', marginBottom: '1rem' }}>
+                            Get started in 3 steps
+                        </h2>
+                        <p className="body-lg animate-fade-in-up delay-100">
+                            Launch your digital menu in under 5 minutes
+                        </p>
                     </div>
 
-                    <div className="max-w-5xl mx-auto">
-                        <div className="grid md:grid-cols-3 gap-12 relative">
-                            {/* Connector Line (Desktop) */}
-                            <div className="hidden md:block absolute top-10 left-1/6 right-1/6 h-0.5 bg-gray-100 -z-10"></div>
-
-                            <div className="text-center relative">
-                                <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto mb-6 border-4 border-white shadow-lg">
-                                    1
-                                </div>
-                                <h3 className="text-2xl font-bold mb-3">Apply & Get Approved</h3>
-                                <p className="text-gray-600">
-                                    Fill out a quick application form with your restaurant details. Our team reviews and approves within 24 hours.
-                                </p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '3rem', maxWidth: '1000px', margin: '0 auto' }}>
+                        <div className="animate-fade-in-up delay-100" style={{ textAlign: 'center' }}>
+                            <div style={{ width: '80px', height: '80px', background: '#000', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '600', margin: '0 auto 2rem' }}>
+                                1
                             </div>
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Sign Up</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Create your account in 30 seconds. No credit card required.
+                            </p>
+                        </div>
 
-                            <div className="text-center relative">
-                                <div className="w-20 h-20 rounded-full bg-sky-50 flex items-center justify-center text-sky-600 text-3xl font-bold mx-auto mb-6 border-4 border-white shadow-lg">
-                                    2
-                                </div>
-                                <h3 className="text-2xl font-bold mb-3">Customize Your Menu</h3>
-                                <p className="text-gray-600">
-                                    Upload your logo, set your brand colors, add categories, and populate your menu with delicious items.
-                                </p>
+                        <div className="animate-fade-in-up delay-200" style={{ textAlign: 'center' }}>
+                            <div style={{ width: '80px', height: '80px', background: '#000', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '600', margin: '0 auto 2rem' }}>
+                                2
                             </div>
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Add Items</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Upload your menu items with photos and prices.
+                            </p>
+                        </div>
 
-                            <div className="text-center relative">
-                                <div className="w-20 h-20 rounded-full bg-cyan-50 flex items-center justify-center text-cyan-600 text-3xl font-bold mx-auto mb-6 border-4 border-white shadow-lg">
-                                    3
-                                </div>
-                                <h3 className="text-2xl font-bold mb-3">Share & Grow</h3>
-                                <p className="text-gray-600">
-                                    Get your unique menu URL, share it with customers via QR codes, social media, or your website.
-                                </p>
+                        <div className="animate-fade-in-up delay-300" style={{ textAlign: 'center' }}>
+                            <div style={{ width: '80px', height: '80px', background: '#000', color: 'white', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: '600', margin: '0 auto 2rem' }}>
+                                3
                             </div>
+                            <h3 className="heading-md" style={{ marginBottom: '1rem', color: '#000' }}>Go Live</h3>
+                            <p style={{ color: '#666', lineHeight: '1.6' }}>
+                                Share your menu URL or QR code with customers.
+                            </p>
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* CTA Section */}
-            <section className="py-20 gradient-bg text-white relative overflow-hidden">
-                <div className="absolute inset-0 opacity-20">
-                    <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400 rounded-full blur-3xl mix-blend-multiply filter opacity-50"></div>
-                    <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-400 rounded-full blur-3xl mix-blend-multiply filter opacity-50"></div>
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10">
-                    <div className="max-w-4xl mx-auto text-center">
-                        <h2 className="text-4xl md:text-5xl font-bold mb-6">Ready to Transform Your Restaurant?</h2>
-                        <p className="text-xl md:text-2xl mb-10 text-blue-100">
-                            Join hundreds of restaurants already using MenuPlatform
-                        </p>
-                        <Link to="/apply">
-                            <button className="btn btn-outline text-xl px-12 py-5 hover:bg-white hover:text-blue-700 border-2">
-                                <i className="fas fa-rocket mr-2"></i>
-                                Start Your Free Trial
-                            </button>
-                        </Link>
+            <section className="section-padding">
+                <div className="container">
+                    <div className="cta-section animate-scale-in">
+                        <div style={{ position: 'relative', zIndex: 1 }}>
+                            <h2 className="heading-lg" style={{ color: 'white', marginBottom: '1.5rem' }}>
+                                Ready to modernize your menu?
+                            </h2>
+                            <p className="body-lg" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '2.5rem', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
+                                Join hundreds of restaurants already using MenuPlatform
+                            </p>
+                            <Link to="/apply">
+                                <button className="btn-primary" style={{ background: 'white', color: '#000', padding: '1.25rem 2.5rem' }}>
+                                    Start Free Trial
+                                </button>
+                            </Link>
+                        </div>
                     </div>
                 </div>
             </section>
 
             {/* Footer */}
-            <footer className="bg-gray-900 text-gray-300 py-12 border-t border-gray-800">
-                <div className="container mx-auto px-4">
-                    <div className="grid md:grid-cols-4 gap-8 mb-8">
-                        <div className="col-span-1 md:col-span-1">
-                            <div className="flex items-center gap-2 mb-4">
-                                <i className="fas fa-utensils text-2xl text-blue-500"></i>
-                                <span className="text-xl font-bold text-white">MenuPlatform</span>
+            <footer className="footer" style={{ padding: '4rem 0 2rem' }}>
+                <div className="container">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
+                        <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                                <div style={{ width: '32px', height: '32px', background: '#000', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1rem' }}>
+                                    M
+                                </div>
+                                <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>MenuPlatform</span>
                             </div>
-                            <p className="text-sm text-gray-400 leading-relaxed">
-                                The modern way to manage and display your restaurant menu digitally.
+                            <p style={{ color: '#666', fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                                Modern digital menus for modern restaurants.
                             </p>
                         </div>
 
                         <div>
-                            <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Product</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Features</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Pricing</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Examples</a></li>
+                            <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Product</h4>
+                            <ul style={{ listStyle: 'none', padding: 0 }}>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/features" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Features</Link></li>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/pricing" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Pricing</Link></li>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/examples" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Examples</Link></li>
                             </ul>
                         </div>
 
                         <div>
-                            <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Company</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">About Us</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Contact</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Support</a></li>
+                            <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Company</h4>
+                            <ul style={{ listStyle: 'none', padding: 0 }}>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/about" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>About</Link></li>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/contact" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Contact</Link></li>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/support" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Support</Link></li>
                             </ul>
                         </div>
 
                         <div>
-                            <h4 className="text-white font-bold mb-4 uppercase text-sm tracking-wider">Legal</h4>
-                            <ul className="space-y-2 text-sm">
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a></li>
-                                <li><a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a></li>
+                            <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Legal</h4>
+                            <ul style={{ listStyle: 'none', padding: 0 }}>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/privacy" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Privacy</Link></li>
+                                <li style={{ marginBottom: '0.5rem' }}><Link to="/terms" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Terms</Link></li>
                             </ul>
                         </div>
                     </div>
 
-                    <div className="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                        <p>&copy; 2025 MenuPlatform. All rights reserved.</p>
+                    <div style={{ borderTop: '1px solid #e5e5e5', paddingTop: '2rem', textAlign: 'center' }}>
+                        <p style={{ color: '#999', fontSize: '0.875rem' }}>
+                            © 2025 MenuPlatform. All rights reserved.
+                        </p>
                     </div>
                 </div>
             </footer>

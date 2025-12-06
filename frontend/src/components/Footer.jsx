@@ -1,0 +1,57 @@
+import { Link } from 'react-router-dom';
+
+const Footer = () => {
+    return (
+        <footer className="footer" style={{ padding: '4rem 0 2rem' }}>
+            <div className="container">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                            <div style={{ width: '32px', height: '32px', background: '#000', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1rem' }}>
+                                M
+                            </div>
+                            <span style={{ fontSize: '1.125rem', fontWeight: '600' }}>MenuPlatform</span>
+                        </div>
+                        <p style={{ color: '#666', fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                            Modern digital menus for modern restaurants.
+                        </p>
+                    </div>
+
+                    <div>
+                        <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Product</h4>
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/features" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Features</Link></li>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/pricing" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Pricing</Link></li>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/examples" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Examples</Link></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Company</h4>
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/about" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>About</Link></li>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/contact" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Contact</Link></li>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/support" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Support</Link></li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h4 style={{ fontWeight: '600', marginBottom: '1rem', fontSize: '0.9375rem' }}>Legal</h4>
+                        <ul style={{ listStyle: 'none', padding: 0 }}>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/privacy" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Privacy</Link></li>
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/terms" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Terms</Link></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid #e5e5e5', paddingTop: '2rem', textAlign: 'center' }}>
+                    <p style={{ color: '#999', fontSize: '0.875rem' }}>
+                        © 2025 MenuPlatform. All rights reserved.
+                    </p>
+                </div>
+            </div>
+        </footer>
+    );
+};
+
+export default Footer;
