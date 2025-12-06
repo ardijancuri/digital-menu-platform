@@ -1,21 +1,9 @@
-import { Link } from 'react-router-dom';
-import '../styles/landing.css';
+import PageLayout from '../components/PageLayout';
 
 const TermsPage = () => {
     return (
-        <div style={{ background: '#ffffff' }}>
-            <nav className="navbar">
-                <div className="container" style={{ padding: '1.5rem 2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-                            <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>M</div>
-                            <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>MenuPlatform</span>
-                        </Link>
-                    </div>
-                </div>
-            </nav>
-
-            <section style={{ marginTop: '80px', padding: '6rem 0 6rem' }}>
+        <PageLayout>
+            <section style={{ padding: '6rem 0 6rem' }}>
                 <div className="container">
                     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                         <div className="accent-line"></div>
@@ -59,11 +47,7 @@ const TermsPage = () => {
                     </div>
                 </div>
             </section>
-
-            <footer className="footer" style={{ padding: '3rem 0 2rem' }}>
-                <div className="container"><div style={{ textAlign: 'center' }}><p style={{ color: '#999', fontSize: '0.875rem' }}>© 2025 MenuPlatform. All rights reserved.</p></div></div>
-            </footer>
-        </div>
+        </PageLayout>
     );
 };
 

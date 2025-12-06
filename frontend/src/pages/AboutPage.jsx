@@ -1,22 +1,9 @@
-import { Link } from 'react-router-dom';
-import '../styles/landing.css';
+import PageLayout from '../components/PageLayout';
 
 const AboutPage = () => {
     return (
-        <div style={{ background: '#ffffff' }}>
-            <nav className="navbar">
-                <div className="container" style={{ padding: '1.5rem 2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-                            <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>M</div>
-                            <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>MenuPlatform</span>
-                        </Link>
-                        <Link to="/apply"><button className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9375rem' }}>Get Started</button></Link>
-                    </div>
-                </div>
-            </nav>
-
-            <section style={{ marginTop: '80px', padding: '6rem 0 4rem' }}>
+        <PageLayout>
+            <section style={{ padding: '6rem 0 4rem' }}>
                 <div className="container">
                     <div style={{ maxWidth: '800px', margin: '0 auto' }}>
                         <div className="accent-line"></div>
@@ -44,28 +31,30 @@ const AboutPage = () => {
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', maxWidth: '900px', margin: '0 auto' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🎯</div>
+                            <div style={{ width: '64px', height: '64px', background: '#f0f0f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.75rem', color: '#000' }}>
+                                <i className="fas fa-bullseye"></i>
+                            </div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.75rem' }}>Simplicity</h3>
                             <p style={{ color: '#666', lineHeight: '1.6' }}>We believe great tools should be easy to use</p>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚡</div>
+                            <div style={{ width: '64px', height: '64px', background: '#f0f0f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.75rem', color: '#000' }}>
+                                <i className="fas fa-bolt"></i>
+                            </div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.75rem' }}>Speed</h3>
                             <p style={{ color: '#666', lineHeight: '1.6' }}>Fast setup, fast updates, fast support</p>
                         </div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>🤝</div>
+                            <div style={{ width: '64px', height: '64px', background: '#f0f0f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem', fontSize: '1.75rem', color: '#000' }}>
+                                <i className="fas fa-handshake"></i>
+                            </div>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.75rem' }}>Partnership</h3>
                             <p style={{ color: '#666', lineHeight: '1.6' }}>Your success is our success</p>
                         </div>
                     </div>
                 </div>
             </section>
-
-            <footer className="footer" style={{ padding: '3rem 0 2rem' }}>
-                <div className="container"><div style={{ textAlign: 'center' }}><p style={{ color: '#999', fontSize: '0.875rem' }}>© 2025 MenuPlatform. All rights reserved.</p></div></div>
-            </footer>
-        </div>
+        </PageLayout>
     );
 };
 

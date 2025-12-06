@@ -1,35 +1,10 @@
-import { Link } from 'react-router-dom';
-import '../styles/landing.css';
+import PageLayout from '../components/PageLayout';
 
 const FeaturesPage = () => {
     return (
-        <div style={{ background: '#ffffff' }}>
-            {/* Navbar */}
-            <nav className="navbar">
-                <div className="container" style={{ padding: '1.5rem 2rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
-                            <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-                                M
-                            </div>
-                            <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>MenuPlatform</span>
-                        </Link>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <Link to="/login" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem', fontWeight: '500' }}>
-                                Sign In
-                            </Link>
-                            <Link to="/apply">
-                                <button className="btn-primary" style={{ padding: '0.75rem 1.5rem', fontSize: '0.9375rem' }}>
-                                    Get Started
-                                </button>
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </nav>
-
+        <PageLayout>
             {/* Hero */}
-            <section style={{ marginTop: '80px', padding: '6rem 0 4rem' }}>
+            <section style={{ padding: '6rem 0 4rem' }}>
                 <div className="container">
                     <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
                         <div className="accent-line" style={{ margin: '0 auto 2rem' }}></div>
@@ -151,27 +126,16 @@ const FeaturesPage = () => {
                             <p className="body-lg" style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '2.5rem', maxWidth: '600px', margin: '0 auto 2.5rem' }}>
                                 Create your digital menu in minutes
                             </p>
-                            <Link to="/apply">
+                            <a href="/apply">
                                 <button className="btn-primary" style={{ background: 'white', color: '#000', padding: '1.25rem 2.5rem' }}>
-                                    Start Free Trial →
+                                    Start Free Trial
                                 </button>
-                            </Link>
+                            </a>
                         </div>
                     </div>
                 </div>
             </section>
-
-            {/* Footer */}
-            <footer className="footer" style={{ padding: '3rem 0 2rem' }}>
-                <div className="container">
-                    <div style={{ textAlign: 'center' }}>
-                        <p style={{ color: '#999', fontSize: '0.875rem' }}>
-                            © 2025 MenuPlatform. All rights reserved.
-                        </p>
-                    </div>
-                </div>
-            </footer>
-        </div>
+        </PageLayout>
     );
 };
 
