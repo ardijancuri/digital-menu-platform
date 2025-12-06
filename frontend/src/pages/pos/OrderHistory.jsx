@@ -1,10 +1,15 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
+import { useAuth } from '../../context/AuthContext';
+import Receipt from '../../components/Receipt';
 
 const OrderHistory = () => {
+    const { user } = useAuth();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('active'); // 'active' or 'history'
+    const [filter, setFilter] = useState('active'); // 'active', 'ready', or 'history'
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     useEffect(() => {
         fetchOrders();
@@ -24,6 +29,16 @@ const OrderHistory = () => {
 
     const handleStatusUpdate = async (id, newStatus) => {
         try {
+            // If completing an order, show receipt first
+            if (newStatus === 'completed') {
+                const orderToComplete = orders.find(o => o.id === id);
+                if (orderToComplete) {
+                    setSelectedOrder(orderToComplete);
+                    setShowReceipt(true);
+                    return; // Don't update status yet
+                }
+            }
+
             await posAPI.updateOrderStatus(id, { status: newStatus });
             fetchOrders();
         } catch (error) {
@@ -32,23 +47,45 @@ const OrderHistory = () => {
         }
     };
 
+    const handleCompleteOrder = async () => {
+        try {
+            await posAPI.updateOrderStatus(selectedOrder.id, { status: 'completed' });
+            setShowReceipt(false);
+            setSelectedOrder(null);
+            fetchOrders();
+        } catch (error) {
+            console.error('Error completing order:', error);
+            alert('Failed to complete order');
+        }
+    };
+
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
-                <div className="bg-gray-100 p-1 rounded-lg flex">
+                <div className="bg-white border-2 border-gray-200 p-1.5 rounded-xl flex shadow-sm">
                     <button
                         onClick={() => setFilter('active')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === 'active' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                     >
+                        <i className="fas fa-fire mr-2"></i>
                         Active Orders
                     </button>
                     <button
-                        onClick={() => setFilter('history')}
-                        className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === 'history' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-600 hover:text-gray-900'
+                        onClick={() => setFilter('ready')}
+                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'ready' ? 'bg-green-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                             }`}
                     >
+                        <i className="fas fa-check-circle mr-2"></i>
+                        Ready Orders
+                    </button>
+                    <button
+                        onClick={() => setFilter('history')}
+                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'history' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            }`}
+                    >
+                        <i className="fas fa-history mr-2"></i>
                         Order History
                     </button>
                 </div>
@@ -57,7 +94,7 @@ const OrderHistory = () => {
             {loading ? (
                 <div className="p-8 text-center">Loading orders...</div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {orders.map(order => (
                         <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
                             <div className="mb-3">
@@ -104,10 +141,9 @@ const OrderHistory = () => {
                                     <span className="text-base font-medium text-gray-600">Total</span>
                                     <span className="text-xl font-bold text-gray-900">{parseFloat(order.total_amount).toFixed(2)} MKD</span>
                                 </div>
-                                <p className="text-sm text-gray-500 text-right mt-1">{order.payment_method || 'Unpaid'}</p>
                             </div>
 
-                            {filter === 'active' && (
+                            {(filter === 'active' || filter === 'ready') && (
                                 <div className="flex flex-col gap-2">
                                     {order.status === 'preparing' && (
                                         <button
@@ -141,6 +177,17 @@ const OrderHistory = () => {
                         </div>
                     )}
                 </div>
+            )}
+
+            {/* Receipt Modal */}
+            {showReceipt && selectedOrder && (
+                <Receipt
+                    order={selectedOrder}
+                    businessName={user?.business_name || 'Restaurant'}
+                    onClose={() => {
+                        handleCompleteOrder();
+                    }}
+                />
             )}
         </div>
     );

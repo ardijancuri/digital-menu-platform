@@ -265,7 +265,9 @@ export const getOrders = async (req, res) => {
         const params = [userId];
 
         if (status === 'active') {
-            query += ` AND o.status IN ('pending', 'preparing', 'ready')`;
+            query += ` AND o.status IN ('preparing')`;
+        } else if (status === 'ready') {
+            query += ` AND o.status = 'ready'`;
         } else if (status === 'history') {
             query += ` AND o.status IN ('completed', 'cancelled')`;
         }

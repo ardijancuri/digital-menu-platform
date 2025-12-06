@@ -6,6 +6,7 @@ const TableManagement = () => {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newTable, setNewTable] = useState({ name: '', capacity: 4 });
+    const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetchTables();
@@ -55,23 +56,37 @@ const TableManagement = () => {
         }
     };
 
+    const filteredTables = tables.filter(table =>
+        table.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
     if (loading) return <div className="p-8 text-center">Loading tables...</div>;
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Table Management</h2>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                    <i className="fas fa-plus"></i>
-                    Add Table
-                </button>
+                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <input
+                        type="text"
+                        placeholder="Search tables..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
+                    />
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                        <i className="fas fa-plus"></i>
+                        Add Table
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-                {tables.map(table => (
+                {filteredTables.map(table => (
+
                     <div
                         key={table.id}
                         className={`bg-white rounded-xl shadow-sm border-2 p-6 relative group transition-all ${table.status === 'occupied' ? 'border-orange-200 bg-orange-50' :
@@ -117,6 +132,12 @@ const TableManagement = () => {
                         </select>
                     </div>
                 ))}
+                {filteredTables.length === 0 && (
+                    <div className="col-span-full text-center py-12 text-gray-500">
+                        <i className="fas fa-search text-4xl mb-3"></i>
+                        <p>No tables found matching "{searchQuery}"</p>
+                    </div>
+                )}
             </div>
 
             {/* Add Table Modal */}
