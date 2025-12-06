@@ -2,6 +2,10 @@
 -- Run this file to create all necessary tables
 
 -- Drop existing tables if they exist (for development)
+DROP TABLE IF EXISTS order_items CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS staff CASCADE;
+DROP TABLE IF EXISTS tables CASCADE;
 DROP TABLE IF EXISTS menu_items CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS menu_settings CASCADE;
@@ -93,6 +97,78 @@ CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_menu_settings_user_id ON menu_settings(user_id);
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_menu_items_category_id ON menu_items(category_id);
+
+-- POS Tables
+
+-- Tables table: physical tables in the restaurant
+CREATE TABLE tables (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    capacity INTEGER DEFAULT 4,
+    status TEXT DEFAULT 'available' CHECK (status IN ('available', 'occupied', 'reserved')),
+    position_x INTEGER DEFAULT 0,
+    position_y INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Staff table: restaurant employees
+CREATE TABLE staff (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    pin_code TEXT NOT NULL,
+    role TEXT DEFAULT 'server' CHECK (role IN ('admin', 'manager', 'server', 'kitchen')),
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Orders table: customer orders
+CREATE TABLE orders (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    table_id INTEGER REFERENCES tables(id) ON DELETE SET NULL,
+    staff_id INTEGER REFERENCES staff(id) ON DELETE SET NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'preparing', 'ready', 'completed', 'cancelled')),
+    total_amount NUMERIC(10, 2) DEFAULT 0.00,
+    payment_method TEXT CHECK (payment_method IN ('cash', 'card', 'online', NULL)),
+    payment_status TEXT DEFAULT 'pending' CHECK (payment_status IN ('pending', 'paid', 'refunded')),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Order items table: items within an order
+CREATE TABLE order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    menu_item_id INTEGER REFERENCES menu_items(id) ON DELETE SET NULL,
+    quantity INTEGER DEFAULT 1,
+    price NUMERIC(10, 2) NOT NULL, -- Snapshot of price at time of order
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Create indexes for POS tables
+CREATE INDEX idx_tables_user_id ON tables(user_id);
+CREATE INDEX idx_staff_user_id ON staff(user_id);
+CREATE INDEX idx_orders_user_id ON orders(user_id);
+CREATE INDEX idx_orders_table_id ON orders(table_id);
+CREATE INDEX idx_orders_status ON orders(status);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
+CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+
+-- Success message
+-- Create default admin user
+-- Email: admin@example.com
+-- Password: admin123
+INSERT INTO users (business_name, email, slug, password_hash, role, is_active)
+VALUES (
+    'Platform Admin', 
+    'admin@example.com', 
+    'admin', 
+    '$2b$10$Pe2jtLSK1t9W3823PKj/..cT.mbZSWunIkt9vRQuuaDDeMwpMv9iLa', 
+    'admin', 
+    true
+);
 
 -- Success message
 SELECT 'Database schema created successfully!' AS message;

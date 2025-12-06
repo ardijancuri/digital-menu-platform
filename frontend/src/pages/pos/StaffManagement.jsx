@@ -1,0 +1,173 @@
+import { useState, useEffect } from 'react';
+import { posAPI } from '../../services/posAPI';
+
+const StaffManagement = () => {
+    const [staffList, setStaffList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showAddModal, setShowAddModal] = useState(false);
+    const [newStaff, setNewStaff] = useState({ name: '', pin_code: '', role: 'server' });
+
+    useEffect(() => {
+        fetchStaff();
+    }, []);
+
+    const fetchStaff = async () => {
+        try {
+            const response = await posAPI.getStaff();
+            setStaffList(response.data.staff);
+        } catch (error) {
+            console.error('Error fetching staff:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleAddStaff = async (e) => {
+        e.preventDefault();
+        try {
+            await posAPI.createStaff(newStaff);
+            setShowAddModal(false);
+            setNewStaff({ name: '', pin_code: '', role: 'server' });
+            fetchStaff();
+        } catch (error) {
+            console.error('Error creating staff:', error);
+            alert('Failed to create staff member');
+        }
+    };
+
+    const handleDeleteStaff = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this staff member?')) return;
+        try {
+            await posAPI.deleteStaff(id);
+            fetchStaff();
+        } catch (error) {
+            console.error('Error deleting staff:', error);
+            alert('Failed to delete staff member');
+        }
+    };
+
+    if (loading) return <div className="p-8 text-center">Loading staff...</div>;
+
+    return (
+        <div>
+            <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800">Staff Management</h2>
+                <button
+                    onClick={() => setShowAddModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                >
+                    <i className="fas fa-plus"></i>
+                    Add Staff
+                </button>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th className="px-6 py-4 font-semibold text-gray-600">Name</th>
+                            <th className="px-6 py-4 font-semibold text-gray-600">Role</th>
+                            <th className="px-6 py-4 font-semibold text-gray-600">Joined</th>
+                            <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {staffList.map(staff => (
+                            <tr key={staff.id} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 font-medium text-gray-900">{staff.name}</td>
+                                <td className="px-6 py-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold uppercase ${staff.role === 'admin' ? 'bg-red-100 text-red-600' :
+                                            staff.role === 'manager' ? 'bg-purple-100 text-purple-600' :
+                                                'bg-blue-100 text-blue-600'
+                                        }`}>
+                                        {staff.role}
+                                    </span>
+                                </td>
+                                <td className="px-6 py-4 text-gray-500 text-sm">
+                                    {new Date(staff.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                    <button
+                                        onClick={() => handleDeleteStaff(staff.id)}
+                                        className="text-gray-400 hover:text-red-500 transition-colors"
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                        {staffList.length === 0 && (
+                            <tr>
+                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                    No staff members found. Add your first employee!
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Add Staff Modal */}
+            {showAddModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl">
+                        <h3 className="text-xl font-bold mb-4">Add Staff Member</h3>
+                        <form onSubmit={handleAddStaff}>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={newStaff.name}
+                                    onChange={(e) => setNewStaff({ ...newStaff, name: e.target.value })}
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">PIN Code (4 digits)</label>
+                                <input
+                                    type="password"
+                                    required
+                                    maxLength="4"
+                                    pattern="\d{4}"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={newStaff.pin_code}
+                                    onChange={(e) => setNewStaff({ ...newStaff, pin_code: e.target.value })}
+                                />
+                            </div>
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                                <select
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                    value={newStaff.role}
+                                    onChange={(e) => setNewStaff({ ...newStaff, role: e.target.value })}
+                                >
+                                    <option value="server">Server</option>
+                                    <option value="manager">Manager</option>
+                                    <option value="kitchen">Kitchen Staff</option>
+                                </select>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAddModal(false)}
+                                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                >
+                                    Add Staff
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default StaffManagement;

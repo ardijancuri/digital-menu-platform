@@ -10,6 +10,7 @@ import applicationRoutes from './routes/applicationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
+import posRoutes from './routes/posRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/public', publicRoutes);
+app.use('/api/pos', posRoutes);
 
 // 404 handler
 app.use((req, res) => {

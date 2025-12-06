@@ -13,6 +13,7 @@ const DashboardLayout = () => {
         { path: '/dashboard/categories', label: 'Categories', icon: 'fa-folder' },
         { path: '/dashboard/products', label: 'Products', icon: 'fa-utensils' },
         { path: '/dashboard/preview', label: 'Preview', icon: 'fa-eye' },
+        { path: '/pos', label: 'POS System', icon: 'fa-cash-register', highlight: true },
     ];
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -56,9 +57,13 @@ const DashboardLayout = () => {
                             key={item.path}
                             to={item.path}
                             onClick={() => setIsSidebarOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === item.path
-                                    ? 'bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-md'
-                                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
+                            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all duration-200 ${location.pathname === item.path || location.pathname.startsWith(item.path)
+                                    ? item.highlight
+                                        ? 'bg-gradient-to-r from-green-600 to-green-800 text-white shadow-md'
+                                        : 'bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-md'
+                                    : item.highlight
+                                        ? 'text-green-700 hover:bg-green-50 hover:text-green-800 border border-green-200'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                                 }`}
                         >
                             <i className={`fas ${item.icon} text-lg w-6 text-center`}></i>

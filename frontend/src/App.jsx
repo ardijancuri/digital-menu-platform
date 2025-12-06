@@ -20,6 +20,15 @@ import CategoriesPage from './pages/dashboard/CategoriesPage';
 import ProductsPage from './pages/dashboard/ProductsPage';
 import PreviewPage from './pages/dashboard/PreviewPage';
 
+// POS Pages
+import POSLayout from './layouts/POSLayout';
+import POSDashboard from './pages/pos/POSDashboard';
+import OrderTaking from './pages/pos/OrderTaking';
+import TableManagement from './pages/pos/TableManagement';
+import StaffManagement from './pages/pos/StaffManagement';
+import OrderHistory from './pages/pos/OrderHistory';
+import Reports from './pages/pos/Reports';
+
 function App() {
   return (
     <AuthProvider>
@@ -64,6 +73,23 @@ function App() {
             <Route path="categories" element={<CategoriesPage />} />
             <Route path="products" element={<ProductsPage />} />
             <Route path="preview" element={<PreviewPage />} />
+          </Route>
+
+          {/* POS Routes */}
+          <Route
+            path="/pos"
+            element={
+              <ProtectedRoute>
+                <POSLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<POSDashboard />} />
+            <Route path="order" element={<OrderTaking />} />
+            <Route path="tables" element={<TableManagement />} />
+            <Route path="staff" element={<StaffManagement />} />
+            <Route path="orders" element={<OrderHistory />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
 
           {/* 404 */}
