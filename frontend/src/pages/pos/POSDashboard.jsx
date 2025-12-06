@@ -1,15 +1,77 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-// import { posAPI } from '../../services/api'; // We'll create this later
+import { posAPI } from '../../services/posAPI';
 
 const POSDashboard = () => {
-    // Mock data for now
-    const stats = {
-        todaySales: 1250.50,
-        activeOrders: 5,
-        occupiedTables: 3,
-        staffOnline: 4
+    const [stats, setStats] = useState({
+        todaySales: 0,
+        activeOrders: 0,
+        occupiedTables: 0,
+        totalTables: 0,
+        staffCount: 0
+    });
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            // Fetch all necessary data
+            const [ordersResponse, tablesResponse, staffResponse] = await Promise.all([
+                posAPI.getOrders('history'),
+                posAPI.getTables(),
+                posAPI.getStaff()
+            ]);
+
+            // Calculate today's sales from completed orders
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const completedOrders = ordersResponse.data.orders.filter(order => order.status === 'completed');
+            const todaySales = completedOrders
+                .filter(order => {
+                    const orderDate = new Date(order.created_at);
+                    orderDate.setHours(0, 0, 0, 0);
+                    return orderDate.getTime() === today.getTime();
+                })
+                .reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
+
+            // Count active orders (preparing + ready)
+            const activeOrdersResponse = await posAPI.getOrders('active');
+            const readyOrdersResponse = await posAPI.getOrders('ready');
+            const activeOrders = activeOrdersResponse.data.orders.length + readyOrdersResponse.data.orders.length;
+
+            // Count occupied tables
+            const tables = tablesResponse.data.tables;
+            const occupiedTables = tables.filter(table => table.status === 'occupied').length;
+            const totalTables = tables.length;
+
+            // Count staff
+            const staffCount = staffResponse.data.staff.length;
+
+            setStats({
+                todaySales,
+                activeOrders,
+                occupiedTables,
+                totalTables,
+                staffCount
+            });
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+        } finally {
+            setLoading(false);
+        }
     };
+
+    if (loading) {
+        return <div className="p-8 text-center">Loading dashboard...</div>;
+    }
+
+    const tableCapacityPercent = stats.totalTables > 0
+        ? Math.round((stats.occupiedTables / stats.totalTables) * 100)
+        : 0;
 
     return (
         <div className="max-w-7xl mx-auto">
@@ -22,10 +84,9 @@ const POSDashboard = () => {
                         </div>
                         <span className="text-sm text-gray-500 font-medium">Today's Sales</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">${stats.todaySales.toFixed(2)}</h3>
-                    <p className="text-sm text-green-600 mt-2 flex items-center">
-                        <i className="fas fa-arrow-up mr-1"></i>
-                        12% vs yesterday
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.todaySales.toFixed(2)} MKD</h3>
+                    <p className="text-sm text-gray-600 mt-2">
+                        Completed orders today
                     </p>
                 </div>
 
@@ -38,7 +99,7 @@ const POSDashboard = () => {
                     </div>
                     <h3 className="text-2xl font-bold text-gray-900">{stats.activeOrders}</h3>
                     <p className="text-sm text-gray-600 mt-2">
-                        Pending processing
+                        Being prepared
                     </p>
                 </div>
 
@@ -49,9 +110,9 @@ const POSDashboard = () => {
                         </div>
                         <span className="text-sm text-gray-500 font-medium">Occupied Tables</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">{stats.occupiedTables}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.occupiedTables} / {stats.totalTables}</h3>
                     <p className="text-sm text-gray-600 mt-2">
-                        45% capacity
+                        {tableCapacityPercent}% capacity
                     </p>
                 </div>
 
@@ -60,11 +121,11 @@ const POSDashboard = () => {
                         <div className="bg-purple-100 p-3 rounded-lg text-purple-600">
                             <i className="fas fa-users text-xl"></i>
                         </div>
-                        <span className="text-sm text-gray-500 font-medium">Staff Online</span>
+                        <span className="text-sm text-gray-500 font-medium">Staff Members</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">{stats.staffOnline}</h3>
+                    <h3 className="text-2xl font-bold text-gray-900">{stats.staffCount}</h3>
                     <p className="text-sm text-gray-600 mt-2">
-                        Shift ends in 2h
+                        Total staff
                     </p>
                 </div>
             </div>
