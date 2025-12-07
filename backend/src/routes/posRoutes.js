@@ -10,6 +10,7 @@ import {
     loginStaff,
     deleteStaff,
     createOrder,
+    addItemsToOrder,
     getOrders,
     updateOrderStatus
 } from '../controllers/posController.js';
@@ -34,6 +35,7 @@ router.delete('/staff/:id', deleteStaff);
 // Orders
 router.get('/orders', getOrders);
 router.post('/orders', createOrder);
+router.post('/orders/:order_id/items', addItemsToOrder);
 router.put('/orders/:id/status', updateOrderStatus);
 
 export default router;

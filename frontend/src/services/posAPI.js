@@ -31,5 +31,6 @@ export const posAPI = {
     // Orders
     getOrders: (status) => api.get(`/pos/orders?status=${status || ''}`),
     createOrder: (data) => api.post('/pos/orders', data),
+    addItemsToOrder: (orderId, data) => api.post(`/pos/orders/${orderId}/items`, data),
     updateOrderStatus: (id, data) => api.put(`/pos/orders/${id}/status`, data),
 };

@@ -12,9 +12,10 @@ const OrderTaking = () => {
     const [staffList, setStaffList] = useState([]);
     const [selectedTable, setSelectedTable] = useState(null);
     const [selectedStaff, setSelectedStaff] = useState('');
+    const [activeOrderId, setActiveOrderId] = useState(null); // Track existing order ID for occupied tables
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
-    const [step, setStep] = useState(1); // 1 = Select Table, 2 = Select Products
+    const [step, setStep] = useState(1); // 1 = Select Table, 2 = Select Staff, 3 = Select Products
 
     useEffect(() => {
         fetchData();
@@ -70,27 +71,35 @@ const OrderTaking = () => {
         if (cart.length === 0) return;
         setProcessing(true);
         try {
-            const orderData = {
-                table_id: selectedTable === 'to-go' ? null : selectedTable,
-                staff_id: selectedStaff || null,
-                items: cart.map(item => ({
-                    id: item.id,
-                    quantity: item.quantity,
-                    price: item.price,
-                    notes: ''
-                })),
-                total_amount: cartTotal,
-                payment_method: 'cash'
-            };
+            const itemsData = cart.map(item => ({
+                id: item.id,
+                quantity: item.quantity,
+                price: item.price,
+                notes: ''
+            }));
 
-            await posAPI.createOrder(orderData);
+            // If we have an active order ID, add items to existing order
+            if (activeOrderId) {
+                await posAPI.addItemsToOrder(activeOrderId, { items: itemsData });
+            } else {
+                // Create new order
+                const orderData = {
+                    table_id: selectedTable === 'to-go' ? null : selectedTable,
+                    staff_id: selectedStaff || null,
+                    items: itemsData,
+                    total_amount: cartTotal,
+                    payment_method: 'cash'
+                };
+                await posAPI.createOrder(orderData);
+            }
+
             setCart([]);
             setSelectedTable(null);
             setSelectedStaff('');
+            setActiveOrderId(null);
             setStep(1);
             // Refresh tables to update their status
             await fetchData();
-            alert('Order placed successfully!');
         } catch (error) {
             console.error('Error placing order:', error);
             alert('Failed to place order');
@@ -98,9 +107,50 @@ const OrderTaking = () => {
             setProcessing(false);
         }
     };
-
-    const handleTableSelect = (tableId) => {
+    const handleTableSelect = async (tableId) => {
         setSelectedTable(tableId);
+
+        // If table is occupied, skip staff selection and go directly to products
+        const table = tables.find(t => t.id === tableId);
+        if (table && table.status === 'occupied') {
+            // Use the existing staff from the active order
+            setSelectedStaff(table.staff_id || '');
+
+            // Get the active order for this table
+            try {
+                const [activeRes, readyRes] = await Promise.all([
+                    posAPI.getOrders('active'),
+                    posAPI.getOrders('ready')
+                ]);
+
+                const activeOrders = activeRes.data.orders || [];
+                const readyOrders = readyRes.data.orders || [];
+                const allOrders = [...activeOrders, ...readyOrders];
+
+                const activeOrder = allOrders.find(
+                    order => order.table_id === tableId && order.status !== 'completed' && order.status !== 'cancelled'
+                );
+
+                if (activeOrder) {
+                    setActiveOrderId(activeOrder.id);
+                }
+            } catch (error) {
+                console.error('Error fetching active order:', error);
+            }
+
+            setStep(3); // Go directly to product selection
+        } else {
+            setActiveOrderId(null); // Reset for new orders
+            setStep(2); // Go to staff selection for new orders
+        }
+    };
+
+    const handleStaffSelect = (staffId) => {
+        setSelectedStaff(staffId);
+        setStep(3); // Go to product selection
+    };
+
+    const handleBackToStaff = () => {
         setStep(2);
     };
 
@@ -128,12 +178,11 @@ const OrderTaking = () => {
                     <p className="text-gray-600">Choose a table to start a new order</p>
                 </div>
 
-                {/* To Go and Staff Selection Row */}
-                <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* To Go Option */}
+                {/* To Go Option */}
+                <div className="mb-6">
                     <button
                         onClick={() => handleTableSelect('to-go')}
-                        className="p-6 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
+                        className="w-full p-6 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-3"
                     >
                         <i className="fas fa-shopping-bag text-2xl"></i>
                         <div className="text-left">
@@ -141,25 +190,6 @@ const OrderTaking = () => {
                             <div className="text-sm opacity-90">Takeaway / Delivery</div>
                         </div>
                     </button>
-
-                    {/* Staff Selection */}
-                    <div className="flex flex-col justify-center">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Assign to Staff (Optional)
-                        </label>
-                        <select
-                            className="w-full p-4 text-base border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white cursor-pointer"
-                            value={selectedStaff}
-                            onChange={(e) => setSelectedStaff(e.target.value)}
-                        >
-                            <option value="">No staff assigned</option>
-                            {staffList.map(staff => (
-                                <option key={staff.id} value={staff.id}>
-                                    {staff.name} ({staff.role})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
                 </div>
 
                 {/* Tables Grid */}
@@ -168,30 +198,34 @@ const OrderTaking = () => {
                         <button
                             key={table.id}
                             onClick={() => handleTableSelect(table.id)}
-                            disabled={table.status === 'occupied'}
                             className={`p-6 rounded-xl shadow-md transition-all relative ${table.status === 'available'
                                 ? 'bg-white hover:bg-blue-50 hover:shadow-lg border-2 border-gray-200 hover:border-blue-500'
                                 : table.status === 'reserved'
                                     ? 'bg-yellow-50 border-2 border-yellow-400 hover:bg-yellow-100'
-                                    : 'bg-gray-100 border-2 border-gray-300 cursor-not-allowed opacity-60'
+                                    : 'bg-orange-50 border-2 border-orange-400 hover:bg-orange-100 hover:border-orange-500'
                                 }`}
                         >
                             {/* Status Badge */}
                             <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${table.status === 'available' ? 'bg-green-500 text-white' :
                                 table.status === 'reserved' ? 'bg-yellow-500 text-white' :
-                                    'bg-red-500 text-white'
+                                    'bg-orange-500 text-white'
                                 }`}>
                                 {table.status === 'available' ? 'Free' :
                                     table.status === 'reserved' ? 'Reserved' :
-                                        'Occupied'}
+                                        'In Use'}
                             </div>
 
                             <div className="text-center mt-2">
                                 <i className={`fas fa-chair text-4xl mb-3 ${table.status === 'available' ? 'text-green-600' :
                                     table.status === 'reserved' ? 'text-yellow-600' :
-                                        'text-gray-400'
+                                        'text-orange-600'
                                     }`}></i>
                                 <div className="font-bold text-gray-800 text-xl">{table.name}</div>
+                                {table.status === 'occupied' && table.staff_name && (
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        <i className="fas fa-user mr-1"></i>{table.staff_name}
+                                    </div>
+                                )}
                             </div>
                         </button>
                     ))}
@@ -207,7 +241,71 @@ const OrderTaking = () => {
         );
     }
 
-    // Step 2: Product Selection
+    // Step 2: Staff Selection
+    if (step === 2) {
+        return (
+            <div className="max-w-6xl mx-auto px-4">
+                <div className="mb-6">
+                    <button
+                        onClick={handleBackToTables}
+                        className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium mb-4"
+                    >
+                        <i className="fas fa-arrow-left"></i>
+                        Back to Tables
+                    </button>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Staff Member</h2>
+                    <p className="text-gray-600">
+                        {selectedTable === 'to-go' ? 'Assign staff to this To Go order' : `Assign staff to ${tables.find(t => t.id === selectedTable)?.name || 'this table'}`}
+                    </p>
+                </div>
+
+                {/* Staff Grid - Touch Friendly */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+                    {staffList.map(staff => (
+                        <button
+                            key={staff.id}
+                            onClick={() => handleStaffSelect(staff.id)}
+                            className="p-4 bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-xl hover:border-blue-500 transition-all group"
+                        >
+                            <div className="text-center">
+                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-blue-500 transition-colors">
+                                    <i className="fas fa-user text-xl text-blue-600 group-hover:text-white"></i>
+                                </div>
+                                <div className="font-bold text-gray-800 text-base mb-1">{staff.name}</div>
+                                <div className="text-xs text-gray-500 capitalize">{staff.role}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Skip Staff Assignment */}
+                <div className="text-center">
+                    <button
+                        onClick={() => handleStaffSelect('')}
+                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
+                    >
+                        <i className="fas fa-forward mr-2"></i>
+                        Skip - No Staff Assignment
+                    </button>
+                </div>
+
+                {staffList.length === 0 && (
+                    <div className="text-center py-12 text-gray-500">
+                        <i className="fas fa-users text-4xl mb-3"></i>
+                        <p>No staff members available. Add staff in Staff Management.</p>
+                        <button
+                            onClick={() => handleStaffSelect('')}
+                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
+                        >
+                            Continue Without Staff
+                        </button>
+                    </div>
+                )}
+            </div>
+        );
+    }
+
+    // Step 3: Product Selection
     return (
         <div className="flex flex-col lg:flex-row h-[calc(100vh-6rem)] gap-4 lg:gap-6">
             {/* Left Side: Menu */}
@@ -216,11 +314,11 @@ const OrderTaking = () => {
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                     <div className="flex items-center justify-between mb-3">
                         <button
-                            onClick={handleBackToTables}
+                            onClick={handleBackToStaff}
                             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
                         >
                             <i className="fas fa-arrow-left"></i>
-                            <span className="hidden sm:inline">Back to Tables</span>
+                            <span className="hidden sm:inline">Back to Staff</span>
                         </button>
                         <div className="text-sm font-medium text-gray-700">
                             {selectedTable === 'to-go' ? (

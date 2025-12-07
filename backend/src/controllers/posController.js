@@ -239,6 +239,55 @@ export const createOrder = async (req, res) => {
     }
 };
 
+export const addItemsToOrder = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const userId = req.user.id;
+        const { order_id } = req.params;
+        const { items } = req.body;
+
+        // Verify order belongs to user
+        const orderCheck = await client.query(
+            'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
+            [order_id, userId]
+        );
+
+        if (orderCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        // Add new items to the order
+        let additionalTotal = 0;
+        for (const item of items) {
+            await client.query(
+                `INSERT INTO order_items (order_id, menu_item_id, quantity, price, notes) 
+                 VALUES ($1, $2, $3, $4, $5)`,
+                [order_id, item.id, item.quantity, item.price, item.notes || '']
+            );
+            additionalTotal += parseFloat(item.price) * item.quantity;
+        }
+
+        // Update order total and set status back to preparing if it was ready
+        await client.query(
+            "UPDATE orders SET total_amount = total_amount + $1, status = 'preparing' WHERE id = $2",
+            [additionalTotal, order_id]
+        );
+
+        await client.query('COMMIT');
+
+        res.json({ success: true, message: 'Items added to order' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error adding items to order:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
 export const getOrders = async (req, res) => {
     try {
         const userId = req.user.id;
