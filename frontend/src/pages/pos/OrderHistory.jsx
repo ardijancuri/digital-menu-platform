@@ -124,15 +124,90 @@ const OrderHistory = () => {
 
                             <div className="border-t border-gray-100 py-3 mb-3 flex-1">
                                 <ul className="space-y-2">
-                                    {order.items.map((item, idx) => (
-                                        <li key={idx} className="flex justify-between text-sm">
-                                            <span className="text-gray-800">
-                                                <span className="font-bold mr-1">{item.quantity}x</span>
-                                                {item.name}
-                                            </span>
-                                            <span className="text-gray-600">{parseFloat(item.price).toFixed(2)} MKD</span>
-                                        </li>
-                                    ))}
+                                    {(() => {
+                                        // Sort items by creation time
+                                        const sortedItems = [...order.items].sort((a, b) =>
+                                            new Date(a.created_at || 0) - new Date(b.created_at || 0)
+                                        );
+
+                                        if (sortedItems.length === 0) return null;
+
+                                        // Find the timestamp of the last item
+                                        const lastItemTime = new Date(sortedItems[sortedItems.length - 1].created_at || 0).getTime();
+
+                                        // Group items: New Round (latest batch) vs Previous
+                                        // We treat the set of items with the latest timestamp as the "New Round"
+                                        // A small 1-second buffer handles any minor db variations, though transaction time should be identical.
+                                        const ROUND_THRESHOLD_MS = 1000;
+
+                                        // Skip grouping for history or completed orders
+                                        if (filter === 'history' || order.status === 'completed' || order.status === 'cancelled') {
+                                            return sortedItems.map((item, idx) => (
+                                                <li key={idx} className="flex justify-between text-sm">
+                                                    <span className="text-gray-800">
+                                                        <span className="font-bold mr-1">{item.quantity}x</span>
+                                                        {item.name}
+                                                    </span>
+                                                    <span className="text-gray-600">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                </li>
+                                            ));
+                                        }
+
+                                        const previousItems = [];
+                                        const newItems = [];
+
+                                        sortedItems.forEach(item => {
+                                            const itemTime = new Date(item.created_at || 0).getTime();
+                                            if (lastItemTime - itemTime < ROUND_THRESHOLD_MS) {
+                                                newItems.push(item);
+                                            } else {
+                                                previousItems.push(item);
+                                            }
+                                        });
+
+                                        // If everything is in one round (e.g. new order), just show all as one list without label
+                                        // Unless we specifically want to mark "New Round" even for single round? 
+                                        // User said "group only the items from the last round", implying separation from old.
+                                        // If no previous items, then "New Round" label might be redundant or confusing?
+                                        // Let's assume if previousItems is empty, we just show mapped items normally (no label).
+
+                                        return (
+                                            <>
+                                                {/* Previous Items */}
+                                                {previousItems.map((item, idx) => (
+                                                    <li key={`prev-${idx}`} className="flex justify-between text-sm opacity-75">
+                                                        <span className="text-gray-800">
+                                                            <span className="font-bold mr-1">{item.quantity}x</span>
+                                                            {item.name}
+                                                        </span>
+                                                        <span className="text-gray-600">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                    </li>
+                                                ))}
+
+                                                {/* Separator if we have both old and new items */}
+                                                {previousItems.length > 0 && newItems.length > 0 && (
+                                                    <li className="flex items-center gap-2 py-2">
+                                                        <div className="h-px bg-blue-200 flex-1"></div>
+                                                        <span className="text-xs font-bold text-blue-600 uppercase tracking-wider bg-blue-50 px-2 py-1 rounded-full">
+                                                            New Round
+                                                        </span>
+                                                        <div className="h-px bg-blue-200 flex-1"></div>
+                                                    </li>
+                                                )}
+
+                                                {/* New/Latest Items */}
+                                                {newItems.map((item, idx) => (
+                                                    <li key={`new-${idx}`} className="flex justify-between text-sm">
+                                                        <span className="text-gray-900 font-medium">
+                                                            <span className="font-bold mr-1">{item.quantity}x</span>
+                                                            {item.name}
+                                                        </span>
+                                                        <span className="text-gray-800 font-medium">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                    </li>
+                                                ))}
+                                            </>
+                                        );
+                                    })()}
                                 </ul>
                             </div>
 

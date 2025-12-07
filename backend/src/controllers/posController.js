@@ -301,7 +301,8 @@ export const getOrders = async (req, res) => {
                        'name', m.name,
                        'quantity', oi.quantity,
                        'price', oi.price,
-                       'notes', oi.notes
+                       'notes', oi.notes,
+                       'created_at', oi.created_at
                    )) as items
             FROM orders o
             LEFT JOIN tables t ON o.table_id = t.id
@@ -339,6 +340,36 @@ export const updateOrderStatus = async (req, res) => {
         const userId = req.user.id;
         const { id } = req.params;
         const { status, payment_status } = req.body;
+
+        // If status is cancelled, DELETE the order instead of updating
+        if (status === 'cancelled') {
+            const deleteQuery = 'DELETE FROM orders WHERE id = $1 AND user_id = $2 RETURNING *';
+            const result = await client.query(deleteQuery, [id, userId]);
+
+            if (result.rows.length === 0) {
+                await client.query('ROLLBACK');
+                return res.status(404).json({ success: false, message: 'Order not found' });
+            }
+
+            // Also update table status to 'available' if it was occupied by this order
+            const deletedOrder = result.rows[0];
+            if (deletedOrder.table_id) {
+                const activeOrdersRes = await client.query(
+                    `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing', 'ready') AND id != $2`,
+                    [deletedOrder.table_id, id]
+                );
+
+                if (activeOrdersRes.rows.length === 0) {
+                    await client.query(
+                        'UPDATE tables SET status = $1 WHERE id = $2',
+                        ['available', deletedOrder.table_id]
+                    );
+                }
+            }
+
+            await client.query('COMMIT');
+            return res.json({ success: true, message: 'Order cancelled and deleted', deleted: true });
+        }
 
         let updateQuery = 'UPDATE orders SET updated_at = NOW()';
         const params = [];
