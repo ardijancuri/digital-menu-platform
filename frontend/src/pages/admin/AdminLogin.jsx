@@ -12,6 +12,8 @@ const AdminLogin = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    const [showPassword, setShowPassword] = useState(false);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -67,14 +69,26 @@ const AdminLogin = () => {
                             required
                         />
 
-                        <Input
-                            label="Password"
-                            type="password"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            placeholder="Enter admin password"
-                            required
-                        />
+                        <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    className="input pr-10"
+                                    value={formData.password}
+                                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                    placeholder="Enter admin password"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                </button>
+                            </div>
+                        </div>
 
                         <Button type="submit" variant="primary" loading={loading} className="w-full">
                             <i className="fas fa-sign-in-alt mr-2"></i>
