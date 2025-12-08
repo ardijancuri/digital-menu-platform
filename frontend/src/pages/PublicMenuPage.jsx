@@ -114,7 +114,7 @@ const PublicMenuPage = () => {
                         <img
                             src={menu.logo_url}
                             alt="Logo"
-                            className="w-12 h-12 rounded-full object-cover shadow-sm bg-white p-1"
+                            className="w-12 h-12 rounded-full object-cover shadow-sm"
                         />
                     )}
                     <div>
