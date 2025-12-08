@@ -16,6 +16,7 @@ export const adminLogin = async (req, res) => {
         );
 
         if (result.rows.length === 0) {
+            console.log('Admin login failed: No user found or not admin for email:', email);
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials or not an admin account'
@@ -24,10 +25,21 @@ export const adminLogin = async (req, res) => {
 
         const user = result.rows[0];
 
+        // DEBUG: Temporary logging
+        console.log('User found:', user.email);
+        console.log('Stored hash length:', user.password_hash?.length);
+        console.log('Input password length:', password?.length);
+        console.log('Stored hash (first 10 chars):', user.password_hash?.substring(0, 10));
+
         // Verify password
         const isPasswordValid = await comparePassword(password, user.password_hash);
+        console.log('Password comparison result:', isPasswordValid);
 
         if (!isPasswordValid) {
+            // Double check if trim helps
+            const trimmedValid = await comparePassword(password.trim(), user.password_hash.trim());
+            console.log('Trimmed password comparison result:', trimmedValid);
+
             return res.status(401).json({
                 success: false,
                 message: 'Invalid credentials'
