@@ -22,7 +22,10 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || '*',
+    credentials: true,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -78,15 +81,17 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`
+// Start server only if run directly
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+    app.listen(PORT, () => {
+        console.log(`
 ╔════════════════════════════════════════════╗
 ║   Digital Menu Platform API Server        ║
 ║   Running on http://localhost:${PORT}       ║
 ║   Environment: ${process.env.NODE_ENV || 'development'}                  ║
 ╚════════════════════════════════════════════╝
-  `);
-});
+      `);
+    });
+}
 
 export default app;
