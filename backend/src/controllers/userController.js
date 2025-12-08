@@ -1,4 +1,5 @@
 import { query } from '../db/database.js';
+import { uploadFile, deleteFile } from '../utils/supabase.js';
 
 /**
  * Get menu settings
@@ -122,7 +123,7 @@ export const uploadBannerImage = async (req, res) => {
             });
         }
 
-        const imageUrl = `/uploads/${req.file.filename}`;
+        const imageUrl = await uploadFile(req.file);
 
         // Append to banner_images array
         const result = await query(
@@ -164,6 +165,9 @@ export const deleteBannerImage = async (req, res) => {
             });
         }
 
+        // Try to delete from storage
+        await deleteFile(imageUrl);
+
         // Remove from banner_images array
         const result = await query(
             `UPDATE menu_settings 
@@ -202,7 +206,7 @@ export const uploadLogo = async (req, res) => {
             });
         }
 
-        const logoUrl = `/uploads/${req.file.filename}`;
+        const logoUrl = await uploadFile(req.file);
 
         const result = await query(
             'UPDATE menu_settings SET logo_url = $1, updated_at = NOW() WHERE user_id = $2 RETURNING *',
@@ -543,7 +547,7 @@ export const uploadItemImage = async (req, res) => {
             });
         }
 
-        const imageUrl = `/uploads/${req.file.filename}`;
+        const imageUrl = await uploadFile(req.file);
 
         // Verify item belongs to user
         const result = await query(
@@ -591,6 +595,9 @@ export const deleteItemImage = async (req, res) => {
                 message: 'Item ID and Image URL are required'
             });
         }
+
+        // Try to delete from storage
+        await deleteFile(imageUrl);
 
         const result = await query(
             `UPDATE menu_items m
