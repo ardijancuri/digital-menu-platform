@@ -179,7 +179,7 @@ const PublicMenuPage = () => {
 
             {/* Menu Categories */}
             <main className="px-5 space-y-6">
-                {menu.categories.map((category) => {
+                {menu.categories.map((category, index) => {
                     const isExpanded = expandedCategories.has(category.id);
                     // Use theme for "Nearby Shop" or "Popular" section headers style as reference
                     // But here we display Categories
@@ -188,7 +188,7 @@ const PublicMenuPage = () => {
                         <div key={category.id}>
                             <div
                                 onClick={() => toggleCategory(category.id)}
-                                className="flex justify-between items-center mb-1.5 cursor-pointer"
+                                className="flex justify-between items-center mb-2 cursor-pointer"
                             >
                                 <h2
                                     className="text-lg font-bold"
@@ -210,11 +210,7 @@ const PublicMenuPage = () => {
                                     {category.items?.map((item) => (
                                         <div
                                             key={item.id}
-                                            className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
-                                            style={{
-                                                backgroundColor: theme.item_card_bg_color,
-                                                borderColor: theme.border_color
-                                            }}
+                                            className="bg-gray-100 rounded-3xl overflow-hidden transition-shadow flex flex-col h-full"
                                         >
                                             {/* Image */}
                                             <div className="p-2 pb-0">
@@ -307,6 +303,9 @@ const PublicMenuPage = () => {
                                         </div>
                                     ))}
                                 </div>
+                            )}
+                            {index < menu.categories.length - 1 && (
+                                <div className="border-b border-gray-200 my-6"></div>
                             )}
                         </div>
                     );
