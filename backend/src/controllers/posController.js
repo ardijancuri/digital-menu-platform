@@ -1,5 +1,5 @@
 import pool from '../db/database.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 // --- Tables Management ---
 

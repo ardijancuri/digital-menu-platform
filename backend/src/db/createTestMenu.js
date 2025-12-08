@@ -1,5 +1,5 @@
 import pool from './database.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 async function createTestMenu() {
     try {
