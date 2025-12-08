@@ -13,7 +13,10 @@ import {
     createMenuItem,
     updateMenuItem,
     deleteMenuItem,
-    uploadItemImage
+    uploadItemImage,
+    uploadBannerImage,
+    deleteBannerImage,
+    deleteItemImage
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -25,6 +28,8 @@ router.use(authMiddleware);
 router.get('/settings', getSettings);
 router.put('/settings', updateSettings);
 router.post('/upload-logo', uploadSingle('logo'), uploadLogo);
+router.post('/upload-banner', uploadSingle('banner'), uploadBannerImage);
+router.post('/delete-banner', deleteBannerImage);
 
 // Category routes
 router.get('/categories', getCategories);
@@ -38,5 +43,6 @@ router.post('/menu-items', createMenuItem);
 router.put('/menu-items/:id', updateMenuItem);
 router.delete('/menu-items/:id', deleteMenuItem);
 router.post('/upload-item-image', uploadSingle('image'), uploadItemImage);
+router.post('/delete-item-image', deleteItemImage);
 
 export default router;

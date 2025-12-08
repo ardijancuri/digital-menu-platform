@@ -17,7 +17,6 @@ const ProductsPage = () => {
         name: '',
         description: '',
         price: '',
-        tag: '',
     });
     const [imageFile, setImageFile] = useState(null);
 
@@ -47,7 +46,6 @@ const ProductsPage = () => {
             name: '',
             description: '',
             price: '',
-            tag: '',
         });
         setImageFile(null);
         setIsModalOpen(true);
@@ -60,7 +58,6 @@ const ProductsPage = () => {
             name: item.name,
             description: item.description || '',
             price: item.price,
-            tag: item.tag || '',
         });
         setImageFile(null);
         setIsModalOpen(true);
@@ -132,16 +129,24 @@ const ProductsPage = () => {
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {items.map((item) => (
                         <div key={item.id} className="card">
-                            {item.image_url && (
-                                <img src={item.image_url} alt={item.name} className="w-full h-32 object-cover rounded-lg mb-3" />
+                            {item.images && item.images.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-1 mb-3">
+                                    {item.images.slice(0, 2).map((img, idx) => (
+                                        <img key={idx} src={img} alt={`${item.name} ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
+                                    ))}
+                                    {item.images.length > 2 && (
+                                        <div className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
+                                            +{item.images.length - 2}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400">
+                                    <i className="fas fa-image text-2xl"></i>
+                                </div>
                             )}
                             <div className="flex items-start justify-between mb-2">
                                 <h3 className="font-semibold">{item.name}</h3>
-                                {item.tag && (
-                                    <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                                        {item.tag}
-                                    </span>
-                                )}
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{item.description}</p>
                             <p className="text-lg font-bold text-blue-600 mb-2">${parseFloat(item.price).toFixed(2)}</p>
@@ -206,24 +211,42 @@ const ProductsPage = () => {
                     />
 
                     <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Tag</label>
-                        <select
-                            value={formData.tag}
-                            onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
-                            className="input"
-                        >
-                            <option value="">None</option>
-                            <option value="New">New</option>
-                            <option value="Hot">Hot</option>
-                            <option value="Bestseller">Bestseller</option>
-                        </select>
-                    </div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Item Images</label>
+                        {editingItem && editingItem.images && editingItem.images.length > 0 && (
+                            <div className="grid grid-cols-3 gap-2 mb-4">
+                                {editingItem.images.map((img, idx) => (
+                                    <div key={idx} className="relative group">
+                                        <img src={img} alt="Product" className="w-full h-24 object-cover rounded-lg border" />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (confirm('Remove this image?')) {
+                                                    try {
+                                                        await userAPI.deleteItemImage(editingItem.id, img);
+                                                        const updatedItem = { ...editingItem, images: editingItem.images.filter(i => i !== img) };
+                                                        setEditingItem(updatedItem);
+                                                        fetchData();
+                                                    } catch (err) {
+                                                        alert('Failed to remove image');
+                                                    }
+                                                }
+                                            }}
+                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
 
-                    <ImageUpload
-                        onUpload={(file) => setImageFile(file)}
-                        currentImage={editingItem?.image_url}
-                        label="Item Image"
-                    />
+                        <ImageUpload
+                            onUpload={(file) => setImageFile(file)}
+                            currentImage={null}
+                            label={editingItem && editingItem.images && editingItem.images.length > 0 ? "Add Another Image" : "Upload Image"}
+                        />
+                        {imageFile && <p className="text-xs text-green-600 mt-1">Image selected: {imageFile.name}</p>}
+                    </div>
 
                     <div className="flex space-x-2">
                         <Button type="submit" variant="primary" loading={uploadingImage} className="flex-1">

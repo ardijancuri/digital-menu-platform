@@ -8,6 +8,10 @@ const PublicMenuPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [expandedCategories, setExpandedCategories] = useState(new Set());
+    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+    const [isBannerPaused, setIsBannerPaused] = useState(false);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
 
     useEffect(() => {
         fetchMenu();
@@ -15,7 +19,7 @@ const PublicMenuPage = () => {
 
     useEffect(() => {
         if (menu) {
-            // Load Google Fonts dynamically
+            // Load Google Fonts
             const businessNameFont = menu.theme.business_name_font || 'Montserrat';
             const categoryFont = menu.theme.category_font || 'Roboto Condensed';
             const productNameFont = menu.theme.product_name_font || 'Montserrat';
@@ -32,11 +36,35 @@ const PublicMenuPage = () => {
         }
     }, [menu]);
 
+    // Carousel Autoplay
+    useEffect(() => {
+        if (menu?.theme?.banner_images?.length > 1 && !isBannerPaused) {
+            const timer = setInterval(() => {
+                setCurrentBannerIndex(prev => (prev + 1) % menu.theme.banner_images.length);
+            }, 5000);
+            return () => clearInterval(timer);
+        }
+    }, [menu?.theme?.banner_images, isBannerPaused]);
+
+    const handleBannerSwipe = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        const isLeftSwipe = distance > 50;
+        const isRightSwipe = distance < -50;
+        const length = menu.theme.banner_images.length;
+
+        if (isLeftSwipe) {
+            setCurrentBannerIndex(prev => (prev + 1) % length);
+        }
+        if (isRightSwipe) {
+            setCurrentBannerIndex(prev => (prev - 1 + length) % length);
+        }
+    };
+
     const fetchMenu = async () => {
         try {
             const response = await publicAPI.getMenu(slug);
             setMenu(response.data.menu);
-            // Expand all categories by default
             const allCategoryIds = new Set(response.data.menu.categories.map(cat => cat.id));
             setExpandedCategories(allCategoryIds);
         } catch (err) {
@@ -61,10 +89,7 @@ const PublicMenuPage = () => {
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-indigo-600 mx-auto mb-4"></div>
-                    <p className="text-gray-600 text-lg font-medium">Loading menu...</p>
-                </div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
             </div>
         );
     }
@@ -72,235 +97,221 @@ const PublicMenuPage = () => {
     if (error || !menu) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <i className="fas fa-exclamation-circle text-6xl text-red-500 mb-4"></i>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Menu Not Found</h1>
-                    <p className="text-gray-600">The menu you're looking for doesn't exist.</p>
-                </div>
+                <p className="text-gray-600">Menu not found</p>
             </div>
         );
     }
 
-    const styles = {
-        backgroundColor: menu.theme.background_color || '#ffffff',
-        color: menu.theme.text_color || '#000000',
-    };
-
-    const primaryColor = menu.theme.primary_color || '#6366f1';
-    const accentColor = menu.theme.accent_color || '#8b5cf6';
-    const categoryBgColor = menu.theme.category_bg_color || '#f9fafb';
-    const itemCardBgColor = menu.theme.item_card_bg_color || '#ffffff';
-    const borderColor = menu.theme.border_color || '#e5e7eb';
-    const headerBgColor = menu.theme.header_bg_color || '#ffffff';
-    const categoryTitleColor = menu.theme.category_title_color || '#1f2937';
-    const productNameColor = menu.theme.product_name_color || '#1f2937';
-    const descriptionTextColor = menu.theme.description_text_color || '#6b7280';
-    const priceColor = menu.theme.price_color || '#3b82f6';
-    const categoryIconColor = menu.theme.category_icon_color || '#3b82f6';
-    const businessNameFont = menu.theme.business_name_font || 'Montserrat';
-    const categoryFont = menu.theme.category_font || 'Roboto Condensed';
-    const productNameFont = menu.theme.product_name_font || 'Montserrat';
-    const descriptionFont = menu.theme.description_font || 'Quicksand';
+    const { theme } = menu;
+    const bannerImages = theme.banner_images || [];
 
     return (
-        <div className="min-h-screen" style={styles}>
+        <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background_color }}>
             {/* Header */}
-            <header className="border-b" style={{ borderColor: borderColor, backgroundColor: headerBgColor }}>
-                <div className="container mx-auto px-4 py-6">
-                    <div className="text-center max-w-3xl mx-auto">
-                        {menu.logo_url && (
-                            <img
-                                src={menu.logo_url}
-                                alt={menu.business_name}
-                                className="h-12 w-auto mx-auto object-contain"
-                            />
-                        )}
-                        {!menu.logo_url && (
-                            <h1
-                                className="text-3xl font-bold"
-                                style={{
-                                    color: primaryColor,
-                                    fontFamily: businessNameFont,
-                                }}
-                            >
-                                {menu.business_name}
-                            </h1>
-                        )}
+            <header className="px-5 py-4">
+                <div className="flex items-center gap-2">
+                    {menu.logo_url && (
+                        <img
+                            src={menu.logo_url}
+                            alt="Logo"
+                            className="w-12 h-12 rounded-full object-cover shadow-sm bg-white p-1"
+                        />
+                    )}
+                    <div>
+                        <h1
+                            className="text-xl font-bold leading-tight"
+                            style={{
+                                color: theme.primary_color,
+                                fontFamily: theme.business_name_font
+                            }}
+                        >
+                            {menu.business_name}
+                        </h1>
 
                     </div>
                 </div>
             </header>
 
-            {/* Menu Categories - Dropdown Style */}
-            <main className="container mx-auto px-4 py-8 max-w-5xl">
-                {menu.categories.length === 0 ? (
-                    <div className="text-center py-20">
-                        <i className="fas fa-utensils text-6xl opacity-20 mb-4"></i>
-                        <p className="text-xl opacity-60" style={{ fontFamily: descriptionFont }}>
-                            No categories available yet
-                        </p>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {menu.categories.map((category) => {
-                            const isExpanded = expandedCategories.has(category.id);
-                            const categoryItems = category.items || [];
+            {/* Banner Carousel */}
+            {bannerImages.length > 0 && (
+                <div
+                    className="px-5 mb-8"
+                    onMouseEnter={() => setIsBannerPaused(true)}
+                    onMouseLeave={() => setIsBannerPaused(false)}
+                    onTouchStart={(e) => {
+                        setIsBannerPaused(true);
+                        setTouchStart(e.targetTouches[0].clientX);
+                    }}
+                    onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
+                    onTouchEnd={() => {
+                        setIsBannerPaused(false);
+                        handleBannerSwipe();
+                        setTouchStart(null);
+                        setTouchEnd(null);
+                    }}
+                >
+                    <div className="relative rounded-2xl overflow-hidden aspect-[2/1] shadow-lg">
+                        {bannerImages.map((img, index) => (
+                            <div
+                                key={index}
+                                className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBannerIndex ? 'opacity-100' : 'opacity-0'
+                                    }`}
+                            >
+                                <img src={img} alt="Banner" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0"></div>
+                            </div>
+                        ))}
 
-                            return (
-                                <div
-                                    key={category.id}
-                                    className="rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg"
+                        {/* Dots */}
+                        <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
+                            {bannerImages.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setCurrentBannerIndex(idx)}
+                                    className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentBannerIndex ? 'bg-white w-6' : 'bg-white/50'
+                                        }`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Menu Categories */}
+            <main className="px-5 space-y-6">
+                {menu.categories.map((category) => {
+                    const isExpanded = expandedCategories.has(category.id);
+                    // Use theme for "Nearby Shop" or "Popular" section headers style as reference
+                    // But here we display Categories
+
+                    return (
+                        <div key={category.id}>
+                            <div
+                                onClick={() => toggleCategory(category.id)}
+                                className="flex justify-between items-center mb-1.5 cursor-pointer"
+                            >
+                                <h2
+                                    className="text-lg font-bold"
                                     style={{
-                                        backgroundColor: '#ffffff',
-                                        border: `1px solid ${borderColor}`,
+                                        color: theme.category_title_color,
+                                        fontFamily: theme.category_font
                                     }}
                                 >
-                                    {/* Category Header */}
-                                    <button
-                                        onClick={() => toggleCategory(category.id)}
-                                        className="w-full px-5 py-4 flex items-center justify-between transition-all duration-200"
-                                        style={{
-                                            backgroundColor: categoryBgColor,
-                                        }}
-                                    >
-                                        <h2
-                                            className="text-xl font-bold text-left"
+                                    {category.name}
+                                </h2>
+                                <span className="text-xs font-medium px-2 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1">
+                                    {isExpanded ? 'Hide' : 'See All'}
+                                    <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'}`}></i>
+                                </span>
+                            </div>
+
+                            {isExpanded && (
+                                <div className="grid grid-cols-2 gap-4">
+                                    {category.items?.map((item) => (
+                                        <div
+                                            key={item.id}
+                                            className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col h-full"
                                             style={{
-                                                color: categoryTitleColor,
-                                                fontFamily: categoryFont,
+                                                backgroundColor: theme.item_card_bg_color,
+                                                borderColor: theme.border_color
                                             }}
                                         >
-                                            {category.name}
-                                        </h2>
-                                        <div className="flex items-center gap-3">
-                                            <span
-                                                className="text-xs font-semibold px-2 py-1 rounded-full"
-                                                style={{
-                                                    backgroundColor: `${accentColor}15`,
-                                                    color: accentColor,
-                                                    fontFamily: descriptionFont,
-                                                }}
-                                            >
-                                                {categoryItems.length} {categoryItems.length === 1 ? 'item' : 'items'}
-                                            </span>
-                                            <i
-                                                className={`fas fa-chevron-down text-lg transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''
-                                                    }`}
-                                                style={{ color: categoryIconColor }}
-                                            ></i>
-                                        </div>
-                                    </button>
-
-                                    {/* Category Items */}
-                                    <div
-                                        className="transition-all duration-300 ease-in-out overflow-hidden"
-                                        style={{
-                                            maxHeight: isExpanded ? '5000px' : '0',
-                                            opacity: isExpanded ? 1 : 0,
-                                        }}
-                                    >
-                                        {categoryItems.length === 0 ? (
-                                            <div className="px-6 py-12 text-center">
-                                                <p className="text-gray-400" style={{ fontFamily: descriptionFont }}>
-                                                    No items in this category yet
-                                                </p>
+                                            {/* Image */}
+                                            <div className="p-2 pb-0">
+                                                <div className="relative h-32 w-full rounded-2xl overflow-hidden bg-gray-100 group">
+                                                    {item.images && item.images.length > 0 ? (
+                                                        item.images.length > 1 ? (
+                                                            <div className="w-full h-full relative group">
+                                                                <div
+                                                                    className="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar cursor-grab active:cursor-grabbing"
+                                                                    onMouseDown={(e) => {
+                                                                        const slider = e.currentTarget;
+                                                                        slider.style.scrollSnapType = 'none'; // Disable snap while dragging
+                                                                        slider.dataset.isDown = 'true';
+                                                                        slider.dataset.startX = e.pageX; // Use global pageX
+                                                                        slider.dataset.scrollLeft = slider.scrollLeft;
+                                                                    }}
+                                                                    onMouseLeave={(e) => {
+                                                                        const slider = e.currentTarget;
+                                                                        slider.dataset.isDown = 'false';
+                                                                        slider.style.scrollSnapType = 'x mandatory'; // Re-enable snap
+                                                                    }}
+                                                                    onMouseUp={(e) => {
+                                                                        const slider = e.currentTarget;
+                                                                        slider.dataset.isDown = 'false';
+                                                                        slider.style.scrollSnapType = 'x mandatory'; // Re-enable snap
+                                                                    }}
+                                                                    onMouseMove={(e) => {
+                                                                        const slider = e.currentTarget;
+                                                                        if (slider.dataset.isDown !== 'true') return;
+                                                                        e.preventDefault();
+                                                                        const x = e.pageX;
+                                                                        const walk = (x - parseFloat(slider.dataset.startX)) * 2; // Scroll-fast
+                                                                        slider.scrollLeft = parseFloat(slider.dataset.scrollLeft) - walk;
+                                                                    }}
+                                                                >
+                                                                    {item.images.map((img, idx) => (
+                                                                        <img
+                                                                            key={idx}
+                                                                            src={img}
+                                                                            alt={`${item.name} ${idx + 1}`}
+                                                                            className="snap-center min-w-full h-full object-cover pointer-events-none"
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                                <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1.5">
+                                                                    {item.images.map((_, idx) => (
+                                                                        <div key={idx} className="w-2 h-2 rounded-full bg-white opacity-75 shadow-sm" />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <img
+                                                                src={item.images[0]}
+                                                                alt={item.name}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        )
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                                                            <i className="fas fa-utensils text-2xl opacity-50"></i>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <div className="p-5 grid md:grid-cols-2 gap-5">
-                                                {categoryItems.map((item) => (
-                                                    <div
-                                                        key={item.id}
-                                                        className="group relative rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
+
+                                            {/* Content */}
+                                            <div className="p-4 flex flex-col flex-1">
+                                                <h3
+                                                    className="font-bold text-sm mb-1 leading-tight line-clamp-2"
+                                                    style={{
+                                                        color: theme.product_name_font,
+                                                        fontFamily: theme.product_name_font
+                                                    }}
+                                                >
+                                                    {item.name}
+                                                </h3>
+
+                                                <div className="mt-auto pt-2 flex items-center justify-between">
+                                                    <span
+                                                        className="font-bold text-sm"
                                                         style={{
-                                                            backgroundColor: itemCardBgColor,
-                                                            border: `1px solid ${borderColor}`,
+                                                            color: theme.price_color,
+                                                            fontFamily: theme.product_name_font
                                                         }}
                                                     >
-                                                        {item.image_url && (
-                                                            <div className="relative h-48 overflow-hidden">
-                                                                <img
-                                                                    src={item.image_url}
-                                                                    alt={item.name}
-                                                                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                                                />
-                                                                {item.tag && (
-                                                                    <span
-                                                                        className="absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg"
-                                                                        style={{
-                                                                            backgroundColor: accentColor,
-                                                                            fontFamily: descriptionFont,
-                                                                        }}
-                                                                    >
-                                                                        {item.tag}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                        <div className="p-4">
-                                                            <div className="flex items-start justify-between mb-2">
-                                                                <h3
-                                                                    className="text-lg font-bold flex-1"
-                                                                    style={{
-                                                                        color: primaryColor,
-                                                                        fontFamily: productNameFont,
-                                                                    }}
-                                                                >
-                                                                    {item.name}
-                                                                </h3>
-                                                                {!item.image_url && item.tag && (
-                                                                    <span
-                                                                        className="px-2 py-1 rounded-full text-xs font-bold text-white ml-2"
-                                                                        style={{
-                                                                            backgroundColor: accentColor,
-                                                                            fontFamily: descriptionFont,
-                                                                        }}
-                                                                    >
-                                                                        {item.tag}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            {item.description && (
-                                                                <p
-                                                                    className="mb-3 leading-relaxed text-sm"
-                                                                    style={{
-                                                                        color: descriptionTextColor,
-                                                                        fontFamily: descriptionFont
-                                                                    }}
-                                                                >
-                                                                    {item.description}
-                                                                </p>
-                                                            )}
-                                                            <div
-                                                                className="text-xl font-bold"
-                                                                style={{
-                                                                    color: priceColor,
-                                                                    fontFamily: productNameFont,
-                                                                }}
-                                                            >
-                                                                ${parseFloat(item.price).toFixed(2)}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                ))}
+                                                        ${parseFloat(item.price).toFixed(2)}
+                                                    </span>
+                                                </div>
                                             </div>
-                                        )}
-                                    </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            );
-                        })}
-                    </div>
-                )}
+                            )}
+                        </div>
+                    );
+                })}
             </main>
-
-            {/* Footer */}
-            <footer className="border-t mt-20 py-8" style={{ borderColor: `${primaryColor}20` }}>
-                <div className="container mx-auto px-4 text-center opacity-60">
-                    <p className="text-sm" style={{ fontFamily: descriptionFont }}>
-                        <i className="fas fa-utensils mr-2"></i>
-                        Powered by MenuPlatform
-                    </p>
-                </div>
-            </footer>
         </div>
     );
 };

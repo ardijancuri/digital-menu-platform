@@ -93,6 +93,15 @@ export const userAPI = {
             headers: { 'Content-Type': 'multipart/form-data' },
         });
     },
+    deleteItemImage: (itemId, imageUrl) => api.post('/user/delete-item-image', { itemId, imageUrl }),
+    uploadBannerImage: (file) => {
+        const formData = new FormData();
+        formData.append('banner', file);
+        return api.post('/user/upload-banner', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+    },
+    deleteBannerImage: (imageUrl) => api.post('/user/delete-banner', { imageUrl }),
 };
 
 // Public API

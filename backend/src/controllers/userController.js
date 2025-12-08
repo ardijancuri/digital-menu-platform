@@ -57,7 +57,8 @@ export const updateSettings = async (req, res) => {
             product_name_font,
             description_font,
             description,
-            opening_hours
+            opening_hours,
+            banner_images
         } = req.body;
 
         const result = await query(
@@ -81,15 +82,16 @@ export const updateSettings = async (req, res) => {
            description_font = COALESCE($17, description_font),
            description = COALESCE($18, description),
            opening_hours = COALESCE($19, opening_hours),
+           banner_images = COALESCE($20, banner_images),
            updated_at = NOW()
-       WHERE user_id = $20
+       WHERE user_id = $21
        RETURNING *`,
             [primary_color, background_color, text_color, accent_color,
                 category_bg_color, item_card_bg_color, border_color, header_bg_color,
                 category_title_color, product_name_color, description_text_color, price_color,
                 category_icon_color,
                 business_name_font, category_font, product_name_font, description_font,
-                description, opening_hours, userId]
+                description, opening_hours, banner_images, userId]
         );
 
         res.json({
@@ -102,6 +104,86 @@ export const updateSettings = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while updating settings'
+        });
+    }
+};
+
+/**
+ * Upload banner image
+ */
+export const uploadBannerImage = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'No file uploaded'
+            });
+        }
+
+        const imageUrl = `/uploads/${req.file.filename}`;
+
+        // Append to banner_images array
+        const result = await query(
+            `UPDATE menu_settings 
+             SET banner_images = array_append(banner_images, $1), 
+                 updated_at = NOW() 
+             WHERE user_id = $2 
+             RETURNING *`,
+            [imageUrl, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Banner image uploaded successfully',
+            imageUrl: imageUrl,
+            settings: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Upload banner image error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while uploading banner image'
+        });
+    }
+};
+
+/**
+ * Delete banner image
+ */
+export const deleteBannerImage = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { imageUrl } = req.body;
+
+        if (!imageUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Image URL is required'
+            });
+        }
+
+        // Remove from banner_images array
+        const result = await query(
+            `UPDATE menu_settings 
+             SET banner_images = array_remove(banner_images, $1), 
+                 updated_at = NOW() 
+             WHERE user_id = $2 
+             RETURNING *`,
+            [imageUrl, userId]
+        );
+
+        res.json({
+            success: true,
+            message: 'Banner image removed successfully',
+            settings: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Delete banner image error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while removing banner image'
         });
     }
 };
@@ -276,6 +358,9 @@ export const deleteCategory = async (req, res) => {
 /**
  * Get menu items
  */
+/**
+ * Get menu items
+ */
 export const getMenuItems = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -308,7 +393,7 @@ export const getMenuItems = async (req, res) => {
 export const createMenuItem = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { category_id, name, description, price, tag } = req.body;
+        const { category_id, name, description, price } = req.body;
 
         if (!category_id || !name || !price) {
             return res.status(400).json({
@@ -331,10 +416,10 @@ export const createMenuItem = async (req, res) => {
         }
 
         const result = await query(
-            `INSERT INTO menu_items (category_id, name, description, price, tag) 
-       VALUES ($1, $2, $3, $4, $5) 
+            `INSERT INTO menu_items (category_id, name, description, price, images) 
+       VALUES ($1, $2, $3, $4, ARRAY[]::TEXT[]) 
        RETURNING *`,
-            [category_id, name, description, price, tag]
+            [category_id, name, description, price]
         );
 
         res.status(201).json({
@@ -358,7 +443,7 @@ export const updateMenuItem = async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
-        const { category_id, name, description, price, tag } = req.body;
+        const { category_id, name, description, price } = req.body;
 
         // Verify item belongs to user
         const itemCheck = await query(
@@ -380,11 +465,10 @@ export const updateMenuItem = async (req, res) => {
        SET category_id = COALESCE($1, category_id),
            name = COALESCE($2, name),
            description = COALESCE($3, description),
-           price = COALESCE($4, price),
-           tag = COALESCE($5, tag)
-       WHERE id = $6
+           price = COALESCE($4, price)
+       WHERE id = $5
        RETURNING *`,
-            [category_id, name, description, price, tag, id]
+            [category_id, name, description, price, id]
         );
 
         res.json({
@@ -464,7 +548,7 @@ export const uploadItemImage = async (req, res) => {
         // Verify item belongs to user
         const result = await query(
             `UPDATE menu_items m
-       SET image_url = $1
+       SET images = array_append(images, $1)
        FROM categories c
        WHERE m.category_id = c.id AND m.id = $2 AND c.user_id = $3
        RETURNING m.*`,
@@ -481,7 +565,7 @@ export const uploadItemImage = async (req, res) => {
         res.json({
             success: true,
             message: 'Image uploaded successfully',
-            image_url: imageUrl,
+            imageUrl: imageUrl,
             item: result.rows[0]
         });
     } catch (error) {
@@ -489,6 +573,51 @@ export const uploadItemImage = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while uploading image'
+        });
+    }
+};
+
+/**
+ * Delete menu item image
+ */
+export const deleteItemImage = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { itemId, imageUrl } = req.body;
+
+        if (!itemId || !imageUrl) {
+            return res.status(400).json({
+                success: false,
+                message: 'Item ID and Image URL are required'
+            });
+        }
+
+        const result = await query(
+            `UPDATE menu_items m
+       SET images = array_remove(images, $1)
+       FROM categories c
+       WHERE m.category_id = c.id AND m.id = $2 AND c.user_id = $3
+       RETURNING m.*`,
+            [imageUrl, itemId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Menu item not found'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Image removed successfully',
+            item: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Delete item image error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while removing image'
         });
     }
 };

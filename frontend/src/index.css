@@ -180,3 +180,14 @@
 ::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
 }
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}

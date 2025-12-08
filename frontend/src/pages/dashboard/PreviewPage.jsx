@@ -129,6 +129,16 @@ const PreviewPage = () => {
                                 <i className="fas fa-palette mr-2"></i>
                                 Colors
                             </button>
+                            <button
+                                onClick={() => setActiveTab('banners')}
+                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'banners'
+                                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
+                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    }`}
+                            >
+                                <i className="fas fa-images mr-2"></i>
+                                Banners
+                            </button>
                         </div>
 
                         {/* Tab Content */}
@@ -305,6 +315,92 @@ const PreviewPage = () => {
                                             />
                                         </div>
                                     </div>
+                                </div>
+                            )}
+
+                            {activeTab === 'banners' && (
+                                <div className="space-y-4">
+                                    <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Carousel Images (Max 5)</h4>
+
+                                    {/* Existing Banners */}
+                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                        {settings?.banner_images?.map((url, index) => (
+                                            <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-video bg-gray-50">
+                                                <img
+                                                    src={url}
+                                                    alt={`Banner ${index + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <button
+                                                    onClick={async () => {
+                                                        if (confirm('Delete this banner?')) {
+                                                            setSaving(true);
+                                                            try {
+                                                                await userAPI.deleteBannerImage(url);
+                                                                const updatedBanners = settings.banner_images.filter(img => img !== url);
+                                                                setSettings({ ...settings, banner_images: updatedBanners });
+                                                                setIframeKey(prev => prev + 1);
+                                                            } catch (error) {
+                                                                console.error(error);
+                                                                alert('Failed to delete banner');
+                                                            } finally {
+                                                                setSaving(false);
+                                                            }
+                                                        }
+                                                    }}
+                                                    className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1.5 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <i className="fas fa-times text-xs"></i>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {/* Upload New Banner */}
+                                    {(!settings?.banner_images || settings.banner_images.length < 5) && (
+                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors bg-gray-50">
+                                            <input
+                                                type="file"
+                                                id="banner-upload"
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={async (e) => {
+                                                    const file = e.target.files[0];
+                                                    if (!file) return;
+
+                                                    setSaving(true);
+                                                    try {
+                                                        const response = await userAPI.uploadBannerImage(file);
+                                                        const newUrl = response.data.imageUrl;
+                                                        const currentBanners = settings.banner_images || [];
+                                                        setSettings({
+                                                            ...settings,
+                                                            banner_images: [...currentBanners, newUrl]
+                                                        });
+                                                        setIframeKey(prev => prev + 1);
+                                                    } catch (error) {
+                                                        console.error(error);
+                                                        alert('Failed to upload banner');
+                                                    } finally {
+                                                        setSaving(false);
+                                                        e.target.value = ''; // Reset input
+                                                    }
+                                                }}
+                                            />
+                                            <label htmlFor="banner-upload" className="cursor-pointer">
+                                                <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                                <p className="text-sm text-gray-600 font-medium">Click to upload banner</p>
+                                                <p className="text-xs text-gray-500 mt-1">Recommended: 16:9 ratio</p>
+                                            </label>
+                                        </div>
+                                    )}
+
+                                    {settings?.banner_images?.length >= 5 && (
+                                        <div className="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-200">
+                                            <i className="fas fa-info-circle mr-1"></i>
+                                            Maximum of 5 banner images reached.
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

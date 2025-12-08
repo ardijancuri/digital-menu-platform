@@ -113,34 +113,34 @@ async function createTestMenu() {
         // Create menu items
         if (appetizersId) {
             await pool.query(`
-                INSERT INTO menu_items (category_id, name, description, price, tag)
+                INSERT INTO menu_items (category_id, name, description, price)
                 VALUES 
-                    ($1, 'Bruschetta', 'Toasted bread with fresh tomatoes, garlic, and basil', 8.99, 'New'),
-                    ($1, 'Mozzarella Sticks', 'Crispy fried mozzarella with marinara sauce', 7.99, NULL),
-                    ($1, 'Caesar Salad', 'Fresh romaine lettuce with parmesan and croutons', 9.99, 'Bestseller')
+                    ($1, 'Bruschetta', 'Toasted bread with fresh tomatoes, garlic, and basil', 8.99),
+                    ($1, 'Mozzarella Sticks', 'Crispy fried mozzarella with marinara sauce', 7.99),
+                    ($1, 'Caesar Salad', 'Fresh romaine lettuce with parmesan and croutons', 9.99)
                 ON CONFLICT DO NOTHING
             `, [appetizersId]);
         }
 
         if (mainsId) {
             await pool.query(`
-                INSERT INTO menu_items (category_id, name, description, price, tag)
+                INSERT INTO menu_items (category_id, name, description, price)
                 VALUES 
-                    ($1, 'Grilled Salmon', 'Fresh Atlantic salmon with lemon butter sauce', 24.99, 'Hot'),
-                    ($1, 'Ribeye Steak', 'Premium 12oz ribeye with garlic mashed potatoes', 32.99, 'Bestseller'),
-                    ($1, 'Pasta Carbonara', 'Classic Italian pasta with bacon and parmesan', 18.99, NULL),
-                    ($1, 'Chicken Parmesan', 'Breaded chicken breast with marinara and mozzarella', 19.99, NULL)
+                    ($1, 'Grilled Salmon', 'Fresh Atlantic salmon with lemon butter sauce', 24.99),
+                    ($1, 'Ribeye Steak', 'Premium 12oz ribeye with garlic mashed potatoes', 32.99),
+                    ($1, 'Pasta Carbonara', 'Classic Italian pasta with bacon and parmesan', 18.99),
+                    ($1, 'Chicken Parmesan', 'Breaded chicken breast with marinara and mozzarella', 19.99)
                 ON CONFLICT DO NOTHING
             `, [mainsId]);
         }
 
         if (dessertsId) {
             await pool.query(`
-                INSERT INTO menu_items (category_id, name, description, price, tag)
+                INSERT INTO menu_items (category_id, name, description, price)
                 VALUES 
-                    ($1, 'Tiramisu', 'Classic Italian coffee-flavored dessert', 8.99, 'Bestseller'),
-                    ($1, 'Chocolate Lava Cake', 'Warm chocolate cake with molten center', 9.99, 'Hot'),
-                    ($1, 'Cheesecake', 'New York style cheesecake with berry compote', 7.99, NULL)
+                    ($1, 'Tiramisu', 'Classic Italian coffee-flavored dessert', 8.99),
+                    ($1, 'Chocolate Lava Cake', 'Warm chocolate cake with molten center', 9.99),
+                    ($1, 'Cheesecake', 'New York style cheesecake with berry compote', 7.99)
                 ON CONFLICT DO NOTHING
             `, [dessertsId]);
         }
