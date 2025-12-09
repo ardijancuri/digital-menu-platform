@@ -15,6 +15,8 @@ const OrderHistory = () => {
         fetchOrders();
     }, [filter]);
 
+    const [searchTerm, setSearchTerm] = useState('');
+
     const fetchOrders = async () => {
         setLoading(true);
         try {
@@ -62,7 +64,16 @@ const OrderHistory = () => {
     return (
         <div>
             <div className="mb-4 flex flex-col gap-3">
-                <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
+                    <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search by table or order number..."
+                        className="w-full sm:w-80 px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                         onClick={() => setFilter('active')}
@@ -95,7 +106,15 @@ const OrderHistory = () => {
                 <div className="p-8 text-center">Loading orders...</div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {orders.map(order => (
+                    {orders
+                        .filter(order => {
+                            if (!searchTerm.trim()) return true;
+                            const term = searchTerm.trim().toLowerCase();
+                            const orderMatch = order.id?.toString().includes(term);
+                            const tableMatch = (order.table_name || '').toLowerCase().includes(term);
+                            return orderMatch || tableMatch;
+                        })
+                        .map(order => (
                         <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
                             <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">

@@ -166,7 +166,7 @@ const Reports = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Total Revenue</h3>
-                    <p className="text-3xl font-bold text-gray-900">{stats.totalSales.toFixed(2)} MKD</p>
+                    <p className="text-3xl font-bold text-gray-900">{Math.round(stats.totalSales)} MKD</p>
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Total Orders</h3>
@@ -174,7 +174,7 @@ const Reports = () => {
                 </div>
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <h3 className="text-sm font-medium text-gray-500 mb-2">Average Order Value</h3>
-                    <p className="text-3xl font-bold text-gray-900">{stats.averageOrderValue.toFixed(2)} MKD</p>
+                    <p className="text-3xl font-bold text-gray-900">{Math.round(stats.averageOrderValue)} MKD</p>
                 </div>
             </div>
 
@@ -212,7 +212,7 @@ const Reports = () => {
                                 borderRadius: '8px',
                                 padding: '8px 12px'
                             }}
-                            formatter={(value) => [`${value.toFixed(2)} MKD`, 'Revenue']}
+                            formatter={(value) => [`${Math.round(value)} MKD`, 'Revenue']}
                         />
                         <Line
                             type="monotone"
@@ -245,7 +245,7 @@ const Reports = () => {
                                 <td className="px-6 py-4 font-medium text-gray-900">{day.date}</td>
                                 <td className="px-6 py-4 text-right text-gray-600">{day.orderCount}</td>
                                 <td className="px-6 py-4 text-right text-gray-900 font-medium">
-                                    {day.revenue.toFixed(2)} MKD
+                                    {Math.round(day.revenue)} MKD
                                 </td>
                             </tr>
                         ))}
