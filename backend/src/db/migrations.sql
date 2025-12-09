@@ -57,6 +57,7 @@ CREATE TABLE menu_settings (
     description_text_color TEXT DEFAULT '#6b7280',
     price_color TEXT DEFAULT '#3b82f6',
     category_icon_color TEXT DEFAULT '#3b82f6',
+    breakline_color TEXT DEFAULT '#e5e7eb',
     business_name_font TEXT DEFAULT 'Montserrat',
     category_font TEXT DEFAULT 'Roboto Condensed',
     product_name_font TEXT DEFAULT 'Montserrat',

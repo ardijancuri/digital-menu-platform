@@ -16,7 +16,14 @@ const PreviewPage = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [iframeKey, setIframeKey] = useState(0);
-    const [activeTab, setActiveTab] = useState('fonts');
+    const [activeTab, setActiveTab] = useState('style');
+
+    const normalizeColor = (value, fallback) => {
+        if (typeof value !== 'string') return fallback;
+        const trimmed = value.trim();
+        const isHex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(trimmed);
+        return isHex ? trimmed : fallback;
+    };
 
     useEffect(() => {
         fetchSettings();
@@ -110,24 +117,14 @@ const PreviewPage = () => {
                         {/* Tabs */}
                         <div className="flex border-b">
                             <button
-                                onClick={() => setActiveTab('fonts')}
-                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'fonts'
+                                onClick={() => setActiveTab('style')}
+                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'style'
                                     ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
                                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                                     }`}
                             >
-                                <i className="fas fa-font mr-2"></i>
-                                Fonts
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('colors')}
-                                className={`flex-1 px-4 py-3 text-sm font-medium transition-colors ${activeTab === 'colors'
-                                    ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                                    }`}
-                            >
-                                <i className="fas fa-palette mr-2"></i>
-                                Colors
+                                <i className="fas fa-swatchbook mr-2"></i>
+                                Style
                             </button>
                             <button
                                 onClick={() => setActiveTab('banners')}
@@ -143,151 +140,112 @@ const PreviewPage = () => {
 
                         {/* Tab Content */}
                         <div className="flex-1 overflow-y-auto p-4">
-                            {activeTab === 'fonts' && (
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Business Name
-                                        </label>
-                                        <select
-                                            value={settings?.business_name_font || 'Montserrat'}
-                                            onChange={(e) => handleFontChange('business_name_font', e.target.value)}
-                                            disabled={saving}
-                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            style={{ fontFamily: settings?.business_name_font || 'Montserrat' }}
-                                        >
-                                            {FONT_OPTIONS.map(font => (
-                                                <option key={font} value={font} style={{ fontFamily: font }}>
-                                                    {font}
-                                                </option>
-                                            ))}
-                                        </select>
+                            {activeTab === 'style' && (
+                                <div className="space-y-5">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Business Name
+                                            </label>
+                                            <select
+                                                value={settings?.business_name_font || 'Montserrat'}
+                                                onChange={(e) => handleFontChange('business_name_font', e.target.value)}
+                                                disabled={saving}
+                                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                style={{ fontFamily: settings?.business_name_font || 'Montserrat' }}
+                                            >
+                                                {FONT_OPTIONS.map(font => (
+                                                    <option key={font} value={font} style={{ fontFamily: font }}>
+                                                        {font}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Categories
+                                            </label>
+                                            <select
+                                                value={settings?.category_font || 'Roboto Condensed'}
+                                                onChange={(e) => handleFontChange('category_font', e.target.value)}
+                                                disabled={saving}
+                                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                style={{ fontFamily: settings?.category_font || 'Roboto Condensed' }}
+                                            >
+                                                {FONT_OPTIONS.map(font => (
+                                                    <option key={font} value={font} style={{ fontFamily: font }}>
+                                                        {font}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Product Names
+                                            </label>
+                                            <select
+                                                value={settings?.product_name_font || 'Montserrat'}
+                                                onChange={(e) => handleFontChange('product_name_font', e.target.value)}
+                                                disabled={saving}
+                                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                style={{ fontFamily: settings?.product_name_font || 'Montserrat' }}
+                                            >
+                                                {FONT_OPTIONS.map(font => (
+                                                    <option key={font} value={font} style={{ fontFamily: font }}>
+                                                        {font}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                                Descriptions
+                                            </label>
+                                            <select
+                                                value={settings?.description_font || 'Quicksand'}
+                                                onChange={(e) => handleFontChange('description_font', e.target.value)}
+                                                disabled={saving}
+                                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                style={{ fontFamily: settings?.description_font || 'Quicksand' }}
+                                            >
+                                                {FONT_OPTIONS.map(font => (
+                                                    <option key={font} value={font} style={{ fontFamily: font }}>
+                                                        {font}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Categories
-                                        </label>
-                                        <select
-                                            value={settings?.category_font || 'Roboto Condensed'}
-                                            onChange={(e) => handleFontChange('category_font', e.target.value)}
-                                            disabled={saving}
-                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            style={{ fontFamily: settings?.category_font || 'Roboto Condensed' }}
-                                        >
-                                            {FONT_OPTIONS.map(font => (
-                                                <option key={font} value={font} style={{ fontFamily: font }}>
-                                                    {font}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Product Names
-                                        </label>
-                                        <select
-                                            value={settings?.product_name_font || 'Montserrat'}
-                                            onChange={(e) => handleFontChange('product_name_font', e.target.value)}
-                                            disabled={saving}
-                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            style={{ fontFamily: settings?.product_name_font || 'Montserrat' }}
-                                        >
-                                            {FONT_OPTIONS.map(font => (
-                                                <option key={font} value={font} style={{ fontFamily: font }}>
-                                                    {font}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                                            Descriptions
-                                        </label>
-                                        <select
-                                            value={settings?.description_font || 'Quicksand'}
-                                            onChange={(e) => handleFontChange('description_font', e.target.value)}
-                                            disabled={saving}
-                                            className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                            style={{ fontFamily: settings?.description_font || 'Quicksand' }}
-                                        >
-                                            {FONT_OPTIONS.map(font => (
-                                                <option key={font} value={font} style={{ fontFamily: font }}>
-                                                    {font}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                </div>
-                            )}
-
-                            {activeTab === 'colors' && (
-                                <div className="space-y-4">
-                                    {/* Brand Colors */}
-                                    <div>
-                                        <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Brand Colors</h4>
-                                        <div className="grid grid-cols-3 gap-2">
+                                    <div className="space-y-3">
+                                        <h4 className="text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Colors</h4>
+                                        <div className="grid grid-cols-2 gap-3">
                                             <ColorPicker
-                                                label="Primary"
+                                                label="Primary (title & categories)"
                                                 value={settings?.primary_color || '#1f2937'}
                                                 onChange={(value) => handleColorChange('primary_color', value)}
                                                 name="primary_color"
                                             />
                                             <ColorPicker
-                                                label="Accent"
-                                                value={settings?.accent_color || '#3b82f6'}
+                                                label="Accent (tile & toggle bg)"
+                                                value={settings?.accent_color || '#f3f4f6'}
                                                 onChange={(value) => handleColorChange('accent_color', value)}
                                                 name="accent_color"
                                             />
                                             <ColorPicker
-                                                label="Border"
-                                                value={settings?.border_color || '#e5e7eb'}
-                                                onChange={(value) => handleColorChange('border_color', value)}
-                                                name="border_color"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-gray-200"></div>
-
-                                    {/* Background Colors */}
-                                    <div>
-                                        <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Backgrounds</h4>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <ColorPicker
-                                                label="Header"
-                                                value={settings?.header_bg_color || '#ffffff'}
-                                                onChange={(value) => handleColorChange('header_bg_color', value)}
-                                                name="header_bg_color"
+                                                label="Hide/Show Text & Icon"
+                                                value={settings?.category_icon_color || '#374151'}
+                                                onChange={(value) => handleColorChange('category_icon_color', value)}
+                                                name="category_icon_color"
                                             />
                                             <ColorPicker
-                                                label="Category"
-                                                value={settings?.category_bg_color || '#f9fafb'}
-                                                onChange={(value) => handleColorChange('category_bg_color', value)}
-                                                name="category_bg_color"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="border-t border-gray-200"></div>
-
-                                    {/* Text Colors */}
-                                    <div>
-                                        <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Text Colors</h4>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            <ColorPicker
-                                                label="Body Text"
-                                                value={settings?.text_color || '#111827'}
-                                                onChange={(value) => handleColorChange('text_color', value)}
-                                                name="text_color"
-                                            />
-                                            <ColorPicker
-                                                label="Category Title"
-                                                value={settings?.category_title_color || '#1f2937'}
-                                                onChange={(value) => handleColorChange('category_title_color', value)}
-                                                name="category_title_color"
+                                                label="Background"
+                                                value={settings?.background_color || '#ffffff'}
+                                                onChange={(value) => handleColorChange('background_color', value)}
+                                                name="background_color"
                                             />
                                             <ColorPicker
                                                 label="Product Name"
@@ -296,22 +254,16 @@ const PreviewPage = () => {
                                                 name="product_name_color"
                                             />
                                             <ColorPicker
-                                                label="Description"
-                                                value={settings?.description_text_color || '#6b7280'}
-                                                onChange={(value) => handleColorChange('description_text_color', value)}
-                                                name="description_text_color"
-                                            />
-                                            <ColorPicker
                                                 label="Price"
                                                 value={settings?.price_color || '#3b82f6'}
                                                 onChange={(value) => handleColorChange('price_color', value)}
                                                 name="price_color"
                                             />
                                             <ColorPicker
-                                                label="Icon"
-                                                value={settings?.category_icon_color || '#3b82f6'}
-                                                onChange={(value) => handleColorChange('category_icon_color', value)}
-                                                name="category_icon_color"
+                                                label="Breakline"
+                                                value={normalizeColor(settings?.breakline_color, '#e5e7eb')}
+                                                onChange={(value) => handleColorChange('breakline_color', value)}
+                                                name="breakline_color"
                                             />
                                         </div>
                                     </div>

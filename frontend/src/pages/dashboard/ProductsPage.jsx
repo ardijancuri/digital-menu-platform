@@ -149,7 +149,7 @@ const ProductsPage = () => {
                                 <h3 className="font-semibold">{item.name}</h3>
                             </div>
                             <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                            <p className="text-lg font-bold text-blue-600 mb-2">${parseFloat(item.price).toFixed(2)}</p>
+                            <p className="text-lg font-bold text-blue-600 mb-2">{`${Math.round(parseFloat(item.price))} MKD`}</p>
                             <p className="text-xs text-gray-500 mb-3">Category: {item.category_name}</p>
                             <div className="flex space-x-2">
                                 <Button onClick={() => handleEdit(item)} variant="secondary" className="flex-1 text-sm">

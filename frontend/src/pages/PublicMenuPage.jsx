@@ -136,7 +136,7 @@ const PublicMenuPage = () => {
                 {/* Banner Carousel */}
                 {bannerImages.length > 0 && (
                     <div
-                        className="px-5 mb-8"
+                        className="px-5 mb-10"
                         onMouseEnter={() => setIsBannerPaused(true)}
                         onMouseLeave={() => setIsBannerPaused(false)}
                         onTouchStart={(e) => {
@@ -189,20 +189,26 @@ const PublicMenuPage = () => {
                             <div key={category.id}>
                                 <div
                                     onClick={() => toggleCategory(category.id)}
-                                    className="flex justify-between items-center mb-2 cursor-pointer"
+                                    className="flex justify-between items-center mb-4 cursor-pointer"
                                 >
-                                <h2
-                                    className="text-2xl font-bold"
+                                    <h2
+                                        className="text-2xl font-bold"
                                         style={{
-                                            color: theme.category_title_color,
+                                            color: theme.primary_color,
                                             fontFamily: theme.category_font
                                         }}
                                     >
                                         {category.name}
                                     </h2>
-                                <span className="text-sm font-medium px-2.5 py-1 rounded-full bg-gray-100 text-gray-500 flex items-center gap-1.5">
+                                    <span
+                                        className="text-sm font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                                        style={{
+                                            backgroundColor: theme.accent_color || '#f3f4f6',
+                                            color: theme.category_icon_color || '#374151'
+                                        }}
+                                    >
                                         {isExpanded ? 'Hide' : 'See All'}
-                                    <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-base`}></i>
+                                        <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-base`}></i>
                                     </span>
                                 </div>
 
@@ -211,7 +217,8 @@ const PublicMenuPage = () => {
                                         {category.items?.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="bg-gray-100 rounded-3xl overflow-hidden transition-shadow flex flex-col h-full"
+                                                className="rounded-3xl overflow-hidden transition-shadow flex flex-col h-full"
+                                                style={{ backgroundColor: theme.accent_color || '#f3f4f6' }}
                                             >
                                                 {/* Image */}
                                                 <div className="p-2 pb-0">
@@ -278,18 +285,18 @@ const PublicMenuPage = () => {
                                                 </div>
 
                                                 {/* Content */}
-                                                <div className="p-4 flex flex-col flex-1">
+                                                <div className="px-4 py-2 flex flex-col flex-1">
                                                     <h3
                                                         className="font-bold text-base mb-1 leading-tight line-clamp-2"
                                                         style={{
-                                                            color: theme.product_name_font,
+                                                            color: theme.product_name_color || theme.product_name_font,
                                                             fontFamily: theme.product_name_font
                                                         }}
                                                     >
                                                         {item.name}
                                                     </h3>
 
-                                                    <div className="mt-auto pt-2 flex items-center justify-between">
+                                                    <div className="mt-auto flex items-center justify-between">
                                                         <span
                                                             className="font-bold text-lg"
                                                             style={{
@@ -306,7 +313,14 @@ const PublicMenuPage = () => {
                                     </div>
                                 )}
                                 {index < menu.categories.length - 1 && (
-                                    <div className="border-b border-gray-200 my-6"></div>
+                                    <div
+                                        className="border-b my-6"
+                                        style={{
+                                            borderColor: /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(theme.breakline_color || '')
+                                                ? theme.breakline_color
+                                                : '#e5e7eb'
+                                        }}
+                                    ></div>
                                 )}
                             </div>
                         );
@@ -315,12 +329,12 @@ const PublicMenuPage = () => {
             </div>
             {/* Footer */}
             <footer className="mt-10 px-5 pb-8 text-center text-sm text-gray-500">
-                <span>Developed by </span>
+                <span className="text-black">Developed by </span>
                 <a
                     href="https://oninova.net"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-semibold text-blue-600 hover:underline"
+                    className="font-semibold text-black hover:underline"
                 >
                     ONINOVA
                 </a>

@@ -59,7 +59,8 @@ export const updateSettings = async (req, res) => {
             description_font,
             description,
             opening_hours,
-            banner_images
+            banner_images,
+            breakline_color
         } = req.body;
 
         const result = await query(
@@ -84,15 +85,16 @@ export const updateSettings = async (req, res) => {
            description = COALESCE($18, description),
            opening_hours = COALESCE($19, opening_hours),
            banner_images = COALESCE($20, banner_images),
+           breakline_color = COALESCE($21, breakline_color),
            updated_at = NOW()
-       WHERE user_id = $21
+       WHERE user_id = $22
        RETURNING *`,
             [primary_color, background_color, text_color, accent_color,
                 category_bg_color, item_card_bg_color, border_color, header_bg_color,
                 category_title_color, product_name_color, description_text_color, price_color,
                 category_icon_color,
                 business_name_font, category_font, product_name_font, description_font,
-                description, opening_hours, banner_images, userId]
+                description, opening_hours, banner_images, breakline_color, userId]
         );
 
         res.json({

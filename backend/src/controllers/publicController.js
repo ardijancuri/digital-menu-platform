@@ -16,7 +16,7 @@ export const getPublicMenu = async (req, res) => {
               m.category_title_color, m.product_name_color, m.description_text_color, m.price_color,
               m.category_icon_color,
               m.business_name_font, m.category_font, m.product_name_font, m.description_font,
-              m.description, m.opening_hours, m.banner_images
+              m.description, m.opening_hours, m.banner_images, m.breakline_color
        FROM users u
        LEFT JOIN menu_settings m ON u.id = m.user_id
        WHERE u.slug = $1 AND u.role = 'user'`,
@@ -82,6 +82,7 @@ export const getPublicMenu = async (req, res) => {
                     description_text_color: menuData.description_text_color,
                     price_color: menuData.price_color,
                     category_icon_color: menuData.category_icon_color,
+                    breakline_color: menuData.breakline_color,
                     business_name_font: menuData.business_name_font,
                     category_font: menuData.category_font,
                     product_name_font: menuData.product_name_font,
