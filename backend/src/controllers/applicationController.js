@@ -12,7 +12,6 @@ export const submitApplication = async (req, res) => {
             owner_name,
             email,
             phone,
-            address,
             slug,
             password
         } = req.body;
@@ -49,10 +48,10 @@ export const submitApplication = async (req, res) => {
         // Insert application
         const result = await query(
             `INSERT INTO applications 
-       (business_name, business_type, owner_name, email, phone, address, slug, password_hash, status) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending') 
+       (business_name, business_type, owner_name, email, phone, slug, password_hash, status) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') 
        RETURNING id, business_name, email, slug, status, created_at`,
-            [business_name, business_type, owner_name, email, phone, address, slug, password_hash]
+            [business_name, business_type, owner_name, email, phone, slug, password_hash]
         );
 
         res.status(201).json({

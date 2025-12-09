@@ -53,7 +53,6 @@ export const applicationValidation = [
     body('owner_name').notEmpty().trim().withMessage('Owner name is required'),
     validateEmail,
     body('phone').notEmpty().trim().withMessage('Phone number is required'),
-    body('address').notEmpty().trim().withMessage('Address is required'),
     validateSlug,
     validatePassword,
     checkValidation

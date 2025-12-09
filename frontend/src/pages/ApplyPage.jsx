@@ -16,7 +16,6 @@ const ApplyPage = () => {
         owner_name: '',
         email: '',
         phone: '',
-        address: '',
         slug: '',
         password: '',
         confirmPassword: '',
@@ -162,15 +161,6 @@ const ApplyPage = () => {
                                     required
                                 />
                             </div>
-
-                            <Input
-                                label="Address"
-                                name="address"
-                                value={formData.address}
-                                onChange={handleChange}
-                                placeholder="123 Main Street, City, State 12345"
-                                required
-                            />
 
                             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">

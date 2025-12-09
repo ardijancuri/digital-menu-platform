@@ -104,7 +104,6 @@ const AdminApplications = () => {
                                             <p><strong>Owner:</strong> {app.owner_name}</p>
                                             <p><strong>Email:</strong> {app.email}</p>
                                             <p><strong>Phone:</strong> {app.phone}</p>
-                                            <p><strong>Address:</strong> {app.address}</p>
                                             <p><strong>Slug:</strong> /menu/{app.slug}</p>
                                             <p><strong>Applied:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
                                         </div>

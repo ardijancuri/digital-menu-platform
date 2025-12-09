@@ -20,7 +20,6 @@ CREATE TABLE applications (
     owner_name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     phone TEXT NOT NULL,
-    address TEXT NOT NULL,
     slug TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
