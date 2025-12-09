@@ -47,7 +47,7 @@ CREATE TABLE menu_settings (
     primary_color TEXT DEFAULT '#1f2937',
     background_color TEXT DEFAULT '#ffffff',
     text_color TEXT DEFAULT '#111827',
-    accent_color TEXT DEFAULT '#3b82f6',
+    accent_color TEXT DEFAULT '#e7f0fd',
     category_bg_color TEXT DEFAULT '#f9fafb',
     item_card_bg_color TEXT DEFAULT '#ffffff',
     border_color TEXT DEFAULT '#e5e7eb',
