@@ -307,7 +307,7 @@ const OrderTaking = () => {
 
     // Step 3: Product Selection
     return (
-        <div className="flex flex-col lg:flex-row h-[calc(100vh-6rem)] gap-4 lg:gap-6">
+        <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
             {/* Left Side: Menu */}
             <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 {/* Header with Back Button */}
@@ -345,11 +345,11 @@ const OrderTaking = () => {
                 </div>
 
                 {/* Categories */}
-                <div className="p-4 border-b border-gray-100 overflow-x-auto">
-                    <div className="flex gap-2 min-w-max">
+                <div className="p-4 border-b border-gray-100">
+                    <div className="flex flex-wrap gap-2">
                         <button
                             onClick={() => setActiveCategory('all')}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === 'all'
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto text-center ${activeCategory === 'all'
                                 ? 'bg-gray-900 text-white'
                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                 }`}
@@ -360,7 +360,7 @@ const OrderTaking = () => {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${activeCategory === cat.id
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto text-center ${activeCategory === cat.id
                                     ? 'bg-gray-900 text-white'
                                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                     }`}

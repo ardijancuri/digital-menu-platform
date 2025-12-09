@@ -81,18 +81,23 @@ const CategoriesPage = () => {
                     <p className="text-gray-500">No categories yet. Create your first one!</p>
                 </div>
             ) : (
-                <div className="grid gap-4">
+                <div className="space-y-3">
                     {categories.map((category) => (
-                        <div key={category.id} className="card flex justify-between items-center">
-                            <div>
-                                <h3 className="font-semibold">{category.name}</h3>
-                                <p className="text-sm text-gray-600">Position: {category.position}</p>
+                        <div key={category.id} className="border border-gray-200 rounded-xl p-4 bg-white shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                            <div className="flex items-start gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
+                                    {category.position}
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold text-base">{category.name}</h3>
+                                    <p className="text-xs text-gray-500">Position: {category.position}</p>
+                                </div>
                             </div>
-                            <div className="flex space-x-2">
-                                <Button onClick={() => handleEdit(category)} variant="secondary">
+                            <div className="flex flex-wrap gap-2">
+                                <Button onClick={() => handleEdit(category)} variant="secondary" className="text-xs px-3 py-2">
                                     Edit
                                 </Button>
-                                <Button onClick={() => handleDelete(category.id)} variant="danger">
+                                <Button onClick={() => handleDelete(category.id)} variant="danger" className="text-xs px-3 py-2">
                                     Delete
                                 </Button>
                             </div>

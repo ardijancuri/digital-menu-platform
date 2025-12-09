@@ -253,7 +253,7 @@ const PreviewPage = () => {
 
                                     <div className="space-y-3">
                                         <h4 className="text-xs font-bold text-gray-700 mb-1 uppercase tracking-wide">Colors</h4>
-                                        <div className="grid grid-cols-2 gap-3">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             <ColorPicker
                                                 label="Primary (title & categories)"
                                                 value={settings?.primary_color || DEFAULT_STYLE.primary_color}
@@ -315,9 +315,9 @@ const PreviewPage = () => {
                                     <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Carousel Images (Max 5)</h4>
 
                                     {/* Existing Banners */}
-                                    <div className="grid grid-cols-2 gap-3 mb-4">
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
                                         {settings?.banner_images?.map((url, index) => (
-                                            <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-video bg-gray-50">
+                                            <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-[4/3] bg-gray-50">
                                                 <img
                                                     src={url}
                                                     alt={`Banner ${index + 1}`}
@@ -350,10 +350,9 @@ const PreviewPage = () => {
 
                                     {/* Upload New Banner */}
                                     {(!settings?.banner_images || settings.banner_images.length < 5) && (
-                                        <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors bg-gray-50">
+                                        <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors bg-gray-50 cursor-pointer flex flex-col items-center justify-center gap-1">
                                             <input
                                                 type="file"
-                                                id="banner-upload"
                                                 className="hidden"
                                                 accept="image/*"
                                                 onChange={async (e) => {
@@ -379,12 +378,10 @@ const PreviewPage = () => {
                                                     }
                                                 }}
                                             />
-                                            <label htmlFor="banner-upload" className="cursor-pointer">
-                                                <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
-                                                <p className="text-sm text-gray-600 font-medium">Click to upload banner</p>
-                                                <p className="text-xs text-gray-500 mt-1">Recommended: 16:9 ratio</p>
-                                            </label>
-                                        </div>
+                                            <i className="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-1"></i>
+                                            <p className="text-sm text-gray-600 font-medium">Click to upload banner</p>
+                                            <p className="text-xs text-gray-500">Recommended: 16:9 ratio</p>
+                                        </label>
                                     )}
 
                                     {settings?.banner_images?.length >= 5 && (
@@ -408,7 +405,7 @@ const PreviewPage = () => {
 
                 {/* Preview Panel */}
                 <div className="flex flex-col h-full">
-                    <div className="card flex-1 flex flex-col overflow-hidden">
+                    <div className="flex-1 flex flex-col overflow-hidden p-4">
                         <div className="mb-3">
                             <p className="text-xs text-gray-600 mb-1">
                                 Public URL:
@@ -428,7 +425,7 @@ const PreviewPage = () => {
                         <div className="flex-1 flex items-center justify-center">
                             <div className="relative" style={{ width: '375px', maxHeight: '100%' }}>
                                 {/* Mobile Device Frame */}
-                                <div className="bg-gray-900 rounded-[3rem] p-3 shadow-2xl">
+                                <div className="bg-gray-900 rounded-[3rem] p-3">
                                     {/* Notch */}
                                     <div className="bg-black h-6 rounded-t-[2.5rem] flex items-center justify-center mb-1">
                                         <div className="bg-gray-900 w-32 h-4 rounded-full"></div>

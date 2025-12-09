@@ -61,12 +61,12 @@ const OrderHistory = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
+            <div className="mb-4 flex flex-col gap-3">
                 <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
-                <div className="bg-white border-2 border-gray-200 p-1.5 rounded-xl flex shadow-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <button
                         onClick={() => setFilter('active')}
-                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <i className="fas fa-fire mr-2"></i>
@@ -74,7 +74,7 @@ const OrderHistory = () => {
                     </button>
                     <button
                         onClick={() => setFilter('ready')}
-                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'ready' ? 'bg-green-600 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'ready' ? 'bg-green-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <i className="fas fa-check-circle mr-2"></i>
@@ -82,7 +82,7 @@ const OrderHistory = () => {
                     </button>
                     <button
                         onClick={() => setFilter('history')}
-                        className={`px-5 py-2.5 rounded-lg text-base font-semibold transition-all ${filter === 'history' ? 'bg-gray-700 text-white shadow-md' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'history' ? 'bg-gray-800 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <i className="fas fa-history mr-2"></i>

@@ -112,6 +112,11 @@ const ProductsPage = () => {
         );
     }
 
+    const categorized = categories.map(cat => ({
+        ...cat,
+        items: items.filter(item => item.category_id === cat.id)
+    }));
+
     return (
         <div className="max-w-6xl">
             <div className="flex justify-between items-center mb-6">
@@ -126,39 +131,56 @@ const ProductsPage = () => {
                     <p className="text-gray-500">No menu items yet. Create your first one!</p>
                 </div>
             ) : (
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {items.map((item) => (
-                        <div key={item.id} className="card">
-                            {item.images && item.images.length > 0 ? (
-                                <div className="grid grid-cols-2 gap-1 mb-3">
-                                    {item.images.slice(0, 2).map((img, idx) => (
-                                        <img key={idx} src={img} alt={`${item.name} ${idx + 1}`} className="w-full h-32 object-cover rounded-lg" />
-                                    ))}
-                                    {item.images.length > 2 && (
-                                        <div className="absolute top-2 right-2 bg-gray-900 bg-opacity-75 text-white text-xs px-2 py-1 rounded-full">
-                                            +{item.images.length - 2}
-                                        </div>
-                                    )}
+                <div className="space-y-6">
+                    {categorized.map(category => (
+                        <div key={category.id} className="card p-4">
+                            <div className="flex items-center justify-between mb-3">
+                                <div>
+                                    <h3 className="text-lg font-semibold">{category.name}</h3>
+                                    <p className="text-xs text-gray-500">{category.items.length} item{category.items.length === 1 ? '' : 's'}</p>
                                 </div>
+                            </div>
+                            {category.items.length === 0 ? (
+                                <p className="text-sm text-gray-500">No items in this category yet.</p>
                             ) : (
-                                <div className="w-full h-32 bg-gray-100 rounded-lg mb-3 flex items-center justify-center text-gray-400">
-                                    <i className="fas fa-image text-2xl"></i>
+                                <div className="space-y-3">
+                                    {category.items.map((item) => (
+                                        <div key={item.id} className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm flex gap-3 flex-col sm:flex-row">
+                                            <div className="w-full sm:w-32 aspect-[16/10] bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                                                {item.images && item.images.length > 0 ? (
+                                                    <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                                        <i className="fas fa-image text-xl"></i>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between gap-3">
+                                                    <div className="min-w-0">
+                                                        <h4 className="font-semibold text-sm truncate">{item.name}</h4>
+                                                        <p className="text-xs text-gray-500 truncate">ID: {item.id}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-bold text-blue-600 text-sm">{`${Math.round(parseFloat(item.price))} MKD`}</p>
+                                                    </div>
+                                                </div>
+                                                {item.description && (
+                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                                                )}
+                                                <div className="mt-2 flex flex-wrap gap-2">
+                                                    <Button onClick={() => handleEdit(item)} variant="secondary" className="text-xs px-3 py-2">
+                                                        Edit
+                                                    </Button>
+                                                    <Button onClick={() => handleDelete(item.id)} variant="danger" className="text-xs px-3 py-2">
+                                                        Delete
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
-                            <div className="flex items-start justify-between mb-2">
-                                <h3 className="font-semibold">{item.name}</h3>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                            <p className="text-lg font-bold text-blue-600 mb-2">{`${Math.round(parseFloat(item.price))} MKD`}</p>
-                            <p className="text-xs text-gray-500 mb-3">Category: {item.category_name}</p>
-                            <div className="flex space-x-2">
-                                <Button onClick={() => handleEdit(item)} variant="secondary" className="flex-1 text-sm">
-                                    Edit
-                                </Button>
-                                <Button onClick={() => handleDelete(item.id)} variant="danger" className="flex-1 text-sm">
-                                    Delete
-                                </Button>
-                            </div>
                         </div>
                     ))}
                 </div>
@@ -170,85 +192,86 @@ const ProductsPage = () => {
                 title={editingItem ? 'Edit Menu Item' : 'New Menu Item'}
             >
                 <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                        <select
-                            value={formData.category_id}
-                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                            className="input"
-                            required
-                        >
-                            {categories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <Input
-                        label="Item Name *"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                    />
-
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <textarea
-                            value={formData.description}
-                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="input"
-                            rows="3"
-                        />
-                    </div>
-
-                    <Input
-                        label="Price *"
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        required
-                    />
-
-                    <div className="mb-4">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Item Images</label>
-                        {editingItem && editingItem.images && editingItem.images.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2 mb-4">
-                                {editingItem.images.map((img, idx) => (
-                                    <div key={idx} className="relative group">
-                                        <img src={img} alt="Product" className="w-full h-24 object-cover rounded-lg border" />
-                                        <button
-                                            type="button"
-                                            onClick={async () => {
-                                                if (confirm('Remove this image?')) {
-                                                    try {
-                                                        await userAPI.deleteItemImage(editingItem.id, img);
-                                                        const updatedItem = { ...editingItem, images: editingItem.images.filter(i => i !== img) };
-                                                        setEditingItem(updatedItem);
-                                                        fetchData();
-                                                    } catch (err) {
-                                                        alert('Failed to remove image');
-                                                    }
-                                                }
-                                            }}
-                                            className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            &times;
-                                        </button>
-                                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                            <select
+                                value={formData.category_id}
+                                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                className="input"
+                                required
+                            >
+                                {categories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
                                 ))}
-                            </div>
-                        )}
+                            </select>
+                        </div>
 
-                        <ImageUpload
-                            onUpload={(file) => setImageFile(file)}
-                            currentImage={null}
-                            label={editingItem && editingItem.images && editingItem.images.length > 0 ? "Add Another Image" : "Upload Image"}
+                        <Input
+                            label="Item Name *"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                            required
                         />
-                        {imageFile && <p className="text-xs text-green-600 mt-1">Image selected: {imageFile.name}</p>}
+
+                        <div className="md:col-span-2">
+                            <Input
+                                label="Description"
+                                value={formData.description}
+                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                placeholder="Short description"
+                            />
+                        </div>
+
+                        <Input
+                            label="Price *"
+                            type="number"
+                            step="0.01"
+                            value={formData.price}
+                            onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                            required
+                        />
+
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Images</label>
+                            {editingItem && editingItem.images && editingItem.images.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mb-4">
+                                    {editingItem.images.map((img, idx) => (
+                                        <div key={idx} className="relative group">
+                                            <img src={img} alt="Product" className="w-full h-24 object-cover rounded-lg border" />
+                                            <button
+                                                type="button"
+                                                onClick={async () => {
+                                                    if (confirm('Remove this image?')) {
+                                                        try {
+                                                            await userAPI.deleteItemImage(editingItem.id, img);
+                                                            const updatedItem = { ...editingItem, images: editingItem.images.filter(i => i !== img) };
+                                                            setEditingItem(updatedItem);
+                                                            fetchData();
+                                                        } catch (err) {
+                                                            alert('Failed to remove image');
+                                                        }
+                                                    }
+                                                }}
+                                                className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                &times;
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <ImageUpload
+                                onUpload={(file) => setImageFile(file)}
+                                currentImage={null}
+                                label={editingItem && editingItem.images && editingItem.images.length > 0 ? "Add Another Image" : "Upload Image"}
+                            />
+                            {imageFile && <p className="text-xs text-green-600 mt-1">Image selected: {imageFile.name}</p>}
+                        </div>
                     </div>
 
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 mt-4">
                         <Button type="submit" variant="primary" loading={uploadingImage} className="flex-1">
                             Save
                         </Button>
