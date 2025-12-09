@@ -25,6 +25,20 @@ const PreviewPage = () => {
         return isHex ? trimmed : fallback;
     };
 
+    const DEFAULT_STYLE = {
+        primary_color: '#1f2937',
+        accent_color: '#f7f7f7',
+        category_icon_color: '#374151',
+        background_color: '#ffffff',
+        product_name_color: '#1f2937',
+        price_color: '#3d72c7',
+        breakline_color: '#e5e7eb',
+        business_name_font: 'Montserrat',
+        category_font: 'Roboto Condensed',
+        product_name_font: 'Montserrat',
+        description_font: 'Quicksand'
+    };
+
     useEffect(() => {
         fetchSettings();
 
@@ -95,6 +109,24 @@ const PreviewPage = () => {
         }
     };
 
+    const handleResetDefaults = async () => {
+        if (!settings) return;
+        if (!window.confirm('Reset all style settings to defaults?')) return;
+
+        setSaving(true);
+        try {
+            const updatedSettings = { ...settings, ...DEFAULT_STYLE };
+            await userAPI.updateSettings(updatedSettings);
+            setSettings(updatedSettings);
+            setIframeKey(prev => prev + 1);
+        } catch (error) {
+            console.error('Error resetting settings:', error);
+            alert('Failed to reset settings. Please try again.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="max-w-4xl">
@@ -114,7 +146,6 @@ const PreviewPage = () => {
                 {/* Customization Panel */}
                 <div className="flex flex-col h-full">
                     <div className="card p-0 flex-1 flex flex-col overflow-hidden">
-                        {/* Tabs */}
                         <div className="flex border-b">
                             <button
                                 onClick={() => setActiveTab('style')}
@@ -225,47 +256,56 @@ const PreviewPage = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <ColorPicker
                                                 label="Primary (title & categories)"
-                                                value={settings?.primary_color || '#1f2937'}
+                                                value={settings?.primary_color || DEFAULT_STYLE.primary_color}
                                                 onChange={(value) => handleColorChange('primary_color', value)}
                                                 name="primary_color"
                                             />
                                             <ColorPicker
                                                 label="Accent (tile & toggle bg)"
-                                                value={settings?.accent_color || '#f3f4f6'}
+                                                value={settings?.accent_color || DEFAULT_STYLE.accent_color}
                                                 onChange={(value) => handleColorChange('accent_color', value)}
                                                 name="accent_color"
                                             />
                                             <ColorPicker
                                                 label="Hide/Show Text & Icon"
-                                                value={settings?.category_icon_color || '#374151'}
+                                                value={settings?.category_icon_color || DEFAULT_STYLE.category_icon_color}
                                                 onChange={(value) => handleColorChange('category_icon_color', value)}
                                                 name="category_icon_color"
                                             />
                                             <ColorPicker
                                                 label="Background"
-                                                value={settings?.background_color || '#ffffff'}
+                                                value={settings?.background_color || DEFAULT_STYLE.background_color}
                                                 onChange={(value) => handleColorChange('background_color', value)}
                                                 name="background_color"
                                             />
                                             <ColorPicker
                                                 label="Product Name"
-                                                value={settings?.product_name_color || '#1f2937'}
+                                                value={settings?.product_name_color || DEFAULT_STYLE.product_name_color}
                                                 onChange={(value) => handleColorChange('product_name_color', value)}
                                                 name="product_name_color"
                                             />
                                             <ColorPicker
                                                 label="Price"
-                                                value={settings?.price_color || '#3b82f6'}
+                                                value={settings?.price_color || DEFAULT_STYLE.price_color}
                                                 onChange={(value) => handleColorChange('price_color', value)}
                                                 name="price_color"
                                             />
                                             <ColorPicker
                                                 label="Breakline"
-                                                value={normalizeColor(settings?.breakline_color, '#e5e7eb')}
+                                                value={normalizeColor(settings?.breakline_color, DEFAULT_STYLE.breakline_color)}
                                                 onChange={(value) => handleColorChange('breakline_color', value)}
                                                 name="breakline_color"
                                             />
                                         </div>
+                                    </div>
+                                    <div className="flex justify-end pt-2">
+                                        <button
+                                            onClick={handleResetDefaults}
+                                            disabled={saving}
+                                            className="text-md font-semibold px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            Reset to default
+                                        </button>
                                     </div>
                                 </div>
                             )}
