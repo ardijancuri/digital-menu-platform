@@ -77,8 +77,27 @@ export const approveApplication = async (req, res) => {
 
         // Create menu settings with default values
         await client.query(
-            `INSERT INTO menu_settings (user_id, primary_color, background_color, text_color, accent_color) 
-       VALUES ($1, '#1f2937', '#ffffff', '#111827', '#3b82f6')`,
+            `INSERT INTO menu_settings (
+                user_id,
+                primary_color,
+                background_color,
+                text_color,
+                accent_color,
+                category_icon_color,
+                product_name_color,
+                price_color,
+                breakline_color
+            ) VALUES (
+                $1,
+                '#1f2937',     -- primary
+                '#ffffff',     -- background
+                '#111827',     -- text (unused but kept)
+                '#f7f7f7',     -- accent
+                '#374151',     -- hide/show text & icon
+                '#1f2937',     -- product name
+                '#3d72c7',     -- price
+                '#e5e7eb'      -- breakline
+            )`,
             [userId]
         );
 
