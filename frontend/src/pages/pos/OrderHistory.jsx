@@ -167,7 +167,7 @@ const OrderHistory = () => {
                                                         <span className="font-bold mr-1">{item.quantity}x</span>
                                                         {item.name}
                                                     </span>
-                                                    <span className="text-gray-600">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                    <span className="text-gray-600">{`${Math.round(parseFloat(item.price))} MKD`}</span>
                                                 </li>
                                             ));
                                         }
@@ -199,7 +199,7 @@ const OrderHistory = () => {
                                                             <span className="font-bold mr-1">{item.quantity}x</span>
                                                             {item.name}
                                                         </span>
-                                                        <span className="text-gray-600">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                        <span className="text-gray-600">{`${Math.round(parseFloat(item.price))} MKD`}</span>
                                                     </li>
                                                 ))}
 
@@ -221,7 +221,7 @@ const OrderHistory = () => {
                                                             <span className="font-bold mr-1">{item.quantity}x</span>
                                                             {item.name}
                                                         </span>
-                                                        <span className="text-gray-800 font-medium">{parseFloat(item.price).toFixed(2)} MKD</span>
+                                                        <span className="text-gray-800 font-medium">{`${Math.round(parseFloat(item.price))} MKD`}</span>
                                                     </li>
                                                 ))}
                                             </>
@@ -233,7 +233,7 @@ const OrderHistory = () => {
                             <div className="border-t border-gray-100 pt-3 mb-3">
                                 <div className="flex justify-between items-center">
                                     <span className="text-base font-medium text-gray-600">Total</span>
-                                    <span className="text-xl font-bold text-gray-900">{parseFloat(order.total_amount).toFixed(2)} MKD</span>
+                                    <span className="text-xl font-bold text-gray-900">{`${Math.round(parseFloat(order.total_amount))} MKD`}</span>
                                 </div>
                             </div>
 

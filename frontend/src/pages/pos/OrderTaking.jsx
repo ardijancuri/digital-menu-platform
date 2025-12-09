@@ -388,9 +388,9 @@ const OrderTaking = () => {
                                         {product.description}
                                     </p>
                                 </div>
-                                <div className="mt-2 md:mt-3 font-bold text-gray-900 text-sm md:text-base">
-                                    {parseFloat(product.price).toFixed(2)} MKD
-                                </div>
+                <div className="mt-2 md:mt-3 font-bold text-gray-900 text-sm md:text-base">
+                    {`${Math.round(parseFloat(product.price))} MKD`}
+                </div>
                             </button>
                         ))}
                     </div>
@@ -423,7 +423,7 @@ const OrderTaking = () => {
                             <div key={item.id} className="flex items-center justify-between gap-3 pb-3 border-b border-gray-100">
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-medium text-gray-800 text-sm truncate">{item.name}</h4>
-                                    <p className="text-xs text-gray-500">{parseFloat(item.price).toFixed(2)} MKD</p>
+                                    <p className="text-xs text-gray-500">{`${Math.round(parseFloat(item.price))} MKD`}</p>
                                 </div>
                                 <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                                     <button
@@ -448,7 +448,7 @@ const OrderTaking = () => {
                 <div className="p-4 bg-gray-50 border-t border-gray-200">
                     <div className="flex justify-between items-center mb-4 text-lg font-bold text-gray-900">
                         <span>Total</span>
-                        <span>{cartTotal.toFixed(2)} MKD</span>
+                        <span>{`${Math.round(cartTotal)} MKD`}</span>
                     </div>
                     <button
                         onClick={handleCheckout}
