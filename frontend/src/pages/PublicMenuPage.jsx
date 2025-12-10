@@ -65,8 +65,8 @@ const PublicMenuPage = () => {
         try {
             const response = await publicAPI.getMenu(slug);
             setMenu(response.data.menu);
-            const allCategoryIds = new Set(response.data.menu.categories.map(cat => cat.id));
-            setExpandedCategories(allCategoryIds);
+            // Categories closed by default
+            setExpandedCategories(new Set());
         } catch (err) {
             setError('Menu not found');
         } finally {
@@ -151,7 +151,7 @@ const PublicMenuPage = () => {
                             setTouchEnd(null);
                         }}
                     >
-                        <div className="relative rounded-2xl overflow-hidden aspect-[2/1] shadow-lg">
+                        <div className="relative rounded-3xl overflow-hidden aspect-[2/1] shadow-lg">
                             {bannerImages.map((img, index) => (
                                 <div
                                     key={index}
@@ -222,7 +222,7 @@ const PublicMenuPage = () => {
                                             >
                                                 {/* Image */}
                                                 <div className="p-2 pb-0">
-                                                    <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden bg-gray-100 group">
+                                                    <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 group">
                                                         {item.images && item.images.length > 0 ? (
                                                             item.images.length > 1 ? (
                                                                 <div className="w-full h-full relative group">
