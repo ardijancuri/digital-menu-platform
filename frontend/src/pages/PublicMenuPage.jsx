@@ -109,7 +109,7 @@ const PublicMenuPage = () => {
         <div className="min-h-screen pb-20" style={{ backgroundColor: theme.background_color }}>
             <div className="mx-auto" style={{ maxWidth: '600px' }}>
                 {/* Header */}
-                <header className="px-5 py-4">
+                <header className="px-5 py-6">
                     <div className="flex items-center gap-4">
                         {menu.logo_url && (
                             <img
