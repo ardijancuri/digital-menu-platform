@@ -151,7 +151,7 @@ const PublicMenuPage = () => {
                             setTouchEnd(null);
                         }}
                     >
-                        <div className="relative rounded-3xl overflow-hidden aspect-[2/1] shadow-lg">
+                        <div className="relative rounded-[30px] overflow-hidden aspect-[2/1]">
                             {bannerImages.map((img, index) => (
                                 <div
                                     key={index}
