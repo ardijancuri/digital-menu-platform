@@ -232,29 +232,63 @@ const PublicMenuPage = () => {
                             </div>
                         </div>
 
-                        <div className="relative" ref={languageMenuRef}>
-                            <button
-                                type="button"
-                                onClick={() => setIsLanguageMenuOpen(prev => !prev)}
-                                className="flex items-center justify-center w-10 h-10 mx-1 rounded-full overflow-hidden transition-transform hover:scale-105 focus:outline-none"
-                                style={{ backgroundColor: theme.background_color }}
-                                aria-haspopup="true"
-                                aria-expanded={isLanguageMenuOpen}
-                                aria-label={`Change language (current: ${selectedLanguage.label})`}
+                        <div 
+                            className="relative z-50"
+                            ref={languageMenuRef}
+                        >
+                            <div 
+                                className={isLanguageMenuOpen ? 'rounded-t-full' : 'rounded-full'}
+                                style={{ 
+                                    border: `1px solid ${/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(theme.breakline_color || '')
+                                        ? theme.breakline_color
+                                        : '#e5e7eb'
+                                    }`,
+                                    borderBottom: isLanguageMenuOpen ? 'none' : `1px solid ${/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(theme.breakline_color || '')
+                                        ? theme.breakline_color
+                                        : '#e5e7eb'
+                                    }`,
+                                    backgroundColor: theme.background_color,
+                                    padding: '4px',
+                                    position: 'relative',
+                                    display: 'inline-block',
+                                    zIndex: isLanguageMenuOpen ? 50 : 50,
+                                    borderBottomLeftRadius: isLanguageMenuOpen ? '0' : '9999px',
+                                    borderBottomRightRadius: isLanguageMenuOpen ? '0' : '9999px'
+                                }}
                             >
-                                <img
-                                    src={selectedLanguage.flagUrl}
-                                    alt={selectedLanguage.label}
-                                    className="w-full h-full object-cover"
-                                />
-                            </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLanguageMenuOpen(prev => !prev)}
+                                    className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden transition-transform hover:scale-105 focus:outline-none relative z-10"
+                                    style={{ backgroundColor: theme.background_color }}
+                                    aria-haspopup="true"
+                                    aria-expanded={isLanguageMenuOpen}
+                                    aria-label={`Change language (current: ${selectedLanguage.label})`}
+                                >
+                                    <img
+                                        src={selectedLanguage.flagUrl}
+                                        alt={selectedLanguage.label}
+                                        className="w-full h-full object-cover"
+                                    />
+                                </button>
+                            </div>
 
                             <div
-                                className={`absolute right-0 mt-1 z-10 py-1 px-1 flex flex-col gap-1 items-end rounded-full transition-all duration-200 ease-out origin-top-right transform ${isLanguageMenuOpen
+                                className={`absolute right-0 top-12 z-10 py-1 px-1 flex flex-col gap-1 items-end rounded-b-full transition-all duration-200 ease-out origin-top-right transform ${isLanguageMenuOpen
                                     ? 'translate-y-0 opacity-100 pointer-events-auto'
                                     : '-translate-y-3 opacity-0 pointer-events-none'
                                 }`}
-                                style={{ backgroundColor: theme.background_color }}
+                                style={{ 
+                                    backgroundColor: theme.background_color,
+                                    border: `1px solid ${/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(theme.breakline_color || '')
+                                        ? theme.breakline_color
+                                        : '#e5e7eb'
+                                    }`,
+                                    borderTop: 'none',
+                                    borderTopLeftRadius: '0',
+                                    borderTopRightRadius: '0',
+                                    marginTop: '-1px'
+                                }}
                                 aria-hidden={!isLanguageMenuOpen}
                             >
                                 {languages
