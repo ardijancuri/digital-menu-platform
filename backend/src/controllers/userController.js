@@ -20,9 +20,18 @@ export const getSettings = async (req, res) => {
             });
         }
 
+        // Get business_name from users table
+        const userResult = await query(
+            'SELECT business_name FROM users WHERE id = $1',
+            [userId]
+        );
+
         res.json({
             success: true,
-            settings: result.rows[0]
+            settings: {
+                ...result.rows[0],
+                business_name: userResult.rows[0]?.business_name || ''
+            }
         });
     } catch (error) {
         console.error('Get settings error:', error);
@@ -60,8 +69,18 @@ export const updateSettings = async (req, res) => {
             description,
             opening_hours,
             banner_images,
-            breakline_color
+            breakline_color,
+            business_name,
+            default_language
         } = req.body;
+
+        // Update business_name in users table if provided
+        if (business_name !== undefined) {
+            await query(
+                'UPDATE users SET business_name = $1 WHERE id = $2',
+                [business_name, userId]
+            );
+        }
 
         const result = await query(
             `UPDATE menu_settings 
@@ -86,21 +105,31 @@ export const updateSettings = async (req, res) => {
            opening_hours = COALESCE($19, opening_hours),
            banner_images = COALESCE($20, banner_images),
            breakline_color = COALESCE($21, breakline_color),
+           default_language = COALESCE($22, default_language),
            updated_at = NOW()
-       WHERE user_id = $22
+       WHERE user_id = $23
        RETURNING *`,
             [primary_color, background_color, text_color, accent_color,
                 category_bg_color, item_card_bg_color, border_color, header_bg_color,
                 category_title_color, product_name_color, description_text_color, price_color,
                 category_icon_color,
                 business_name_font, category_font, product_name_font, description_font,
-                description, opening_hours, banner_images, breakline_color, userId]
+                description, opening_hours, banner_images, breakline_color, default_language, userId]
+        );
+
+        // Get updated business_name from users table
+        const userResult = await query(
+            'SELECT business_name FROM users WHERE id = $1',
+            [userId]
         );
 
         res.json({
             success: true,
             message: 'Settings updated successfully',
-            settings: result.rows[0]
+            settings: {
+                ...result.rows[0],
+                business_name: userResult.rows[0]?.business_name
+            }
         });
     } catch (error) {
         console.error('Update settings error:', error);
@@ -261,9 +290,14 @@ export const getCategories = async (req, res) => {
 export const createCategory = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { name, position } = req.body;
+        const { name, position, translations, name_mk, name_sq, name_tr } = req.body;
 
-        if (!name) {
+        const resolvedName = name || translations?.en?.name;
+        const mk = name_mk || translations?.mk?.name || null;
+        const sq = name_sq || translations?.sq?.name || null;
+        const tr = name_tr || translations?.tr?.name || null;
+
+        if (!resolvedName) {
             return res.status(400).json({
                 success: false,
                 message: 'Category name is required'
@@ -271,8 +305,8 @@ export const createCategory = async (req, res) => {
         }
 
         const result = await query(
-            'INSERT INTO categories (user_id, name, position) VALUES ($1, $2, $3) RETURNING *',
-            [userId, name, position || 0]
+            'INSERT INTO categories (user_id, name, name_mk, name_sq, name_tr, position) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [userId, resolvedName, mk, sq, tr, position || 0]
         );
 
         res.status(201).json({
@@ -296,15 +330,23 @@ export const updateCategory = async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
-        const { name, position } = req.body;
+        const { name, position, translations, name_mk, name_sq, name_tr } = req.body;
+
+        const resolvedName = name || translations?.en?.name;
+        const mk = name_mk || translations?.mk?.name || null;
+        const sq = name_sq || translations?.sq?.name || null;
+        const tr = name_tr || translations?.tr?.name || null;
 
         const result = await query(
             `UPDATE categories 
        SET name = COALESCE($1, name), 
-           position = COALESCE($2, position) 
-       WHERE id = $3 AND user_id = $4 
+           name_mk = COALESCE($2, name_mk),
+           name_sq = COALESCE($3, name_sq),
+           name_tr = COALESCE($4, name_tr),
+           position = COALESCE($5, position) 
+       WHERE id = $6 AND user_id = $7 
        RETURNING *`,
-            [name, position, id, userId]
+            [resolvedName, mk, sq, tr, position, id, userId]
         );
 
         if (result.rows.length === 0) {
@@ -372,7 +414,7 @@ export const getMenuItems = async (req, res) => {
         const userId = req.user.id;
 
         const result = await query(
-            `SELECT m.*, c.name as category_name 
+            `SELECT m.*, c.name as category_name, c.name_mk, c.name_sq, c.name_tr
        FROM menu_items m
        JOIN categories c ON m.category_id = c.id
        WHERE c.user_id = $1
@@ -399,9 +441,31 @@ export const getMenuItems = async (req, res) => {
 export const createMenuItem = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { category_id, name, description, price } = req.body;
+        const {
+            category_id,
+            name,
+            description,
+            price,
+            translations,
+            name_mk,
+            name_sq,
+            name_tr,
+            description_mk,
+            description_sq,
+            description_tr
+        } = req.body;
 
-        if (!category_id || !name || !price) {
+        const resolvedName = name || translations?.en?.name;
+        const resolvedDescription = description ?? translations?.en?.description ?? null;
+
+        const mkName = name_mk || translations?.mk?.name || null;
+        const sqName = name_sq || translations?.sq?.name || null;
+        const trName = name_tr || translations?.tr?.name || null;
+        const mkDesc = description_mk || translations?.mk?.description || null;
+        const sqDesc = description_sq || translations?.sq?.description || null;
+        const trDesc = description_tr || translations?.tr?.description || null;
+
+        if (!category_id || !resolvedName || !price) {
             return res.status(400).json({
                 success: false,
                 message: 'Category, name, and price are required'
@@ -422,10 +486,10 @@ export const createMenuItem = async (req, res) => {
         }
 
         const result = await query(
-            `INSERT INTO menu_items (category_id, name, description, price, images) 
-       VALUES ($1, $2, $3, $4, ARRAY[]::TEXT[]) 
+            `INSERT INTO menu_items (category_id, name, name_mk, name_sq, name_tr, description, description_mk, description_sq, description_tr, price, images) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, ARRAY[]::TEXT[]) 
        RETURNING *`,
-            [category_id, name, description, price]
+            [category_id, resolvedName, mkName, sqName, trName, resolvedDescription, mkDesc, sqDesc, trDesc, price]
         );
 
         res.status(201).json({
@@ -449,7 +513,29 @@ export const updateMenuItem = async (req, res) => {
     try {
         const userId = req.user.id;
         const { id } = req.params;
-        const { category_id, name, description, price } = req.body;
+        const {
+            category_id,
+            name,
+            description,
+            price,
+            translations,
+            name_mk,
+            name_sq,
+            name_tr,
+            description_mk,
+            description_sq,
+            description_tr
+        } = req.body;
+
+        const resolvedName = name || translations?.en?.name;
+        const resolvedDescription = description ?? translations?.en?.description ?? null;
+
+        const mkName = name_mk || translations?.mk?.name || null;
+        const sqName = name_sq || translations?.sq?.name || null;
+        const trName = name_tr || translations?.tr?.name || null;
+        const mkDesc = description_mk || translations?.mk?.description || null;
+        const sqDesc = description_sq || translations?.sq?.description || null;
+        const trDesc = description_tr || translations?.tr?.description || null;
 
         // Verify item belongs to user
         const itemCheck = await query(
@@ -470,11 +556,17 @@ export const updateMenuItem = async (req, res) => {
             `UPDATE menu_items 
        SET category_id = COALESCE($1, category_id),
            name = COALESCE($2, name),
-           description = COALESCE($3, description),
-           price = COALESCE($4, price)
-       WHERE id = $5
+           name_mk = COALESCE($3, name_mk),
+           name_sq = COALESCE($4, name_sq),
+           name_tr = COALESCE($5, name_tr),
+           description = COALESCE($6, description),
+           description_mk = COALESCE($7, description_mk),
+           description_sq = COALESCE($8, description_sq),
+           description_tr = COALESCE($9, description_tr),
+           price = COALESCE($10, price)
+       WHERE id = $11
        RETURNING *`,
-            [category_id, name, description, price, id]
+            [category_id, resolvedName, mkName, sqName, trName, resolvedDescription, mkDesc, sqDesc, trDesc, price, id]
         );
 
         res.json({

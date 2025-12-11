@@ -6,6 +6,18 @@ import Modal from '../../components/Modal';
 import ImageUpload from '../../components/ImageUpload';
 
 const ProductsPage = () => {
+    const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'mk', label: 'Macedonian' },
+        { code: 'sq', label: 'Albanian' },
+        { code: 'tr', label: 'Turkish' },
+    ];
+
+    const emptyTranslations = languages.reduce((acc, lang) => {
+        acc[lang.code] = { name: '', description: '' };
+        return acc;
+    }, {});
+
     const [items, setItems] = useState([]);
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,9 +26,8 @@ const ProductsPage = () => {
     const [uploadingImage, setUploadingImage] = useState(false);
     const [formData, setFormData] = useState({
         category_id: '',
-        name: '',
-        description: '',
         price: '',
+        translations: emptyTranslations,
     });
     const [imageFile, setImageFile] = useState(null);
 
@@ -43,9 +54,8 @@ const ProductsPage = () => {
         setEditingItem(null);
         setFormData({
             category_id: categories[0]?.id || '',
-            name: '',
-            description: '',
             price: '',
+            translations: emptyTranslations,
         });
         setImageFile(null);
         setIsModalOpen(true);
@@ -55,9 +65,21 @@ const ProductsPage = () => {
         setEditingItem(item);
         setFormData({
             category_id: item.category_id,
-            name: item.name,
-            description: item.description || '',
             price: item.price,
+            translations: languages.reduce((acc, lang) => {
+                const translation = item?.translations?.[lang.code] || {};
+                acc[lang.code] = {
+                    name:
+                        translation.name ||
+                        item?.[`name_${lang.code}`] ||
+                        (lang.code === 'en' ? item.name : ''),
+                    description:
+                        translation.description ||
+                        item?.[`description_${lang.code}`] ||
+                        (lang.code === 'en' ? item.description || '' : ''),
+                };
+                return acc;
+            }, {}),
         });
         setImageFile(null);
         setIsModalOpen(true);
@@ -66,12 +88,38 @@ const ProductsPage = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const translationsPayload = languages.reduce((acc, lang) => {
+                const t = formData.translations[lang.code] || {};
+                if (t.name || t.description) {
+                    acc[lang.code] = {
+                        ...(t.name ? { name: t.name } : {}),
+                        ...(t.description ? { description: t.description } : {}),
+                    };
+                }
+                return acc;
+            }, {});
+
+            const payload = {
+                category_id: formData.category_id,
+                price: formData.price,
+                name: translationsPayload.en?.name || '',
+                description: translationsPayload.en?.description || '',
+                translations: translationsPayload,
+                // Legacy per-language fields for backward compatibility
+                name_mk: translationsPayload.mk?.name,
+                name_sq: translationsPayload.sq?.name,
+                name_tr: translationsPayload.tr?.name,
+                description_mk: translationsPayload.mk?.description,
+                description_sq: translationsPayload.sq?.description,
+                description_tr: translationsPayload.tr?.description,
+            };
+
             let itemId;
             if (editingItem) {
-                const response = await userAPI.updateMenuItem(editingItem.id, formData);
+                const response = await userAPI.updateMenuItem(editingItem.id, payload);
                 itemId = response.data.item.id;
             } else {
-                const response = await userAPI.createMenuItem(formData);
+                const response = await userAPI.createMenuItem(payload);
                 itemId = response.data.item.id;
             }
 
@@ -112,6 +160,26 @@ const ProductsPage = () => {
         );
     }
 
+    const getLocalized = (entity, field) => {
+        // For dashboard, always show English first
+        if (entity?.translations?.en?.[field]) return entity.translations.en[field];
+        if (entity?.[`${field}_en`]) return entity[`${field}_en`];
+        // If base field exists and _mk version is different, base field is likely English
+        if (entity[field] && entity[`${field}_mk`] && entity[field] !== entity[`${field}_mk`]) {
+            return entity[field];
+        }
+        // If _mk exists and equals base field, then base field is Macedonian, so don't use it for English
+        if (entity[`${field}_mk`] && entity[field] === entity[`${field}_mk`]) {
+            // English is always the fallback, but if base field is Macedonian, return empty or try other languages
+            // Try other languages as fallback only if English doesn't exist
+            if (entity?.translations?.mk?.[field]) return entity.translations.mk[field];
+            if (entity?.[`${field}_mk`]) return entity[`${field}_mk`];
+            return '';
+        }
+        // Base field is likely English
+        return entity[field] || '';
+    };
+
     const categorized = categories.map(cat => ({
         ...cat,
         items: items.filter(item => item.category_id === cat.id)
@@ -136,7 +204,7 @@ const ProductsPage = () => {
                         <div key={category.id} className="card p-4">
                             <div className="flex items-center justify-between mb-3">
                                 <div>
-                                    <h3 className="text-lg font-semibold">{category.name}</h3>
+                                    <h3 className="text-lg font-semibold">{getLocalized(category, 'name')}</h3>
                                     <p className="text-xs text-gray-500">{category.items.length} item{category.items.length === 1 ? '' : 's'}</p>
                                 </div>
                             </div>
@@ -158,15 +226,15 @@ const ProductsPage = () => {
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex justify-between gap-3">
                                                     <div className="min-w-0">
-                                                        <h4 className="font-semibold text-sm truncate">{item.name}</h4>
+                                                        <h4 className="font-semibold text-sm truncate">{getLocalized(item, 'name')}</h4>
                                                         <p className="text-xs text-gray-500 truncate">ID: {item.id}</p>
                                                     </div>
                                                     <div className="text-right">
                                                         <p className="font-bold text-blue-600 text-sm">{`${Math.round(parseFloat(item.price))} MKD`}</p>
                                                     </div>
                                                 </div>
-                                                {item.description && (
-                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{item.description}</p>
+                                                {getLocalized(item, 'description') && (
+                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{getLocalized(item, 'description')}</p>
                                                 )}
                                                 <div className="mt-2 flex flex-wrap gap-2">
                                                     <Button onClick={() => handleEdit(item)} variant="secondary" className="text-xs px-3 py-2">
@@ -202,26 +270,52 @@ const ProductsPage = () => {
                                 required
                             >
                                 {categories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    <option key={cat.id} value={cat.id}>{getLocalized(cat, 'name')}</option>
                                 ))}
                             </select>
                         </div>
 
-                        <Input
-                            label="Item Name *"
-                            value={formData.name}
-                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                            required
-                        />
-
-                        <div className="md:col-span-2">
+                        {languages.map((lang) => (
                             <Input
-                                label="Description"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                key={`name-${lang.code}`}
+                                label={`Item Name (${lang.label})${lang.code === 'en' ? ' *' : ''}`}
+                                value={formData.translations[lang.code]?.name}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        translations: {
+                                            ...prev.translations,
+                                            [lang.code]: {
+                                                ...prev.translations[lang.code],
+                                                name: e.target.value,
+                                            },
+                                        },
+                                    }))
+                                }
+                                required={lang.code === 'en'}
+                            />
+                        ))}
+
+                        {languages.map((lang) => (
+                            <Input
+                                key={`desc-${lang.code}`}
+                                label={`Description (${lang.label})${lang.code === 'en' ? '' : ' (optional)'}`}
+                                value={formData.translations[lang.code]?.description}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        translations: {
+                                            ...prev.translations,
+                                            [lang.code]: {
+                                                ...prev.translations[lang.code],
+                                                description: e.target.value,
+                                            },
+                                        },
+                                    }))
+                                }
                                 placeholder="Short description"
                             />
-                        </div>
+                        ))}
 
                         <Input
                             label="Price *"

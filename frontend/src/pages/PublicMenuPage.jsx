@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicAPI } from '../services/api';
 
@@ -12,10 +12,44 @@ const PublicMenuPage = () => {
     const [isBannerPaused, setIsBannerPaused] = useState(false);
     const [touchStart, setTouchStart] = useState(null);
     const [touchEnd, setTouchEnd] = useState(null);
+    const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
+    const [language, setLanguage] = useState('en');
+    const languages = [
+        { code: 'en', label: 'English (US)', flagUrl: 'https://flagcdn.com/us.svg' },
+        { code: 'mk', label: 'Macedonian', flagUrl: 'https://flagcdn.com/mk.svg' },
+        { code: 'sq', label: 'Albanian', flagUrl: 'https://flagcdn.com/al.svg' },
+        { code: 'tr', label: 'Turkish', flagUrl: 'https://flagcdn.com/tr.svg' }
+    ];
+    const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+    const languageMenuRef = useRef(null);
 
     useEffect(() => {
         fetchMenu();
     }, [slug]);
+
+    // Initialize language from URL or default
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const langParam = params.get('lang');
+        
+        // If language is specified in URL, use it
+        if (langParam) {
+            const found = languages.find(l => l.code === langParam);
+            if (found) {
+                setSelectedLanguage(found);
+                setLanguage(found.code);
+                return;
+            }
+        }
+        
+        // Otherwise, wait for menu to load to get default language
+        if (menu) {
+            const defaultLang = menu.default_language || 'en';
+            const found = languages.find(l => l.code === defaultLang) || languages[0];
+            setSelectedLanguage(found);
+            setLanguage(found.code);
+        }
+    }, [slug, menu]);
 
     useEffect(() => {
         if (menu) {
@@ -35,6 +69,17 @@ const PublicMenuPage = () => {
             };
         }
     }, [menu]);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (languageMenuRef.current && !languageMenuRef.current.contains(event.target)) {
+                setIsLanguageMenuOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Carousel Autoplay
     useEffect(() => {
@@ -88,6 +133,58 @@ const PublicMenuPage = () => {
         });
     };
 
+    const handleLanguageChange = (lang) => {
+        setSelectedLanguage(lang);
+        setLanguage(lang.code);
+        setIsLanguageMenuOpen(false);
+        const params = new URLSearchParams(window.location.search);
+        if (lang.code === 'en') {
+            params.delete('lang');
+        } else {
+            params.set('lang', lang.code);
+        }
+        const qs = params.toString();
+        const newUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+        window.history.replaceState({}, '', newUrl);
+    };
+
+    const getLocalizedText = (entity, field) => {
+        // First, try the requested language explicitly
+        if (entity?.translations?.[language]?.[field]) return entity.translations[language][field];
+        if (entity?.[`${field}_${language}`]) return entity[`${field}_${language}`];
+        
+        // Always fallback to English (never use other languages as fallback)
+        if (language !== 'en') {
+            // Try explicit English translations
+            if (entity?.translations?.en?.[field]) return entity.translations.en[field];
+            if (entity?.[`${field}_en`]) return entity[`${field}_en`];
+            
+            // Try base field as English (check if it's not Macedonian)
+            if (entity[field]) {
+                // If name_mk exists and equals name, then name is Macedonian, don't use it
+                if (entity[`${field}_mk`] && entity[field] === entity[`${field}_mk`]) {
+                    return ''; // Don't use Macedonian as fallback
+                }
+                // Base field is likely English
+                return entity[field];
+            }
+            return '';
+        }
+        
+        // For English specifically, check if base field is actually Macedonian
+        if (language === 'en') {
+            // Check if base field is actually Macedonian (if name_mk exists and equals name)
+            if (entity[`${field}_mk`] && entity[field] === entity[`${field}_mk`]) {
+                // Base field is Macedonian, don't use it for English
+                return '';
+            }
+            // Base field is likely English (different from Macedonian or no Macedonian exists)
+            return entity?.[field] || '';
+        }
+        
+        return '';
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -112,25 +209,73 @@ const PublicMenuPage = () => {
             <div className="mx-auto" style={{ maxWidth: '600px' }}>
                 {/* Header */}
                 <header className="px-5 py-6">
-                    <div className="flex items-center gap-4">
-                        {menu.logo_url && (
-                            <img
-                                src={menu.logo_url}
-                                alt="Logo"
-                                className="w-16 h-16 rounded-full object-cover shadow-sm"
-                            />
-                        )}
-                        <div>
-                            <h1
-                                className="text-2xl font-bold leading-tight"
-                                style={{
-                                    color: theme.primary_color,
-                                    fontFamily: theme.business_name_font
-                                }}
-                            >
-                                {menu.business_name}
-                            </h1>
+                    <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            {menu.logo_url && (
+                                <img
+                                    src={menu.logo_url}
+                                    alt="Logo"
+                                    className="w-16 h-16 rounded-full object-cover shadow-sm"
+                                />
+                            )}
+                            <div>
+                                <h1
+                                    className="text-2xl font-bold leading-tight"
+                                    style={{
+                                        color: theme.primary_color,
+                                        fontFamily: theme.business_name_font
+                                    }}
+                                >
+                                    {menu.business_name}
+                                </h1>
 
+                            </div>
+                        </div>
+
+                        <div className="relative" ref={languageMenuRef}>
+                            <button
+                                type="button"
+                                onClick={() => setIsLanguageMenuOpen(prev => !prev)}
+                                className="flex items-center justify-center w-10 h-10 mx-1 rounded-full overflow-hidden transition-transform hover:scale-105 focus:outline-none"
+                                style={{ backgroundColor: theme.background_color }}
+                                aria-haspopup="true"
+                                aria-expanded={isLanguageMenuOpen}
+                                aria-label={`Change language (current: ${selectedLanguage.label})`}
+                            >
+                                <img
+                                    src={selectedLanguage.flagUrl}
+                                    alt={selectedLanguage.label}
+                                    className="w-full h-full object-cover"
+                                />
+                            </button>
+
+                            <div
+                                className={`absolute right-0 mt-1 z-10 py-1 px-1 flex flex-col gap-1 items-end rounded-full transition-all duration-200 ease-out origin-top-right transform ${isLanguageMenuOpen
+                                    ? 'translate-y-0 opacity-100 pointer-events-auto'
+                                    : '-translate-y-3 opacity-0 pointer-events-none'
+                                }`}
+                                style={{ backgroundColor: theme.background_color }}
+                                aria-hidden={!isLanguageMenuOpen}
+                            >
+                                {languages
+                                    .filter(lang => lang.code !== selectedLanguage.code)
+                                    .map(lang => (
+                                    <button
+                                        key={lang.code}
+                                        type="button"
+                                        className="flex items-center justify-center w-10 h-10 rounded-full overflow-hidden hover:scale-105 transition-transform focus:outline-none"
+                                        onClick={() => handleLanguageChange(lang)}
+                                        aria-label={lang.label}
+                                        style={{ backgroundColor: theme.background_color }}
+                                    >
+                                        <img
+                                            src={lang.flagUrl}
+                                            alt={lang.label}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -200,7 +345,7 @@ const PublicMenuPage = () => {
                                             fontFamily: theme.category_font
                                         }}
                                     >
-                                        {category.name}
+                                        {getLocalizedText(category, 'name')}
                                     </h2>
                                     <span
                                         className="text-sm font-medium px-2.5 py-2 rounded-full flex items-center"
@@ -297,7 +442,7 @@ const PublicMenuPage = () => {
                                                             fontFamily: theme.product_name_font
                                                         }}
                                                     >
-                                                        {item.name}
+                                                        {getLocalizedText(item, 'name')}
                                                     </h3>
 
                                                     <div className="mt-auto flex items-center justify-between">

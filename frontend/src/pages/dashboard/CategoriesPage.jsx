@@ -5,11 +5,25 @@ import Input from '../../components/Input';
 import Modal from '../../components/Modal';
 
 const CategoriesPage = () => {
+    const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'mk', label: 'Macedonian' },
+        { code: 'sq', label: 'Albanian' },
+        { code: 'tr', label: 'Turkish' },
+    ];
+    const emptyTranslations = languages.reduce((acc, lang) => {
+        acc[lang.code] = '';
+        return acc;
+    }, {});
+
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
-    const [formData, setFormData] = useState({ name: '', position: 0 });
+    const [formData, setFormData] = useState({
+        position: 0,
+        translations: emptyTranslations,
+    });
 
     useEffect(() => {
         fetchCategories();
@@ -28,23 +42,54 @@ const CategoriesPage = () => {
 
     const handleCreate = () => {
         setEditingCategory(null);
-        setFormData({ name: '', position: categories.length });
+        setFormData({
+            position: categories.length,
+            translations: emptyTranslations,
+        });
         setIsModalOpen(true);
     };
 
     const handleEdit = (category) => {
         setEditingCategory(category);
-        setFormData({ name: category.name, position: category.position });
+        setFormData({
+            position: category.position,
+            translations: languages.reduce((acc, lang) => {
+                const value =
+                    category?.translations?.[lang.code]?.name ||
+                    category?.[`name_${lang.code}`] ||
+                    (lang.code === 'en' ? category?.name : '');
+                acc[lang.code] = value || '';
+                return acc;
+            }, {}),
+        });
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            const translationsPayload = languages.reduce((acc, lang) => {
+                const nameValue = formData.translations[lang.code]?.trim();
+                if (nameValue) {
+                    acc[lang.code] = { name: nameValue };
+                }
+                return acc;
+            }, {});
+
+            const payload = {
+                position: formData.position,
+                name: translationsPayload.en?.name || '',
+                translations: translationsPayload,
+                // Legacy per-language fields for backward compatibility
+                name_mk: translationsPayload.mk?.name,
+                name_sq: translationsPayload.sq?.name,
+                name_tr: translationsPayload.tr?.name,
+            };
+
             if (editingCategory) {
-                await userAPI.updateCategory(editingCategory.id, formData);
+                await userAPI.updateCategory(editingCategory.id, payload);
             } else {
-                await userAPI.createCategory(formData);
+                await userAPI.createCategory(payload);
             }
             setIsModalOpen(false);
             fetchCategories();
@@ -66,6 +111,26 @@ const CategoriesPage = () => {
     if (loading) {
         return <div className="text-center py-12">Loading...</div>;
     }
+
+    const getLocalizedCategoryName = (category) => {
+        // For dashboard, always show English first
+        if (category?.translations?.en?.name) return category.translations.en.name;
+        if (category?.name_en) return category.name_en;
+        // If base name exists and name_mk is different, base name is likely English
+        if (category.name && category.name_mk && category.name !== category.name_mk) {
+            return category.name;
+        }
+        // If name_mk exists and equals name, then name is Macedonian, so don't use it for English
+        if (category.name_mk && category.name === category.name_mk) {
+            // English is always the fallback, but if base name is Macedonian, return empty or try other languages
+            // Try other languages as fallback only if English doesn't exist
+            if (category?.translations?.mk?.name) return category.translations.mk.name;
+            if (category?.name_mk) return category.name_mk;
+            return '';
+        }
+        // Base name is likely English
+        return category.name || '';
+    };
 
     return (
         <div className="max-w-4xl">
@@ -89,7 +154,7 @@ const CategoriesPage = () => {
                                     {category.position}
                                 </div>
                                 <div>
-                                    <h3 className="font-semibold text-base">{category.name}</h3>
+                                    <h3 className="font-semibold text-base">{getLocalizedCategoryName(category)}</h3>
                                     <p className="text-xs text-gray-500">Position: {category.position}</p>
                                 </div>
                             </div>
@@ -112,12 +177,22 @@ const CategoriesPage = () => {
                 title={editingCategory ? 'Edit Category' : 'New Category'}
             >
                 <form onSubmit={handleSubmit}>
-                    <Input
-                        label="Category Name"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                    />
+                    <div className="grid gap-3">
+                        {languages.map((lang) => (
+                            <Input
+                                key={lang.code}
+                                label={`Category Name (${lang.label})${lang.code === 'en' ? ' *' : ''}`}
+                                value={formData.translations[lang.code]}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        translations: { ...prev.translations, [lang.code]: e.target.value },
+                                    }))
+                                }
+                                required={lang.code === 'en'}
+                            />
+                        ))}
+                    </div>
                     <Input
                         label="Position"
                         type="number"

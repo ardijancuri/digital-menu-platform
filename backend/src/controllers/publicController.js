@@ -16,7 +16,7 @@ export const getPublicMenu = async (req, res) => {
               m.category_title_color, m.product_name_color, m.description_text_color, m.price_color,
               m.category_icon_color,
               m.business_name_font, m.category_font, m.product_name_font, m.description_font,
-              m.description, m.opening_hours, m.banner_images, m.breakline_color
+              m.description, m.opening_hours, m.banner_images, m.breakline_color, m.default_language
        FROM users u
        LEFT JOIN menu_settings m ON u.id = m.user_id
        WHERE u.slug = $1 AND u.role = 'user'`,
@@ -41,16 +41,19 @@ export const getPublicMenu = async (req, res) => {
 
         // Get categories
         const categoriesResult = await query(
-            'SELECT id, name, position FROM categories WHERE user_id = $1 ORDER BY position ASC, id ASC',
+            `SELECT id, name, name_mk, name_sq, name_tr, position 
+             FROM categories 
+             WHERE user_id = $1 
+             ORDER BY position ASC, id ASC`,
             [menuData.id]
         );
 
         // Get menu items
         const itemsResult = await query(
-            `SELECT id, category_id, name, description, price, images
-       FROM menu_items
-       WHERE category_id IN (SELECT id FROM categories WHERE user_id = $1)
-       ORDER BY id ASC`,
+            `SELECT id, category_id, name, name_mk, name_sq, name_tr, description, description_mk, description_sq, description_tr, price, images
+             FROM menu_items
+             WHERE category_id IN (SELECT id FROM categories WHERE user_id = $1)
+             ORDER BY id ASC`,
             [menuData.id]
         );
 
@@ -89,6 +92,7 @@ export const getPublicMenu = async (req, res) => {
                     description_font: menuData.description_font,
                     banner_images: menuData.banner_images
                 },
+                default_language: menuData.default_language || 'en',
                 categories
             }
         });

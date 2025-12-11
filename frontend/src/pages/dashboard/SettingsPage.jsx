@@ -6,6 +6,13 @@ import ColorPicker from '../../components/ColorPicker';
 import ImageUpload from '../../components/ImageUpload';
 
 const SettingsPage = () => {
+    const languages = [
+        { code: 'en', label: 'English' },
+        { code: 'mk', label: 'Macedonian' },
+        { code: 'sq', label: 'Albanian' },
+        { code: 'tr', label: 'Turkish' },
+    ];
+
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -18,7 +25,12 @@ const SettingsPage = () => {
     const fetchSettings = async () => {
         try {
             const response = await userAPI.getSettings();
-            setSettings(response.data.settings);
+            const fetched = response.data.settings || {};
+            setSettings({
+                ...fetched,
+                business_name: fetched.business_name || '',
+                default_language: fetched.default_language || 'en',
+            });
         } catch (err) {
             console.error('Failed to fetch settings:', err);
         } finally {
@@ -52,8 +64,10 @@ const SettingsPage = () => {
         setSaving(true);
         try {
             await userAPI.updateSettings({
+                business_name: settings.business_name || '',
                 description: settings.description,
                 opening_hours: settings.opening_hours,
+                default_language: settings.default_language || 'en',
             });
             alert('Settings saved successfully!');
         } catch (err) {
@@ -78,6 +92,22 @@ const SettingsPage = () => {
                 <p className="text-gray-600">Customize your menu's appearance and information</p>
             </div>
 
+            {/* Menu Title */}
+            <div className="card-flat mb-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
+                    <i className="fas fa-heading text-blue-600"></i>
+                    Menu Title
+                </h3>
+                <Input
+                    label="Business Name *"
+                    name="business_name"
+                    value={settings.business_name || ''}
+                    onChange={handleInputChange}
+                    placeholder="Enter your business name"
+                    required
+                />
+            </div>
+
             {/* Logo Section */}
             <div className="card-flat mb-6">
                 <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
@@ -95,6 +125,35 @@ const SettingsPage = () => {
                         <span>Uploading...</span>
                     </div>
                 )}
+            </div>
+
+            {/* Language Settings */}
+            <div className="card-flat mb-6">
+                <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
+                    <i className="fas fa-language text-blue-600"></i>
+                    Language Settings
+                </h3>
+                <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Default Language *
+                    </label>
+                    <select
+                        name="default_language"
+                        value={settings.default_language || 'en'}
+                        onChange={handleInputChange}
+                        className="input"
+                        required
+                    >
+                        {languages.map((lang) => (
+                            <option key={lang.code} value={lang.code}>
+                                {lang.label}
+                            </option>
+                        ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                        This will be the default language shown when visitors first open your menu.
+                    </p>
+                </div>
             </div>
 
             {/* Business Information */}
