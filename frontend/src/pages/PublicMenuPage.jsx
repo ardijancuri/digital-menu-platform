@@ -64,9 +64,11 @@ const PublicMenuPage = () => {
     const fetchMenu = async () => {
         try {
             const response = await publicAPI.getMenu(slug);
-            setMenu(response.data.menu);
-            // Categories closed by default
-            setExpandedCategories(new Set());
+            const fetchedMenu = response.data.menu;
+            setMenu(fetchedMenu);
+            // Default to first category open if it exists
+            const firstCategoryId = fetchedMenu?.categories?.[0]?.id;
+            setExpandedCategories(firstCategoryId ? new Set([firstCategoryId]) : new Set());
         } catch (err) {
             setError('Menu not found');
         } finally {
@@ -201,14 +203,16 @@ const PublicMenuPage = () => {
                                         {category.name}
                                     </h2>
                                     <span
-                                        className="text-sm font-medium px-2.5 py-1 rounded-full flex items-center gap-1.5"
+                                        className="text-sm font-medium px-2.5 py-2 rounded-full flex items-center"
                                         style={{
                                             backgroundColor: theme.accent_color || '#f3f4f6',
                                             color: theme.category_icon_color || '#374151'
                                         }}
+                                        aria-label={isExpanded ? 'Hide category' : 'See category items'}
+                                        title={isExpanded ? 'Hide category' : 'See category items'}
                                     >
-                                        {isExpanded ? 'Hide' : 'See All'}
                                         <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-base`}></i>
+                                        <span className="sr-only">{isExpanded ? 'Hide' : 'See All'}</span>
                                     </span>
                                 </div>
 
