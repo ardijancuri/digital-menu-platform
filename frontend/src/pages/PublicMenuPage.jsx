@@ -228,7 +228,17 @@ const PublicMenuPage = () => {
                                 >
                                     {menu.business_name}
                                 </h1>
-
+                                {menu.description && (
+                                    <p
+                                        className="text-sm leading-tight"
+                                        style={{
+                                            color: theme.description_text_color || theme.text_color || '#6b7280',
+                                            fontFamily: theme.description_font
+                                        }}
+                                    >
+                                        {menu.description}
+                                    </p>
+                                )}
                             </div>
                         </div>
 
