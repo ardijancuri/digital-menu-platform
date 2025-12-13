@@ -626,11 +626,11 @@ const PublicMenuPage = () => {
                         </div>
 
                         {/* Product Details */}
-                        <div className="px-1 pb-2 space-y-1">
+                        <div className="px-1 pb-2">
                             {/* First Row: Title and Price */}
                             <div className="flex items-center justify-between gap-4">
                                 <h2
-                                    className="text-2xl font-bold flex-1"
+                                    className="text-xl font-bold flex-1"
                                     style={{
                                         color: theme.primary_color,
                                         fontFamily: theme.product_name_font
