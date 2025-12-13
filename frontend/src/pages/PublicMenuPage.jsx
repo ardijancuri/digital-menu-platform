@@ -570,12 +570,12 @@ const PublicMenuPage = () => {
             <footer className="mt-10 px-5 pb-8 text-center text-sm text-gray-500">
                 <span className="text-black">Developed by </span>
                 <a
-                    href="https://oninova.net"
+                    href="https://onipos.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="font-semibold text-black hover:underline"
                 >
-                    ONINOVA
+                    ONIPOS
                 </a>
             </footer>
 
