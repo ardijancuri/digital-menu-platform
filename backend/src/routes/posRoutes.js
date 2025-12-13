@@ -8,6 +8,7 @@ import {
     getStaff,
     createStaff,
     loginStaff,
+    verifyStaffPin,
     deleteStaff,
     createOrder,
     addItemsToOrder,
@@ -30,6 +31,7 @@ router.delete('/tables/:id', deleteTable);
 router.get('/staff', getStaff);
 router.post('/staff', createStaff);
 router.post('/staff/login', loginStaff);
+router.post('/staff/verify-pin', verifyStaffPin);
 router.delete('/staff/:id', deleteStaff);
 
 // Orders

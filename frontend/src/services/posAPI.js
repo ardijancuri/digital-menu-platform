@@ -26,6 +26,7 @@ export const posAPI = {
     getStaff: () => api.get('/pos/staff'),
     createStaff: (data) => api.post('/pos/staff', data),
     loginStaff: (pin_code) => api.post('/pos/staff/login', { pin_code }),
+    verifyStaffPin: (staff_id, pin_code) => api.post('/pos/staff/verify-pin', { staff_id, pin_code }),
     deleteStaff: (id) => api.delete(`/pos/staff/${id}`),
 
     // Orders

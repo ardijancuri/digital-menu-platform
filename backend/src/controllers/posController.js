@@ -168,6 +168,46 @@ export const loginStaff = async (req, res) => {
     }
 };
 
+export const verifyStaffPin = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { staff_id, pin_code } = req.body;
+
+        if (!staff_id || !pin_code) {
+            return res.status(400).json({ success: false, message: 'Staff ID and PIN are required' });
+        }
+
+        // Get the staff member
+        const staffResult = await pool.query(
+            'SELECT * FROM staff WHERE id = $1 AND user_id = $2',
+            [staff_id, userId]
+        );
+
+        if (staffResult.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Staff member not found' });
+        }
+
+        const staff = staffResult.rows[0];
+        const match = await bcrypt.compare(pin_code, staff.pin_code);
+
+        if (match) {
+            res.json({
+                success: true,
+                staff: {
+                    id: staff.id,
+                    name: staff.name,
+                    role: staff.role
+                }
+            });
+        } else {
+            res.status(401).json({ success: false, message: 'Invalid PIN' });
+        }
+    } catch (error) {
+        console.error('Error verifying staff PIN:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
 export const deleteStaff = async (req, res) => {
     try {
         const userId = req.user.id;

@@ -61,6 +61,11 @@ const OrderHistory = () => {
         }
     };
 
+    const handlePrintReceipt = (order) => {
+        setSelectedOrder(order);
+        setShowReceipt(true);
+    };
+
     return (
         <div>
             <div className="mb-4 flex flex-col gap-3">
@@ -237,32 +242,41 @@ const OrderHistory = () => {
                                 </div>
                             </div>
 
-                            {(filter === 'active' || filter === 'ready') && (
-                                <div className="flex flex-col gap-2">
-                                    {order.status === 'preparing' && (
+                            <div className="flex flex-col gap-2">
+                                {(filter === 'active' || filter === 'ready') && (
+                                    <>
+                                        {order.status === 'preparing' && (
+                                            <button
+                                                onClick={() => handleStatusUpdate(order.id, 'ready')}
+                                                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                                            >
+                                                Mark Ready
+                                            </button>
+                                        )}
+                                        {order.status === 'ready' && (
+                                            <button
+                                                onClick={() => handleStatusUpdate(order.id, 'completed')}
+                                                className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900"
+                                            >
+                                                Complete Order
+                                            </button>
+                                        )}
                                         <button
-                                            onClick={() => handleStatusUpdate(order.id, 'ready')}
-                                            className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                                            onClick={() => handleStatusUpdate(order.id, 'cancelled')}
+                                            className="w-full px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50"
                                         >
-                                            Mark Ready
+                                            Cancel
                                         </button>
-                                    )}
-                                    {order.status === 'ready' && (
-                                        <button
-                                            onClick={() => handleStatusUpdate(order.id, 'completed')}
-                                            className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900"
-                                        >
-                                            Complete Order
-                                        </button>
-                                    )}
-                                    <button
-                                        onClick={() => handleStatusUpdate(order.id, 'cancelled')}
-                                        className="w-full px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50"
-                                    >
-                                        Cancel
-                                    </button>
-                                </div>
-                            )}
+                                    </>
+                                )}
+                                <button
+                                    onClick={() => handlePrintReceipt(order)}
+                                    className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
+                                >
+                                    <i className="fas fa-print"></i>
+                                    Print Receipt
+                                </button>
+                            </div>
                         </div>
                     ))}
                     {orders.length === 0 && (
@@ -279,7 +293,14 @@ const OrderHistory = () => {
                     order={selectedOrder}
                     businessName={user?.business_name || 'Restaurant'}
                     onClose={() => {
-                        handleCompleteOrder();
+                        // If order is being completed, handle completion
+                        if (selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled') {
+                            handleCompleteOrder();
+                        } else {
+                            // Just close the receipt for already completed/cancelled orders
+                            setShowReceipt(false);
+                            setSelectedOrder(null);
+                        }
                     }}
                 />
             )}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
 import { userAPI } from '../../services/api';
+import PinModal from '../../components/PinModal';
 
 const OrderTaking = () => {
     const [categories, setCategories] = useState([]);
@@ -16,6 +17,9 @@ const OrderTaking = () => {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [step, setStep] = useState(1); // 1 = Select Table, 2 = Select Staff, 3 = Select Products
+    const [isPinModalOpen, setIsPinModalOpen] = useState(false);
+    const [pendingStaffId, setPendingStaffId] = useState(null);
+    const [pinError, setPinError] = useState('');
 
     useEffect(() => {
         fetchData();
@@ -146,8 +150,35 @@ const OrderTaking = () => {
     };
 
     const handleStaffSelect = (staffId) => {
-        setSelectedStaff(staffId);
-        setStep(3); // Go to product selection
+        // Open PIN modal for staff verification
+        setPendingStaffId(staffId);
+        setIsPinModalOpen(true);
+        setPinError('');
+    };
+
+    const handlePinConfirm = async (pin) => {
+        try {
+            setPinError('');
+            const response = await posAPI.verifyStaffPin(pendingStaffId, pin);
+            
+            if (response.data.success) {
+                setSelectedStaff(pendingStaffId);
+                setIsPinModalOpen(false);
+                setPendingStaffId(null);
+                setStep(3); // Go to product selection
+            } else {
+                setPinError('Invalid PIN. Please try again.');
+            }
+        } catch (error) {
+            console.error('Error verifying PIN:', error);
+            setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
+        }
+    };
+
+    const handlePinModalClose = () => {
+        setIsPinModalOpen(false);
+        setPendingStaffId(null);
+        setPinError('');
     };
 
     const handleBackToStaff = () => {
@@ -172,6 +203,7 @@ const OrderTaking = () => {
     // Step 1: Table Selection
     if (step === 1) {
         return (
+            <>
             <div className="max-w-6xl mx-auto px-4">
                 <div className="mb-6">
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Table or Order Type</h2>
@@ -238,12 +270,21 @@ const OrderTaking = () => {
                     </div>
                 )}
             </div>
+            <PinModal
+                isOpen={isPinModalOpen}
+                onClose={handlePinModalClose}
+                onConfirm={handlePinConfirm}
+                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
+                error={pinError}
+            />
+            </>
         );
     }
 
     // Step 2: Staff Selection
     if (step === 2) {
         return (
+            <>
             <div className="max-w-6xl mx-auto px-4">
                 <div className="mb-6">
                     <button
@@ -278,30 +319,22 @@ const OrderTaking = () => {
                     ))}
                 </div>
 
-                {/* Skip Staff Assignment */}
-                <div className="text-center">
-                    <button
-                        onClick={() => handleStaffSelect('')}
-                        className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-medium"
-                    >
-                        <i className="fas fa-forward mr-2"></i>
-                        Skip - No Staff Assignment
-                    </button>
-                </div>
-
                 {staffList.length === 0 && (
                     <div className="text-center py-12 text-gray-500">
                         <i className="fas fa-users text-4xl mb-3"></i>
-                        <p>No staff members available. Add staff in Staff Management.</p>
-                        <button
-                            onClick={() => handleStaffSelect('')}
-                            className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-medium"
-                        >
-                            Continue Without Staff
-                        </button>
+                        <p className="text-lg font-semibold mb-2">No staff members available.</p>
+                        <p>You must add at least one staff member in Staff Management to create an order.</p>
                     </div>
                 )}
             </div>
+            <PinModal
+                isOpen={isPinModalOpen}
+                onClose={handlePinModalClose}
+                onConfirm={handlePinConfirm}
+                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
+                error={pinError}
+            />
+            </>
         );
     }
 
@@ -462,6 +495,13 @@ const OrderTaking = () => {
                     </button>
                 </div>
             </div>
+            <PinModal
+                isOpen={isPinModalOpen}
+                onClose={handlePinModalClose}
+                onConfirm={handlePinConfirm}
+                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
+                error={pinError}
+            />
         </div>
     );
 };
