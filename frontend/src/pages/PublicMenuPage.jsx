@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicAPI } from '../services/api';
+import Modal from '../components/Modal';
+import RightUpArrowIcon from '../assets/right up arrow.svg';
 
 const PublicMenuPage = () => {
     const { slug } = useParams();
@@ -22,6 +24,8 @@ const PublicMenuPage = () => {
     ];
     const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
     const languageMenuRef = useRef(null);
+    const [selectedProduct, setSelectedProduct] = useState(null);
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     useEffect(() => {
         fetchMenu();
@@ -181,6 +185,24 @@ const PublicMenuPage = () => {
             // Base field is likely English (different from Macedonian or no Macedonian exists)
             return entity?.[field] || '';
         }
+        
+        return '';
+    };
+
+    const getProductDescription = (product) => {
+        if (!product) return '';
+        
+        // Try localized description first
+        const localized = getLocalizedText(product, 'description');
+        if (localized) return localized;
+        
+        // Fallback to direct field access
+        if (product.description) return product.description;
+        if (product[`description_${language}`]) return product[`description_${language}`];
+        if (product.description_en) return product.description_en;
+        if (product.description_mk) return product.description_mk;
+        if (product.description_sq) return product.description_sq;
+        if (product.description_tr) return product.description_tr;
         
         return '';
     };
@@ -478,18 +500,18 @@ const PublicMenuPage = () => {
                                                 </div>
 
                                                 {/* Content */}
-                                                <div className="px-4 py-2 flex flex-col flex-1">
-                                                    <h3
-                                                        className="font-bold text-base mb-1 leading-tight line-clamp-2"
-                                                        style={{
-                                                            color: theme.product_name_color || theme.product_name_font,
-                                                            fontFamily: theme.product_name_font
-                                                        }}
-                                                    >
-                                                        {getLocalizedText(item, 'name')}
-                                                    </h3>
-
-                                                    <div className="mt-auto flex items-center justify-between">
+                                                <div className="px-4 py-2 flex items-center gap-3 flex-1">
+                                                    {/* Left Column: Title and Price */}
+                                                    <div className="flex-1 flex flex-col justify-center min-w-0">
+                                                        <h3
+                                                            className="font-bold text-base leading-tight line-clamp-2"
+                                                            style={{
+                                                                color: theme.product_name_color || theme.product_name_font,
+                                                                fontFamily: theme.product_name_font
+                                                            }}
+                                                        >
+                                                            {getLocalizedText(item, 'name')}
+                                                        </h3>
                                                         <span
                                                             className="font-bold text-lg"
                                                             style={{
@@ -499,6 +521,30 @@ const PublicMenuPage = () => {
                                                         >
                                                             {`${Math.round(parseFloat(item.price))} MKD`}
                                                         </span>
+                                                    </div>
+
+                                                    {/* Right Column: Button */}
+                                                    <div className="flex-shrink-0 flex items-center">
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedProduct(item);
+                                                                setIsProductModalOpen(true);
+                                                            }}
+                                                            className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 focus:outline-none"
+                                                            style={{
+                                                                backgroundColor: theme.primary_color || '#1f2937',
+                                                                color: '#ffffff'
+                                                            }}
+                                                            aria-label="View product details"
+                                                        >
+                                                            <img 
+                                                                src={RightUpArrowIcon} 
+                                                                alt="View details" 
+                                                                className="w-3.5 h-3.5"
+                                                                style={{ filter: 'brightness(0) invert(1)' }}
+                                                            />
+                                                        </button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -532,6 +578,93 @@ const PublicMenuPage = () => {
                     ONINOVA
                 </a>
             </footer>
+
+            {/* Product Modal */}
+            <Modal
+                isOpen={isProductModalOpen}
+                onClose={() => {
+                    setIsProductModalOpen(false);
+                    setSelectedProduct(null);
+                }}
+                title=""
+            >
+                {selectedProduct && (
+                    <div style={{ backgroundColor: theme.background_color }}>
+                        {/* Product Image */}
+                        <div className="mb-4">
+                            {selectedProduct.images && selectedProduct.images.length > 0 ? (
+                                selectedProduct.images.length > 1 ? (
+                                    <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100">
+                                        <div className="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar">
+                                            {selectedProduct.images.map((img, idx) => (
+                                                <img
+                                                    key={idx}
+                                                    src={img}
+                                                    alt={`${getLocalizedText(selectedProduct, 'name')} ${idx + 1}`}
+                                                    className="snap-center min-w-full h-full object-cover"
+                                                />
+                                            ))}
+                                        </div>
+                                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
+                                            {selectedProduct.images.map((_, idx) => (
+                                                <div key={idx} className="w-2 h-2 rounded-full bg-white opacity-75 shadow-sm" />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <img
+                                        src={selectedProduct.images[0]}
+                                        alt={getLocalizedText(selectedProduct, 'name')}
+                                        className="w-full aspect-[4/3] object-cover rounded-3xl"
+                                    />
+                                )
+                            ) : (
+                                <div className="w-full aspect-[4/3] flex items-center justify-center bg-gray-100 rounded-3xl">
+                                    <i className="fas fa-utensils text-4xl text-gray-300 opacity-50"></i>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Product Details */}
+                        <div className="px-1 pb-2 space-y-1">
+                            {/* First Row: Title and Price */}
+                            <div className="flex items-center justify-between gap-4">
+                                <h2
+                                    className="text-2xl font-bold flex-1"
+                                    style={{
+                                        color: theme.primary_color,
+                                        fontFamily: theme.product_name_font
+                                    }}
+                                >
+                                    {getLocalizedText(selectedProduct, 'name')}
+                                </h2>
+                                <span
+                                    className="text-2xl font-bold flex-shrink-0"
+                                    style={{
+                                        color: theme.price_color,
+                                        fontFamily: theme.product_name_font
+                                    }}
+                                >
+                                    {`${Math.round(parseFloat(selectedProduct.price))} MKD`}
+                                </span>
+                            </div>
+
+                            {/* Second Row: Description (Full Width) */}
+                            {getProductDescription(selectedProduct) && (
+                                <p
+                                    className="text-sm leading-relaxed w-full"
+                                    style={{
+                                        color: theme.description_text_color || theme.text_color || '#6b7280',
+                                        fontFamily: theme.description_font
+                                    }}
+                                >
+                                    {getProductDescription(selectedProduct)}
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 };
