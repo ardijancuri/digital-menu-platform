@@ -269,13 +269,15 @@ const OrderHistory = () => {
                                         </button>
                                     </>
                                 )}
-                                <button
-                                    onClick={() => handlePrintReceipt(order)}
-                                    className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                                >
-                                    <i className="fas fa-print"></i>
-                                    Print Receipt
-                                </button>
+                                {filter === 'history' && (
+                                    <button
+                                        onClick={() => handlePrintReceipt(order)}
+                                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
+                                    >
+                                        <i className="fas fa-print"></i>
+                                        Print Receipt
+                                    </button>
+                                )}
                             </div>
                         </div>
                     ))}
