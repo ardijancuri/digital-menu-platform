@@ -20,6 +20,7 @@ const CategoriesPage = () => {
     const [loading, setLoading] = useState(true);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
+    const [selectedLang, setSelectedLang] = useState('en');
     const [formData, setFormData] = useState({
         position: 0,
         translations: emptyTranslations,
@@ -46,11 +47,13 @@ const CategoriesPage = () => {
             position: categories.length,
             translations: emptyTranslations,
         });
+        setSelectedLang('en');
         setIsModalOpen(true);
     };
 
     const handleEdit = (category) => {
         setEditingCategory(category);
+        setSelectedLang('en');
         setFormData({
             position: category.position,
             translations: languages.reduce((acc, lang) => {
@@ -178,20 +181,35 @@ const CategoriesPage = () => {
             >
                 <form onSubmit={handleSubmit}>
                     <div className="grid gap-3">
-                        {languages.map((lang) => (
+                        {/* Category Name with Language Selector */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Category Name</label>
+                                <select
+                                    value={selectedLang}
+                                    onChange={(e) => setSelectedLang(e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {languages.map((lang) => (
+                                        <option key={lang.code} value={lang.code}>
+                                            {lang.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedLang === 'en' && <span className="text-red-500">*</span>}
+                            </div>
                             <Input
-                                key={lang.code}
-                                label={`Category Name (${lang.label})${lang.code === 'en' ? ' *' : ''}`}
-                                value={formData.translations[lang.code]}
+                                value={formData.translations[selectedLang] || ''}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
-                                        translations: { ...prev.translations, [lang.code]: e.target.value },
+                                        translations: { ...prev.translations, [selectedLang]: e.target.value },
                                     }))
                                 }
-                                required={lang.code === 'en'}
+                                required={selectedLang === 'en'}
+                                placeholder={`Enter category name in ${languages.find(l => l.code === selectedLang)?.label}`}
                             />
-                        ))}
+                        </div>
                     </div>
                     <Input
                         label="Position"

@@ -1,5 +1,7 @@
-const Modal = ({ isOpen, onClose, title, children }) => {
+const Modal = ({ isOpen, onClose, title, children, rounded = 'xl' }) => {
     if (!isOpen) return null;
+
+    const roundedClass = rounded === 'large' ? 'rounded-[2.5rem]' : rounded === 'xl' ? 'rounded-xl' : 'rounded-lg';
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -11,7 +13,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
                 ></div>
 
                 {/* Modal */}
-                <div className="inline-block align-bottom bg-white rounded-[2.5rem] text-left overflow-hidden shadow-xl transform transition-all w-full max-w-xs sm:my-8 sm:align-middle sm:max-w-sm">
+                <div className={`inline-block align-bottom bg-white ${roundedClass} text-left overflow-hidden shadow-xl transform transition-all w-full max-w-xs sm:my-8 sm:align-middle sm:max-w-2xl`}>
                     <div className="bg-white px-4 pt-4 pb-4 sm:p-5 sm:pb-4 relative">
                         {title && (
                             <div className="mb-4">

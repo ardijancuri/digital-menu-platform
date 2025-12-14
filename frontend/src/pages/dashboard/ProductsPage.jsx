@@ -30,6 +30,9 @@ const ProductsPage = () => {
         translations: emptyTranslations,
     });
     const [imageFile, setImageFile] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
+    const [selectedNameLang, setSelectedNameLang] = useState('en');
+    const [selectedDescLang, setSelectedDescLang] = useState('en');
 
     useEffect(() => {
         fetchData();
@@ -58,6 +61,9 @@ const ProductsPage = () => {
             translations: emptyTranslations,
         });
         setImageFile(null);
+        setImagePreview(null);
+        setSelectedNameLang('en');
+        setSelectedDescLang('en');
         setIsModalOpen(true);
     };
 
@@ -123,9 +129,18 @@ const ProductsPage = () => {
                 itemId = response.data.item.id;
             }
 
-            // Upload image if provided
+            // Upload image if provided (replace existing if any)
             if (imageFile) {
                 setUploadingImage(true);
+                // If editing and there's an existing image, delete it first
+                if (editingItem && editingItem.images && editingItem.images.length > 0) {
+                    try {
+                        await userAPI.deleteItemImage(editingItem.id, editingItem.images[0]);
+                    } catch (err) {
+                        console.error('Failed to delete old image:', err);
+                        // Continue with upload even if delete fails
+                    }
+                }
                 await userAPI.uploadItemImage(imageFile, itemId);
             }
 
@@ -260,8 +275,8 @@ const ProductsPage = () => {
                 title={editingItem ? 'Edit Menu Item' : 'New Menu Item'}
             >
                 <form onSubmit={handleSubmit}>
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div>
+                    <div className="grid md:grid-cols-2 gap-4 items-end">
+                        <div className="flex flex-col mb-4">
                             <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
                             <select
                                 value={formData.category_id}
@@ -275,39 +290,68 @@ const ProductsPage = () => {
                             </select>
                         </div>
 
-                        {languages.map((lang) => (
+                        {/* Item Name with Language Selector */}
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Item Name</label>
+                                <select
+                                    value={selectedNameLang}
+                                    onChange={(e) => setSelectedNameLang(e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {languages.map((lang) => (
+                                        <option key={lang.code} value={lang.code}>
+                                            {lang.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedNameLang === 'en' && <span className="text-red-500">*</span>}
+                            </div>
                             <Input
-                                key={`name-${lang.code}`}
-                                label={`Item Name (${lang.label})${lang.code === 'en' ? ' *' : ''}`}
-                                value={formData.translations[lang.code]?.name}
+                                value={formData.translations[selectedNameLang]?.name || ''}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
                                         translations: {
                                             ...prev.translations,
-                                            [lang.code]: {
-                                                ...prev.translations[lang.code],
+                                            [selectedNameLang]: {
+                                                ...prev.translations[selectedNameLang] || {},
                                                 name: e.target.value,
                                             },
                                         },
                                     }))
                                 }
-                                required={lang.code === 'en'}
+                                required={selectedNameLang === 'en'}
+                                placeholder={`Enter item name in ${languages.find(l => l.code === selectedNameLang)?.label}`}
                             />
-                        ))}
+                        </div>
 
-                        {languages.map((lang) => (
+                        {/* Description with Language Selector */}
+                        <div className="flex flex-col">
+                            <div className="flex items-center gap-2 mb-2">
+                                <label className="block text-sm font-medium text-gray-700">Description</label>
+                                <select
+                                    value={selectedDescLang}
+                                    onChange={(e) => setSelectedDescLang(e.target.value)}
+                                    className="text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    {languages.map((lang) => (
+                                        <option key={lang.code} value={lang.code}>
+                                            {lang.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {selectedDescLang !== 'en' && <span className="text-xs text-gray-500">(optional)</span>}
+                            </div>
                             <Input
-                                key={`desc-${lang.code}`}
-                                label={`Description (${lang.label})${lang.code === 'en' ? '' : ' (optional)'}`}
-                                value={formData.translations[lang.code]?.description}
+                                value={formData.translations[selectedDescLang]?.description || ''}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
                                         translations: {
                                             ...prev.translations,
-                                            [lang.code]: {
-                                                ...prev.translations[lang.code],
+                                            [selectedDescLang]: {
+                                                ...prev.translations[selectedDescLang] || {},
                                                 description: e.target.value,
                                             },
                                         },
@@ -315,7 +359,7 @@ const ProductsPage = () => {
                                 }
                                 placeholder="Short description"
                             />
-                        ))}
+                        </div>
 
                         <Input
                             label="Price *"
@@ -327,20 +371,26 @@ const ProductsPage = () => {
                         />
 
                         <div className="md:col-span-2">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Images</label>
-                            {editingItem && editingItem.images && editingItem.images.length > 0 && (
-                                <div className="grid grid-cols-3 gap-2 mb-4">
-                                    {editingItem.images.map((img, idx) => (
-                                        <div key={idx} className="relative group">
-                                            <img src={img} alt="Product" className="w-full h-24 object-cover rounded-lg border" />
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Item Image</label>
+                            <div className="flex items-start gap-4">
+                                {/* Existing Image Preview */}
+                                {(imagePreview || editingItem?.images?.[0]) && (
+                                    <div className="relative group flex-shrink-0">
+                                        <img 
+                                            src={imagePreview || editingItem.images[0]} 
+                                            alt="Product" 
+                                            className="w-32 h-32 object-cover rounded-lg border" 
+                                        />
+                                        {editingItem?.images?.[0] && !imageFile && (
                                             <button
                                                 type="button"
                                                 onClick={async () => {
                                                     if (confirm('Remove this image?')) {
                                                         try {
-                                                            await userAPI.deleteItemImage(editingItem.id, img);
-                                                            const updatedItem = { ...editingItem, images: editingItem.images.filter(i => i !== img) };
+                                                            await userAPI.deleteItemImage(editingItem.id, editingItem.images[0]);
+                                                            const updatedItem = { ...editingItem, images: [] };
                                                             setEditingItem(updatedItem);
+                                                            setImagePreview(null);
                                                             fetchData();
                                                         } catch (err) {
                                                             alert('Failed to remove image');
@@ -351,17 +401,27 @@ const ProductsPage = () => {
                                             >
                                                 &times;
                                             </button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        )}
+                                    </div>
+                                )}
 
-                            <ImageUpload
-                                onUpload={(file) => setImageFile(file)}
-                                currentImage={null}
-                                label={editingItem && editingItem.images && editingItem.images.length > 0 ? "Add Another Image" : "Upload Image"}
-                            />
-                            {imageFile && <p className="text-xs text-green-600 mt-1">Image selected: {imageFile.name}</p>}
+                                {/* Upload Section */}
+                                <div className="flex-1">
+                                    <ImageUpload
+                                        onUpload={(file) => {
+                                            setImageFile(file);
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                setImagePreview(reader.result);
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }}
+                                        currentImage={imagePreview || editingItem?.images?.[0] || null}
+                                        label={editingItem?.images?.[0] || imagePreview ? "Replace Image" : "Upload Image"}
+                                    />
+                                    {imageFile && <p className="text-xs text-green-600 mt-1">Image selected: {imageFile.name}</p>}
+                                </div>
+                            </div>
                         </div>
                     </div>
 

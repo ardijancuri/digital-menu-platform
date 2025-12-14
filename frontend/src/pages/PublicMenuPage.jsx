@@ -439,58 +439,11 @@ const PublicMenuPage = () => {
                                                 <div className="p-2 pb-0">
                                                     <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100 group">
                                                         {item.images && item.images.length > 0 ? (
-                                                            item.images.length > 1 ? (
-                                                                <div className="w-full h-full relative group">
-                                                                    <div
-                                                                        className="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar cursor-grab active:cursor-grabbing"
-                                                                        onMouseDown={(e) => {
-                                                                            const slider = e.currentTarget;
-                                                                            slider.style.scrollSnapType = 'none'; // Disable snap while dragging
-                                                                            slider.dataset.isDown = 'true';
-                                                                            slider.dataset.startX = e.pageX; // Use global pageX
-                                                                            slider.dataset.scrollLeft = slider.scrollLeft;
-                                                                        }}
-                                                                        onMouseLeave={(e) => {
-                                                                            const slider = e.currentTarget;
-                                                                            slider.dataset.isDown = 'false';
-                                                                            slider.style.scrollSnapType = 'x mandatory'; // Re-enable snap
-                                                                        }}
-                                                                        onMouseUp={(e) => {
-                                                                            const slider = e.currentTarget;
-                                                                            slider.dataset.isDown = 'false';
-                                                                            slider.style.scrollSnapType = 'x mandatory'; // Re-enable snap
-                                                                        }}
-                                                                        onMouseMove={(e) => {
-                                                                            const slider = e.currentTarget;
-                                                                            if (slider.dataset.isDown !== 'true') return;
-                                                                            e.preventDefault();
-                                                                            const x = e.pageX;
-                                                                            const walk = (x - parseFloat(slider.dataset.startX)) * 2; // Scroll-fast
-                                                                            slider.scrollLeft = parseFloat(slider.dataset.scrollLeft) - walk;
-                                                                        }}
-                                                                    >
-                                                                        {item.images.map((img, idx) => (
-                                                                            <img
-                                                                                key={idx}
-                                                                                src={img}
-                                                                                alt={`${item.name} ${idx + 1}`}
-                                                                                className="snap-center min-w-full h-full object-cover pointer-events-none"
-                                                                            />
-                                                                        ))}
-                                                                    </div>
-                                                                    <div className="absolute bottom-1 left-0 right-0 flex justify-center gap-1.5">
-                                                                        {item.images.map((_, idx) => (
-                                                                            <div key={idx} className="w-2 h-2 rounded-full bg-white opacity-75 shadow-sm" />
-                                                                        ))}
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <img
-                                                                    src={item.images[0]}
-                                                                    alt={item.name}
-                                                                    className="w-full h-full object-cover"
-                                                                />
-                                                            )
+                                                            <img
+                                                                src={item.images[0]}
+                                                                alt={getLocalizedText(item, 'name')}
+                                                                className="w-full h-full object-cover"
+                                                            />
                                                         ) : (
                                                             <div className="w-full h-full flex items-center justify-center text-gray-300">
                                                                 <i className="fas fa-utensils text-2xl opacity-50"></i>
@@ -587,37 +540,18 @@ const PublicMenuPage = () => {
                     setSelectedProduct(null);
                 }}
                 title=""
+                rounded="large"
             >
                 {selectedProduct && (
                     <div style={{ backgroundColor: theme.background_color }}>
                         {/* Product Image */}
                         <div className="mb-4">
                             {selectedProduct.images && selectedProduct.images.length > 0 ? (
-                                selectedProduct.images.length > 1 ? (
-                                    <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden bg-gray-100">
-                                        <div className="flex overflow-x-auto snap-x snap-mandatory h-full w-full hide-scrollbar">
-                                            {selectedProduct.images.map((img, idx) => (
-                                                <img
-                                                    key={idx}
-                                                    src={img}
-                                                    alt={`${getLocalizedText(selectedProduct, 'name')} ${idx + 1}`}
-                                                    className="snap-center min-w-full h-full object-cover"
-                                                />
-                                            ))}
-                                        </div>
-                                        <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1.5">
-                                            {selectedProduct.images.map((_, idx) => (
-                                                <div key={idx} className="w-2 h-2 rounded-full bg-white opacity-75 shadow-sm" />
-                                            ))}
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <img
-                                        src={selectedProduct.images[0]}
-                                        alt={getLocalizedText(selectedProduct, 'name')}
-                                        className="w-full aspect-[4/3] object-cover rounded-3xl"
-                                    />
-                                )
+                                <img
+                                    src={selectedProduct.images[0]}
+                                    alt={getLocalizedText(selectedProduct, 'name')}
+                                    className="w-full aspect-[4/3] object-cover rounded-3xl"
+                                />
                             ) : (
                                 <div className="w-full aspect-[4/3] flex items-center justify-center bg-gray-100 rounded-3xl">
                                     <i className="fas fa-utensils text-4xl text-gray-300 opacity-50"></i>
