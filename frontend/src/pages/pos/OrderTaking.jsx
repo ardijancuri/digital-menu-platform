@@ -16,9 +16,8 @@ const OrderTaking = () => {
     const [activeOrderId, setActiveOrderId] = useState(null); // Track existing order ID for occupied tables
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
-    const [step, setStep] = useState(1); // 1 = Select Table, 2 = Select Staff, 3 = Select Products
+    const [step, setStep] = useState(1); // 1 = Select Table, 3 = Select Products
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
-    const [pendingStaffId, setPendingStaffId] = useState(null);
     const [pinError, setPinError] = useState('');
 
     useEffect(() => {
@@ -114,7 +113,7 @@ const OrderTaking = () => {
     const handleTableSelect = async (tableId) => {
         setSelectedTable(tableId);
 
-        // If table is occupied, skip staff selection and go directly to products
+        // If table is occupied, skip PIN and go directly to products
         const table = tables.find(t => t.id === tableId);
         if (table && table.status === 'occupied') {
             // Use the existing staff from the active order
@@ -145,27 +144,22 @@ const OrderTaking = () => {
             setStep(3); // Go directly to product selection
         } else {
             setActiveOrderId(null); // Reset for new orders
-            setStep(2); // Go to staff selection for new orders
+            // Open PIN modal directly to find staff by PIN
+            setIsPinModalOpen(true);
+            setPinError('');
         }
-    };
-
-    const handleStaffSelect = (staffId) => {
-        // Open PIN modal for staff verification
-        setPendingStaffId(staffId);
-        setIsPinModalOpen(true);
-        setPinError('');
     };
 
     const handlePinConfirm = async (pin) => {
         try {
             setPinError('');
-            const response = await posAPI.verifyStaffPin(pendingStaffId, pin);
+            // Use loginStaff which finds staff member by PIN
+            const response = await posAPI.loginStaff(pin);
             
-            if (response.data.success) {
-                setSelectedStaff(pendingStaffId);
+            if (response.data.success && response.data.staff) {
+                setSelectedStaff(response.data.staff.id);
                 setIsPinModalOpen(false);
-                setPendingStaffId(null);
-                setStep(3); // Go to product selection
+                setStep(3); // Go directly to product selection
             } else {
                 setPinError('Invalid PIN. Please try again.');
             }
@@ -177,13 +171,11 @@ const OrderTaking = () => {
 
     const handlePinModalClose = () => {
         setIsPinModalOpen(false);
-        setPendingStaffId(null);
         setPinError('');
+        // Reset table selection if PIN modal is closed
+        setSelectedTable(null);
     };
 
-    const handleBackToStaff = () => {
-        setStep(2);
-    };
 
     const handleBackToTables = async () => {
         setStep(1);
@@ -274,69 +266,13 @@ const OrderTaking = () => {
                 isOpen={isPinModalOpen}
                 onClose={handlePinModalClose}
                 onConfirm={handlePinConfirm}
-                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
+                staffName=""
                 error={pinError}
             />
             </>
         );
     }
 
-    // Step 2: Staff Selection
-    if (step === 2) {
-        return (
-            <>
-            <div className="max-w-6xl mx-auto px-4">
-                <div className="mb-6">
-                    <button
-                        onClick={handleBackToTables}
-                        className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium mb-4"
-                    >
-                        <i className="fas fa-arrow-left"></i>
-                        Back to Tables
-                    </button>
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Staff Member</h2>
-                    <p className="text-gray-600">
-                        {selectedTable === 'to-go' ? 'Assign staff to this To Go order' : `Assign staff to ${tables.find(t => t.id === selectedTable)?.name || 'this table'}`}
-                    </p>
-                </div>
-
-                {/* Staff Grid - Touch Friendly */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
-                    {staffList.map(staff => (
-                        <button
-                            key={staff.id}
-                            onClick={() => handleStaffSelect(staff.id)}
-                            className="p-4 bg-white border-2 border-gray-200 rounded-xl shadow-md hover:shadow-xl hover:border-blue-500 transition-all group"
-                        >
-                            <div className="text-center">
-                                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:bg-blue-500 transition-colors">
-                                    <i className="fas fa-user text-xl text-blue-600 group-hover:text-white"></i>
-                                </div>
-                                <div className="font-bold text-gray-800 text-base mb-1">{staff.name}</div>
-                                <div className="text-xs text-gray-500 capitalize">{staff.role}</div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-
-                {staffList.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        <i className="fas fa-users text-4xl mb-3"></i>
-                        <p className="text-lg font-semibold mb-2">No staff members available.</p>
-                        <p>You must add at least one staff member in Staff Management to create an order.</p>
-                    </div>
-                )}
-            </div>
-            <PinModal
-                isOpen={isPinModalOpen}
-                onClose={handlePinModalClose}
-                onConfirm={handlePinConfirm}
-                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
-                error={pinError}
-            />
-            </>
-        );
-    }
 
     // Step 3: Product Selection
     return (
@@ -347,11 +283,11 @@ const OrderTaking = () => {
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                     <div className="flex items-center justify-between mb-3">
                         <button
-                            onClick={handleBackToStaff}
+                            onClick={handleBackToTables}
                             className="flex items-center gap-2 text-gray-600 hover:text-gray-800 font-medium"
                         >
                             <i className="fas fa-arrow-left"></i>
-                            <span className="hidden sm:inline">Back to Staff</span>
+                            <span className="hidden sm:inline">Back to Tables</span>
                         </button>
                         <div className="text-sm font-medium text-gray-700">
                             {selectedTable === 'to-go' ? (
@@ -499,7 +435,7 @@ const OrderTaking = () => {
                 isOpen={isPinModalOpen}
                 onClose={handlePinModalClose}
                 onConfirm={handlePinConfirm}
-                staffName={pendingStaffId ? staffList.find(s => s.id === pendingStaffId)?.name || '' : ''}
+                staffName=""
                 error={pinError}
             />
         </div>

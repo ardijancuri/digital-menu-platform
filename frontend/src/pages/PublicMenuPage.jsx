@@ -17,7 +17,7 @@ const PublicMenuPage = () => {
     const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const [language, setLanguage] = useState('en');
     const languages = [
-        { code: 'en', label: 'English (US)', flagUrl: 'https://flagcdn.com/us.svg' },
+        { code: 'en', label: 'English (UK)', flagUrl: 'https://flagcdn.com/gb.svg' },
         { code: 'mk', label: 'Macedonian', flagUrl: 'https://flagcdn.com/mk.svg' },
         { code: 'sq', label: 'Albanian', flagUrl: 'https://flagcdn.com/al.svg' },
         { code: 'tr', label: 'Turkish', flagUrl: 'https://flagcdn.com/tr.svg' }
