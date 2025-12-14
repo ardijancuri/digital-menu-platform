@@ -12,14 +12,24 @@ const ImageUpload = ({ onUpload, currentImage, label = 'Upload Image' }) => {
     };
 
     const processFile = (file) => {
-        if (!file.type.startsWith('image/')) {
+        if (!file || !file.type.startsWith('image/')) {
             alert('Please upload an image file');
+            return;
+        }
+
+        // Check file size (2MB max)
+        const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+        if (file.size > maxSize) {
+            alert('Image size must be less than 2MB. Please choose a smaller image.');
             return;
         }
 
         const reader = new FileReader();
         reader.onloadend = () => {
             setPreview(reader.result);
+        };
+        reader.onerror = () => {
+            alert('Failed to read image file. Please try again.');
         };
         reader.readAsDataURL(file);
 
@@ -33,6 +43,8 @@ const ImageUpload = ({ onUpload, currentImage, label = 'Upload Image' }) => {
         const file = e.dataTransfer.files[0];
         if (file) {
             processFile(file);
+        } else {
+            alert('No file dropped. Please try again.');
         }
     };
 
@@ -81,7 +93,7 @@ const ImageUpload = ({ onUpload, currentImage, label = 'Upload Image' }) => {
                         <p className="text-sm text-gray-600">
                             <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 5MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
                     </div>
                 )}
                 <input

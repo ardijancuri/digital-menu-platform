@@ -312,7 +312,7 @@ const PreviewPage = () => {
 
                             {activeTab === 'banners' && (
                                 <div className="space-y-4">
-                                    <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Carousel Images (Max 5)</h4>
+                                    <h4 className="text-xs font-bold text-gray-700 mb-2 uppercase tracking-wide">Carousel Images (Max 3)</h4>
 
                                     {/* Existing Banners */}
                                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
@@ -349,7 +349,7 @@ const PreviewPage = () => {
                                     </div>
 
                                     {/* Upload New Banner */}
-                                    {(!settings?.banner_images || settings.banner_images.length < 5) && (
+                                    {(!settings?.banner_images || settings.banner_images.length < 3) && (
                                         <label className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-blue-500 transition-colors bg-gray-50 cursor-pointer flex flex-col items-center justify-center gap-1">
                                             <input
                                                 type="file"
@@ -358,6 +358,21 @@ const PreviewPage = () => {
                                                 onChange={async (e) => {
                                                     const file = e.target.files[0];
                                                     if (!file) return;
+
+                                                    // Check file type
+                                                    if (!file.type.startsWith('image/')) {
+                                                        alert('Please upload an image file');
+                                                        e.target.value = ''; // Reset input
+                                                        return;
+                                                    }
+
+                                                    // Check file size (2MB max)
+                                                    const maxSize = 2 * 1024 * 1024; // 2MB in bytes
+                                                    if (file.size > maxSize) {
+                                                        alert('Image size must be less than 2MB. Please choose a smaller image.');
+                                                        e.target.value = ''; // Reset input
+                                                        return;
+                                                    }
 
                                                     setSaving(true);
                                                     try {
@@ -384,10 +399,10 @@ const PreviewPage = () => {
                                         </label>
                                     )}
 
-                                    {settings?.banner_images?.length >= 5 && (
+                                    {settings?.banner_images?.length >= 3 && (
                                         <div className="bg-yellow-50 text-yellow-800 text-xs p-3 rounded-lg border border-yellow-200">
                                             <i className="fas fa-info-circle mr-1"></i>
-                                            Maximum of 5 banner images reached.
+                                            Maximum of 3 banner images reached.
                                         </div>
                                     )}
                                 </div>

@@ -414,6 +414,9 @@ const ProductsPage = () => {
                                             reader.onloadend = () => {
                                                 setImagePreview(reader.result);
                                             };
+                                            reader.onerror = () => {
+                                                alert('Failed to read image file. Please try again.');
+                                            };
                                             reader.readAsDataURL(file);
                                         }}
                                         currentImage={imagePreview || editingItem?.images?.[0] || null}
