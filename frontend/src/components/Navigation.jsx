@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 const Navigation = () => {
     return (
         <nav className="navbar">
-            <div className="container" style={{ padding: '1.5rem 2rem' }}>
+            <div className="container" style={{ padding: '0.5rem 2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
                         <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
