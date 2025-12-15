@@ -7,9 +7,9 @@ const Navigation = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', textDecoration: 'none' }}>
                         <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-                            M
+                            OP
                         </div>
-                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>MenuPlatform</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000' }}>ONIPOS</span>
                     </Link>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <Link to="/login" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem', fontWeight: '500' }}>
