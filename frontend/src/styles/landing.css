@@ -330,7 +330,7 @@ button {
 
 /* Spacing utilities */
 .section-padding {
-    padding: clamp(4rem, 10vw, 8rem) 0;
+    padding: clamp(3rem, 5vw, 5rem) 0;
 }
 
 .container {
@@ -363,7 +363,7 @@ img {
 }
 
 .carousel-header {
-    margin-bottom: 3rem;
+    margin-bottom: 1rem;
     text-align: center;
     max-width: 800px;
     margin-left: auto;

@@ -116,7 +116,7 @@ const LandingFeaturesCarousel = ({ title, subtitle, features, align = 'left', fu
                         marginLeft: align === 'center' ? 'auto' : '0',
                         marginRight: align === 'center' ? 'auto' : '0',
                         maxWidth: '600px',
-                        marginBottom: '4rem'
+                        marginBottom: '1rem'
                     }}
                 >
                     {title && <div className="accent-line animate-slide-in-left" style={{ margin: align === 'center' ? '0 auto 1rem auto' : '0 0 1rem 0' }}></div>}

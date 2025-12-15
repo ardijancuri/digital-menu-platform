@@ -16,13 +16,13 @@ const PricingPage = () => {
 
             <section style={{ padding: '2rem 0 6rem' }}>
                 <div className="container">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
                         <div className="feature-card" style={{ padding: '3rem' }}>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Free</h3>
                             <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€0<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>
                             <p style={{ color: '#666', marginBottom: '2rem' }}>Perfect for getting started</p>
                             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Up to 50 menu items</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Up to 30 menu items</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Basic customization</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ QR code generation</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Mobile responsive</li>
@@ -30,10 +30,23 @@ const PricingPage = () => {
                             <Link to="/apply"><button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Get Started</button></Link>
                         </div>
 
+                        <div className="feature-card" style={{ padding: '3rem' }}>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Starter</h3>
+                            <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€15<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>
+                            <p style={{ color: '#666', marginBottom: '2rem' }}>For small cafes</p>
+                            <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Up to 100 menu items</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Enhanced customization</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ QR code generation</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Priority email support</li>
+                            </ul>
+                            <Link to="/apply"><button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Get Started</button></Link>
+                        </div>
+
                         <div className="feature-card" style={{ padding: '3rem', border: '2px solid #000' }}>
                             <div style={{ background: '#000', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', display: 'inline-block', marginBottom: '1rem' }}>POPULAR</div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Pro</h3>
-                            <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€29<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Premium</h3>
+                            <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€19<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>
                             <p style={{ color: '#666', marginBottom: '2rem' }}>For growing restaurants</p>
                             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Unlimited menu items</li>
@@ -46,14 +59,14 @@ const PricingPage = () => {
                         </div>
 
                         <div className="feature-card" style={{ padding: '3rem' }}>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Enterprise</h3>
+                            <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Premium+</h3>
                             <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>Custom</div>
                             <p style={{ color: '#666', marginBottom: '2rem' }}>For large operations</p>
                             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Everything in Pro</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Everything in Premium</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Multiple locations</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ API access</li>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Dedicated support</li>
+                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Dedicated account manager</li>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Custom integrations</li>
                             </ul>
                             <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Contact Sales</button>

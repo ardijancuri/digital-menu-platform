@@ -10,7 +10,7 @@ import PublicMenuPage from './pages/PublicMenuPage';
 import UserLogin from './pages/UserLogin';
 import FeaturesPage from './pages/FeaturesPage';
 import PricingPage from './pages/PricingPage';
-import ExamplesPage from './pages/ExamplesPage';
+
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import SupportPage from './pages/SupportPage';
@@ -51,7 +51,7 @@ function App() {
           <Route path="/menu/:slug" element={<PublicMenuPage />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/examples" element={<ExamplesPage />} />
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/support" element={<SupportPage />} />
