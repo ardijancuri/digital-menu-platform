@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 
-const LandingCarousel = ({ title, subtitle, images, fullWidth = false, align = 'center' }) => {
+const LandingCarousel = ({ title, subtitle, images, fullWidth = false, align = 'center', noHover = false, fullOpacityInactive = false }) => {
     const scrollRef = useRef(null);
     const [activeIndex, setActiveIndex] = useState(0);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -78,7 +78,7 @@ const LandingCarousel = ({ title, subtitle, images, fullWidth = false, align = '
     );
 
     return (
-        <section className={`section-padding carousel-section ${canScrollLeft ? 'scrolled' : ''}`}>
+        <section className={`section-padding carousel-section ${canScrollLeft ? 'scrolled' : ''} ${noHover ? 'no-hover' : ''} ${fullOpacityInactive ? 'full-opacity-inactive' : ''}`}>
             <div className="container">
                 <div
                     className="carousel-header"

@@ -155,6 +155,8 @@ const LandingPage = () => {
                     images={[pos1, pos2, pos3, pos4, pos5]}
                     fullWidth={true}
                     align="left"
+                    noHover={true}
+                    fullOpacityInactive={true}
                 />
             </div>
 
