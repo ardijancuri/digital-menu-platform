@@ -48,6 +48,8 @@ export const printKitchenTicket = (order) => {
 
     // Group items by round (similar to OrderHistory logic)
     let itemsHTML = '';
+    let hasNewRound = false;
+    
     if (order.items && order.items.length > 0) {
         // Sort items by creation time
         const sortedItems = [...order.items].sort((a, b) =>
@@ -71,27 +73,19 @@ export const printKitchenTicket = (order) => {
             }
         });
 
-        // If there's a new round (previous items exist), only show new items with label
-        if (previousItems.length > 0) {
-            // Add "New Round" label
-            itemsHTML = `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; margin-bottom: 8px;">
-                    <div style="flex: 1; height: 1px; background-color: #bfdbfe;"></div>
-                    <span style="font-size: 10px; font-weight: bold; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; background-color: #dbeafe; padding: 4px 8px; border-radius: 9999px;">
-                        New Round
-                    </span>
-                    <div style="flex: 1; height: 1px; background-color: #bfdbfe;"></div>
-                </div>
-            `;
+        // Check if there's a new round
+        hasNewRound = previousItems.length > 0;
 
+        // If there's a new round, only show new items
+        if (hasNewRound) {
             // Only show new items (not previous items)
-            itemsHTML += newItems.map((item) => `
+            itemsHTML = newItems.map((item) => `
                 <div style="font-size: 14px; font-weight: 600;">
                     <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
                 </div>
             `).join('');
         } else {
-            // If no previous items (all items are from same round), show all items without label
+            // If no previous items (all items are from same round), show all items
             itemsHTML = newItems.map((item) => `
                 <div style="font-size: 14px; font-weight: 600;">
                     <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
@@ -101,6 +95,9 @@ export const printKitchenTicket = (order) => {
     } else {
         itemsHTML = '<div style="font-size: 12px; color: #6b7280;">No items</div>';
     }
+
+    // Build title with "New Round" label if applicable
+    const titleText = hasNewRound ? 'ITEMS TO PREPARE - New Round' : 'ITEMS TO PREPARE';
 
     // Build the kitchen ticket HTML - only items and table
     const ticketHTML = `
@@ -113,7 +110,7 @@ export const printKitchenTicket = (order) => {
             <!-- Items -->
             <div style="margin-bottom: 16px;">
                 <div style="padding-top: 12px; margin-bottom: 12px;">
-                    <h3 style="font-weight: bold; color: #111827; margin-bottom: 12px; font-size: 16px; margin: 0 0 12px 0;">ITEMS TO PREPARE</h3>
+                    <h3 style="font-weight: bold; color: #111827; margin-bottom: 12px; font-size: 16px; margin: 0 0 12px 0;">${titleText}</h3>
                 </div>
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     ${itemsHTML}
