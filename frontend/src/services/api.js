@@ -102,6 +102,9 @@ export const userAPI = {
         });
     },
     deleteBannerImage: (imageUrl) => api.post('/user/delete-banner', { imageUrl }),
+    createManager: (data) => api.post('/user/managers', data),
+    getManagers: () => api.get('/user/managers'),
+    deleteManager: (id) => api.delete(`/user/managers/${id}`),
 };
 
 // Public API

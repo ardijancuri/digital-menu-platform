@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
 import { userAPI } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import PinModal from '../../components/PinModal';
+import Receipt from '../../components/Receipt';
 
 const OrderTaking = () => {
+    const { isManager, user } = useAuth();
     const [categories, setCategories] = useState([]);
     const [products, setProducts] = useState([]);
     const [activeCategory, setActiveCategory] = useState('all');
@@ -19,6 +22,8 @@ const OrderTaking = () => {
     const [step, setStep] = useState(1); // 1 = Select Table, 3 = Select Products
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
     const [pinError, setPinError] = useState('');
+    const [showReceipt, setShowReceipt] = useState(false);
+    const [selectedOrder, setSelectedOrder] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -26,17 +31,27 @@ const OrderTaking = () => {
 
     const fetchData = async () => {
         try {
-            const [catsRes, prodsRes, tablesRes, staffRes] = await Promise.all([
+            const fetchPromises = [
                 userAPI.getCategories(),
                 userAPI.getMenuItems(),
-                posAPI.getTables(),
-                posAPI.getStaff()
-            ]);
+                posAPI.getTables()
+            ];
+
+            // Only fetch staff data if user is not a manager
+            if (!isManager()) {
+                fetchPromises.push(posAPI.getStaff());
+            }
+
+            const results = await Promise.all(fetchPromises);
+            const catsRes = results[0];
+            const prodsRes = results[1];
+            const tablesRes = results[2];
+            const staffRes = !isManager() ? results[3] : null;
 
             setCategories(catsRes.data.categories || []);
             setProducts(prodsRes.data.items || []);
             setTables(tablesRes.data.tables || []);
-            setStaffList(staffRes.data.staff || []);
+            setStaffList(staffRes ? staffRes.data.staff || [] : []);
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -93,7 +108,13 @@ const OrderTaking = () => {
                     total_amount: cartTotal,
                     payment_method: 'cash'
                 };
-                await posAPI.createOrder(orderData);
+                const orderResponse = await posAPI.createOrder(orderData);
+                
+                // Show receipt with auto-print for new orders only
+                if (orderResponse && orderResponse.data.success && orderResponse.data.order) {
+                    setSelectedOrder(orderResponse.data.order);
+                    setShowReceipt(true);
+                }
             }
 
             setCart([]);
@@ -121,16 +142,10 @@ const OrderTaking = () => {
 
             // Get the active order for this table
             try {
-                const [activeRes, readyRes] = await Promise.all([
-                    posAPI.getOrders('active'),
-                    posAPI.getOrders('ready')
-                ]);
-
+                const activeRes = await posAPI.getOrders('active');
                 const activeOrders = activeRes.data.orders || [];
-                const readyOrders = readyRes.data.orders || [];
-                const allOrders = [...activeOrders, ...readyOrders];
 
-                const activeOrder = allOrders.find(
+                const activeOrder = activeOrders.find(
                     order => order.table_id === tableId && order.status !== 'completed' && order.status !== 'cancelled'
                 );
 
@@ -162,10 +177,12 @@ const OrderTaking = () => {
                 setStep(3); // Go directly to product selection
             } else {
                 setPinError('Invalid PIN. Please try again.');
+                throw new Error('Invalid PIN');
             }
         } catch (error) {
             console.error('Error verifying PIN:', error);
             setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
+            throw error; // Re-throw so PinModal can handle it
         }
     };
 
@@ -438,6 +455,19 @@ const OrderTaking = () => {
                 staffName=""
                 error={pinError}
             />
+
+            {/* Receipt Modal with Auto-Print */}
+            {showReceipt && selectedOrder && (
+                <Receipt
+                    order={selectedOrder}
+                    businessName={user?.business_name || 'Restaurant'}
+                    autoPrint={true}
+                    onClose={() => {
+                        setShowReceipt(false);
+                        setSelectedOrder(null);
+                    }}
+                />
+            )}
         </div>
     );
 };

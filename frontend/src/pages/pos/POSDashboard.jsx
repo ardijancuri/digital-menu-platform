@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { posAPI } from '../../services/posAPI';
+import { useAuth } from '../../context/AuthContext';
 
 const POSDashboard = () => {
+    const { isManager } = useAuth();
     const [stats, setStats] = useState({
         todaySales: 0,
         activeOrders: 0,
@@ -19,11 +21,20 @@ const POSDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             // Fetch all necessary data
-            const [ordersResponse, tablesResponse, staffResponse] = await Promise.all([
+            const fetchPromises = [
                 posAPI.getOrders('history'),
-                posAPI.getTables(),
-                posAPI.getStaff()
-            ]);
+                posAPI.getTables()
+            ];
+
+            // Only fetch staff data if user is not a manager
+            if (!isManager()) {
+                fetchPromises.push(posAPI.getStaff());
+            }
+
+            const results = await Promise.all(fetchPromises);
+            const ordersResponse = results[0];
+            const tablesResponse = results[1];
+            const staffResponse = !isManager() ? results[2] : null;
 
             // Calculate today's sales from completed orders
             const today = new Date();
@@ -38,18 +49,17 @@ const POSDashboard = () => {
                 })
                 .reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
 
-            // Count active orders (preparing + ready)
+            // Count active orders (preparing only)
             const activeOrdersResponse = await posAPI.getOrders('active');
-            const readyOrdersResponse = await posAPI.getOrders('ready');
-            const activeOrders = activeOrdersResponse.data.orders.length + readyOrdersResponse.data.orders.length;
+            const activeOrders = activeOrdersResponse.data.orders.length;
 
             // Count occupied tables
             const tables = tablesResponse.data.tables;
             const occupiedTables = tables.filter(table => table.status === 'occupied').length;
             const totalTables = tables.length;
 
-            // Count staff
-            const staffCount = staffResponse.data.staff.length;
+            // Count staff (only for non-managers)
+            const staffCount = staffResponse ? staffResponse.data.staff.length : 0;
 
             setStats({
                 todaySales,
@@ -76,7 +86,7 @@ const POSDashboard = () => {
     return (
         <div className="max-w-7xl mx-auto">
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${isManager() ? 'lg:grid-cols-3' : 'lg:grid-cols-4'} gap-6 mb-8`}>
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
                         <div className="bg-green-100 p-3 rounded-lg text-green-600">
@@ -116,6 +126,7 @@ const POSDashboard = () => {
                     </p>
                 </div>
 
+                {!isManager() && (
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
                         <div className="bg-purple-100 p-3 rounded-lg text-purple-600">
@@ -128,6 +139,7 @@ const POSDashboard = () => {
                         Total staff
                     </p>
                 </div>
+                )}
             </div>
 
             {/* Quick Actions */}

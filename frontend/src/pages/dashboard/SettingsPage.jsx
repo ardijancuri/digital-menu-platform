@@ -14,18 +14,39 @@ const SettingsPage = () => {
         { code: 'tr', label: 'Turkish' },
     ];
 
-    const { user } = useAuth();
+    const { user, isUser } = useAuth();
     const [settings, setSettings] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [uploading, setUploading] = useState(false);
+    const [managers, setManagers] = useState([]);
+    const [loadingManagers, setLoadingManagers] = useState(false);
+    const [showManagerForm, setShowManagerForm] = useState(false);
+    const [newManager, setNewManager] = useState({ username: '', password: '' });
+    const [creatingManager, setCreatingManager] = useState(false);
     
     // Generate menu URL
     const menuUrl = user?.slug ? `${window.location.origin}/menu/${user.slug}` : '';
     const qrCodeUrl = menuUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(menuUrl)}` : '';
 
+    const fetchManagers = async () => {
+        setLoadingManagers(true);
+        try {
+            const response = await userAPI.getManagers();
+            setManagers(response.data.managers || []);
+        } catch (err) {
+            console.error('Failed to fetch managers:', err);
+        } finally {
+            setLoadingManagers(false);
+        }
+    };
+
     useEffect(() => {
         fetchSettings();
+        if (isUser()) {
+            fetchManagers();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchSettings = async () => {
@@ -113,6 +134,59 @@ const SettingsPage = () => {
         } catch (error) {
             console.error('Error downloading QR code:', error);
             alert('Failed to download QR code. Please try again.');
+        }
+    };
+
+    const validatePassword = (password) => {
+        if (password.length < 6) {
+            return 'Password must be at least 6 characters long';
+        }
+        if (!/[A-Z]/.test(password)) {
+            return 'Password must contain at least one uppercase letter';
+        }
+        if (!/[0-9]/.test(password)) {
+            return 'Password must contain at least one number';
+        }
+        return null;
+    };
+
+    const handleCreateManager = async (e) => {
+        e.preventDefault();
+        if (!newManager.username || !newManager.password) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        // Validate password
+        const passwordError = validatePassword(newManager.password);
+        if (passwordError) {
+            alert(passwordError);
+            return;
+        }
+
+        setCreatingManager(true);
+        try {
+            await userAPI.createManager(newManager);
+            setNewManager({ username: '', password: '' });
+            setShowManagerForm(false);
+            fetchManagers();
+            alert('Manager created successfully!');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to create manager');
+        } finally {
+            setCreatingManager(false);
+        }
+    };
+
+    const handleDeleteManager = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this manager?')) return;
+
+        try {
+            await userAPI.deleteManager(id);
+            fetchManagers();
+            alert('Manager deleted successfully!');
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to delete manager');
         }
     };
 
@@ -301,6 +375,90 @@ const SettingsPage = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Manager Users Section - Only visible to owners */}
+            {isUser() && (
+                <div className="mt-8">
+                    <div className="card-flat">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <i className="fas fa-users-cog text-blue-600"></i>
+                                Manager Users
+                            </h3>
+                            <Button
+                                onClick={() => setShowManagerForm(!showManagerForm)}
+                                variant="primary"
+                                className="sm:w-auto w-full"
+                            >
+                                <i className="fas fa-plus mr-2"></i>
+                                {showManagerForm ? 'Cancel' : 'Add Manager'}
+                            </Button>
+                        </div>
+
+                        {showManagerForm && (
+                            <form onSubmit={handleCreateManager} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <Input
+                                        label="Username"
+                                        type="text"
+                                        value={newManager.username}
+                                        onChange={(e) => setNewManager({ ...newManager, username: e.target.value })}
+                                        placeholder="Enter username"
+                                        required
+                                    />
+                                    <div>
+                                        <Input
+                                            label="Password"
+                                            type="password"
+                                            value={newManager.password}
+                                            onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
+                                            placeholder="Enter password"
+                                            required
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Must be at least 6 characters, include 1 uppercase letter and 1 number
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button type="submit" variant="primary" loading={creatingManager} className="w-full sm:w-auto">
+                                    <i className="fas fa-save mr-2"></i>
+                                    Create Manager
+                                </Button>
+                            </form>
+                        )}
+
+                        {loadingManagers ? (
+                            <div className="text-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            </div>
+                        ) : managers.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">No managers created yet.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {managers.map((manager) => (
+                                    <div
+                                        key={manager.id}
+                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                                    >
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{manager.username}</p>
+                                            <p className="text-sm text-gray-500">
+                                                Created: {new Date(manager.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteManager(manager.id)}
+                                            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

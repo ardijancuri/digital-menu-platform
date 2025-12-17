@@ -28,10 +28,16 @@ export const posAPI = {
     loginStaff: (pin_code) => api.post('/pos/staff/login', { pin_code }),
     verifyStaffPin: (staff_id, pin_code) => api.post('/pos/staff/verify-pin', { staff_id, pin_code }),
     deleteStaff: (id) => api.delete(`/pos/staff/${id}`),
+    getStaffRevenue: () => api.get('/pos/staff/revenue'),
+    resetStaffRevenue: () => api.post('/pos/staff/reset-revenue', {}, { responseType: 'blob' }),
 
     // Orders
     getOrders: (status) => api.get(`/pos/orders?status=${status || ''}`),
     createOrder: (data) => api.post('/pos/orders', data),
     addItemsToOrder: (orderId, data) => api.post(`/pos/orders/${orderId}/items`, data),
     updateOrderStatus: (id, data) => api.put(`/pos/orders/${id}/status`, data),
+    updateOrderTable: (id, table_id) => api.put(`/pos/orders/${id}/table`, { table_id }),
+
+    // Reports
+    getDailyRevenue: () => api.get('/pos/reports/daily-revenue'),
 };

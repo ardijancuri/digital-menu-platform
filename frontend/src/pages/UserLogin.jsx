@@ -8,9 +8,14 @@ import Button from '../components/Button';
 const UserLogin = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
-    const [formData, setFormData] = useState({ email: '', password: '' });
+    const [formData, setFormData] = useState({ identifier: '', password: '' });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+
+    // Helper to detect if input is email or username
+    const isEmail = (str) => {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -18,15 +23,25 @@ const UserLogin = () => {
         setLoading(true);
 
         try {
-            const response = await authAPI.userLogin(formData);
+            // Determine if login is by email (owner) or username (manager)
+            const loginData = isEmail(formData.identifier)
+                ? { email: formData.identifier, password: formData.password }
+                : { username: formData.identifier, password: formData.password };
+
+            const response = await authAPI.userLogin(loginData);
             if (response.data && response.data.token && response.data.user) {
                 login(response.data.user, response.data.token);
-                navigate('/dashboard');
+                // Redirect managers to POS, owners to dashboard
+                if (response.data.user.role === 'manager') {
+                    navigate('/pos');
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
                 setError('Invalid response from server');
             }
         } catch (err) {
-            setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
+            setError(err.response?.data?.message || 'Invalid credentials. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -44,7 +59,7 @@ const UserLogin = () => {
                         <i className="fas fa-utensils text-3xl text-white"></i>
                     </div>
                     <h1 className="text-4xl font-bold mb-2 text-gray-900">Restaurant Login</h1>
-                    <p className="text-gray-600">Access your menu dashboard</p>
+                    <p className="text-gray-600">Access your menu dashboard or POS system</p>
                 </div>
 
                 <div className="card">
@@ -59,13 +74,16 @@ const UserLogin = () => {
                         )}
 
                         <Input
-                            label="Email Address"
-                            type="email"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            placeholder="your@email.com"
+                            label="Email or Username"
+                            type="text"
+                            value={formData.identifier}
+                            onChange={(e) => setFormData({ ...formData, identifier: e.target.value })}
+                            placeholder="your@email.com or username"
                             required
                         />
+                        <p className="text-xs text-gray-500 mb-4">
+                            Owners: Use your email address. Managers: Use your username.
+                        </p>
 
                         <Input
                             label="Password"

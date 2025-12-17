@@ -16,7 +16,10 @@ import {
     uploadItemImage,
     uploadBannerImage,
     deleteBannerImage,
-    deleteItemImage
+    deleteItemImage,
+    createManager,
+    getManagers,
+    deleteManager
 } from '../controllers/userController.js';
 
 const router = express.Router();
@@ -44,5 +47,10 @@ router.put('/menu-items/:id', updateMenuItem);
 router.delete('/menu-items/:id', deleteMenuItem);
 router.post('/upload-item-image', uploadSingle('image'), uploadItemImage);
 router.post('/delete-item-image', deleteItemImage);
+
+// Manager routes
+router.post('/managers', createManager);
+router.get('/managers', getManagers);
+router.delete('/managers/:id', deleteManager);
 
 export default router;

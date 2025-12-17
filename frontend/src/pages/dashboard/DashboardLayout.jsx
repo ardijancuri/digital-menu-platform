@@ -4,17 +4,22 @@ import { useAuth } from '../../context/AuthContext';
 import Button from '../../components/Button';
 
 const DashboardLayout = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, isManager } = useAuth();
     const location = useLocation();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const navItems = [
+    const allNavItems = [
         { path: '/dashboard/settings', label: 'Settings', icon: 'fa-cog' },
         { path: '/dashboard/categories', label: 'Categories', icon: 'fa-folder' },
         { path: '/dashboard/products', label: 'Products', icon: 'fa-utensils' },
         { path: '/dashboard/preview', label: 'Preview', icon: 'fa-eye' },
         { path: '/pos', label: 'POS System', icon: 'fa-cash-register', highlight: true },
     ];
+
+    // For managers, only show POS System link
+    const navItems = isManager() 
+        ? allNavItems.filter(item => item.path === '/pos')
+        : allNavItems;
 
     const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 

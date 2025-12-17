@@ -6,16 +6,19 @@ import Receipt from '../../components/Receipt';
 const OrderHistory = () => {
     const { user } = useAuth();
     const [orders, setOrders] = useState([]);
+    const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState('active'); // 'active', 'ready', or 'history'
+    const [filter, setFilter] = useState('active'); // 'active' or 'history'
     const [showReceipt, setShowReceipt] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [shouldAutoPrint, setShouldAutoPrint] = useState(false);
+    const [changingTableOrderId, setChangingTableOrderId] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchOrders();
+        fetchTables();
     }, [filter]);
-
-    const [searchTerm, setSearchTerm] = useState('');
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -29,13 +32,35 @@ const OrderHistory = () => {
         }
     };
 
+    const fetchTables = async () => {
+        try {
+            const response = await posAPI.getTables();
+            setTables(response.data.tables || []);
+        } catch (error) {
+            console.error('Error fetching tables:', error);
+        }
+    };
+
+    const handleTableChange = async (orderId, newTableId) => {
+        try {
+            await posAPI.updateOrderTable(orderId, newTableId === 'null' ? null : parseInt(newTableId));
+            setChangingTableOrderId(null);
+            fetchOrders();
+            fetchTables(); // Refresh tables to update status
+        } catch (error) {
+            console.error('Error updating order table:', error);
+            alert('Failed to update table');
+        }
+    };
+
     const handleStatusUpdate = async (id, newStatus) => {
         try {
-            // If completing an order, show receipt first
+            // If completing an order, show receipt first with auto-print
             if (newStatus === 'completed') {
                 const orderToComplete = orders.find(o => o.id === id);
                 if (orderToComplete) {
                     setSelectedOrder(orderToComplete);
+                    setShouldAutoPrint(true);
                     setShowReceipt(true);
                     return; // Don't update status yet
                 }
@@ -54,6 +79,7 @@ const OrderHistory = () => {
             await posAPI.updateOrderStatus(selectedOrder.id, { status: 'completed' });
             setShowReceipt(false);
             setSelectedOrder(null);
+            setShouldAutoPrint(false);
             fetchOrders();
         } catch (error) {
             console.error('Error completing order:', error);
@@ -63,6 +89,7 @@ const OrderHistory = () => {
 
     const handlePrintReceipt = (order) => {
         setSelectedOrder(order);
+        setShouldAutoPrint(false); // Manual print, no auto-print
         setShowReceipt(true);
     };
 
@@ -79,7 +106,7 @@ const OrderHistory = () => {
                         className="w-full sm:w-80 px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <button
                         onClick={() => setFilter('active')}
                         className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
@@ -87,14 +114,6 @@ const OrderHistory = () => {
                     >
                         <i className="fas fa-fire mr-2"></i>
                         Active Orders
-                    </button>
-                    <button
-                        onClick={() => setFilter('ready')}
-                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'ready' ? 'bg-green-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                            }`}
-                    >
-                        <i className="fas fa-check-circle mr-2"></i>
-                        Ready Orders
                     </button>
                     <button
                         onClick={() => setFilter('history')}
@@ -136,9 +155,35 @@ const OrderHistory = () => {
                                 <p className="text-sm text-gray-500">
                                     {new Date(order.created_at).toLocaleString()}
                                 </p>
-                                <p className="text-sm text-gray-600 font-medium mt-1">
-                                    {order.table_name ? `Table: ${order.table_name}` : 'Takeaway'}
-                                </p>
+                                <div className="text-sm text-gray-600 font-medium mt-1 flex items-center gap-2">
+                                    {changingTableOrderId === order.id ? (
+                                        <select
+                                            className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            defaultValue={order.table_id || 'null'}
+                                            onChange={(e) => handleTableChange(order.id, e.target.value)}
+                                            onBlur={() => setChangingTableOrderId(null)}
+                                            autoFocus
+                                        >
+                                            <option value="null">Takeaway</option>
+                                            {tables.map(table => (
+                                                <option key={table.id} value={table.id}>
+                                                    {table.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <>
+                                            <span>{order.table_name ? `Table: ${order.table_name}` : 'Takeaway'}</span>
+                                            <button
+                                                onClick={() => setChangingTableOrderId(order.id)}
+                                                className="text-blue-600 hover:text-blue-800 text-xs ml-1"
+                                                title="Change table"
+                                            >
+                                                <i className="fas fa-edit"></i>
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                                 {order.staff_name && (
                                     <p className="text-sm text-blue-600 font-medium mt-1">
                                         <i className="fas fa-user mr-1"></i>Staff: {order.staff_name}
@@ -243,17 +288,9 @@ const OrderHistory = () => {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                {(filter === 'active' || filter === 'ready') && (
+                                {filter === 'active' && (
                                     <>
                                         {order.status === 'preparing' && (
-                                            <button
-                                                onClick={() => handleStatusUpdate(order.id, 'ready')}
-                                                className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
-                                            >
-                                                Mark Ready
-                                            </button>
-                                        )}
-                                        {order.status === 'ready' && (
                                             <button
                                                 onClick={() => handleStatusUpdate(order.id, 'completed')}
                                                 className="w-full px-3 py-2 bg-gray-800 text-white rounded-lg text-sm font-medium hover:bg-gray-900"
@@ -270,13 +307,22 @@ const OrderHistory = () => {
                                     </>
                                 )}
                                 {filter === 'history' && (
-                                    <button
-                                        onClick={() => handlePrintReceipt(order)}
-                                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                                    >
-                                        <i className="fas fa-print"></i>
-                                        Print Receipt
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={() => handleStatusUpdate(order.id, 'preparing')}
+                                            className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-redo"></i>
+                                            Reactivate Order
+                                        </button>
+                                        <button
+                                            onClick={() => handlePrintReceipt(order)}
+                                            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-print"></i>
+                                            Print Receipt
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -294,6 +340,7 @@ const OrderHistory = () => {
                 <Receipt
                     order={selectedOrder}
                     businessName={user?.business_name || 'Restaurant'}
+                    autoPrint={shouldAutoPrint}
                     onClose={() => {
                         // If order is being completed, handle completion
                         if (selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled') {
@@ -302,6 +349,7 @@ const OrderHistory = () => {
                             // Just close the receipt for already completed/cancelled orders
                             setShowReceipt(false);
                             setSelectedOrder(null);
+                            setShouldAutoPrint(false);
                         }
                     }}
                 />

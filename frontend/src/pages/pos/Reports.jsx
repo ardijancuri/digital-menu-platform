@@ -25,41 +25,55 @@ const Reports = () => {
 
     const fetchReports = async () => {
         try {
-            const response = await posAPI.getOrders('history');
-            const orders = response.data.orders.filter(order => order.status === 'completed');
+            // Fetch daily revenue from daily_revenue table
+            const dailyRevenueResponse = await posAPI.getDailyRevenue();
+            const storedDailyRevenue = dailyRevenueResponse.data.dailyRevenue || [];
 
-            const totalSales = orders.reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
-            const totalOrders = orders.length;
+            // Calculate totals from stored daily revenue only
+            const totalSales = storedDailyRevenue.reduce((sum, day) => sum + parseFloat(day.total_revenue || 0), 0);
+            const totalOrders = storedDailyRevenue.reduce((sum, day) => sum + (day.order_count || 0), 0);
             const averageOrderValue = totalOrders > 0 ? totalSales / totalOrders : 0;
 
-            const dailyRevenueMap = {};
-            orders.forEach(order => {
-                const date = new Date(order.created_at);
-                const dateKey = date.toISOString().split('T')[0];
-                const dateDisplay = date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-
-                if (!dailyRevenueMap[dateKey]) {
-                    dailyRevenueMap[dateKey] = {
-                        date: dateDisplay,
-                        dateKey: dateKey,
-                        dateObj: date,
-                        revenue: 0,
-                        orderCount: 0
-                    };
+            // Convert stored daily revenue to format expected by chart
+            const dailyRevenue = storedDailyRevenue.map(day => {
+                // Parse date correctly to avoid timezone issues
+                // Handle both string dates (YYYY-MM-DD) and Date objects from database
+                let date;
+                let dateKey;
+                
+                if (day.date instanceof Date) {
+                    // If it's a Date object from PostgreSQL, use local date components
+                    // PostgreSQL DATE is stored as midnight UTC, but we want local date
+                    date = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate());
+                    date.setHours(0, 0, 0, 0);
+                    dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                } else {
+                    // If it's a string (YYYY-MM-DD), parse it using local timezone
+                    const dateParts = day.date.split('-');
+                    date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+                    date.setHours(0, 0, 0, 0);
+                    dateKey = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
                 }
-                dailyRevenueMap[dateKey].revenue += parseFloat(order.total_amount);
-                dailyRevenueMap[dateKey].orderCount += 1;
-            });
+                
+                return {
+                    date: date.toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                    }),
+                    dateKey: dateKey, // Normalized date string for matching
+                    dateObj: date,
+                    revenue: parseFloat(day.total_revenue || 0),
+                    orderCount: day.order_count || 0,
+                    staffRevenue: day.staff_revenue || {}
+                };
+            }).sort((a, b) => a.dateObj - b.dateObj);
 
             setStats({
                 totalSales,
                 totalOrders,
                 averageOrderValue,
-                dailyRevenue: Object.values(dailyRevenueMap).sort((a, b) => a.dateObj - b.dateObj)
+                dailyRevenue
             });
         } catch (error) {
             console.error('Error fetching reports:', error);
@@ -72,37 +86,61 @@ const Reports = () => {
         const now = new Date();
         let chartData = [];
 
+        // Helper function to format date as YYYY-MM-DD in local timezone
+        const formatDateKey = (date) => {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
         if (chartPeriod === '7days') {
             // Daily for 7 days
             for (let i = 6; i >= 0; i--) {
                 const date = new Date(now);
                 date.setDate(date.getDate() - i);
-                const dateKey = date.toISOString().split('T')[0];
+                date.setHours(0, 0, 0, 0); // Normalize to midnight
+                const dateKey = formatDateKey(date);
+                
+                // Find matching day data - try both dateKey and direct date string comparison
+                const dayData = stats.dailyRevenue.find(d => {
+                    // Compare dateKey strings
+                    if (d.dateKey === dateKey) return true;
+                    // Also try comparing the date object directly
+                    if (d.dateObj && d.dateObj.getTime() === date.getTime()) return true;
+                    // Fallback: compare formatted date strings
+                    const dbDateKey = formatDateKey(d.dateObj || new Date(d.dateKey));
+                    return dbDateKey === dateKey;
+                });
+                
                 chartData.push({
                     date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                    revenue: 0
+                    revenue: dayData ? dayData.revenue : 0
                 });
-
-                const dayData = stats.dailyRevenue.find(d => d.dateKey === dateKey);
-                if (dayData) {
-                    chartData[chartData.length - 1].revenue = dayData.revenue;
-                }
             }
         } else if (chartPeriod === '1month') {
             // Daily for 30 days
             for (let i = 29; i >= 0; i--) {
                 const date = new Date(now);
                 date.setDate(date.getDate() - i);
-                const dateKey = date.toISOString().split('T')[0];
+                date.setHours(0, 0, 0, 0); // Normalize to midnight
+                const dateKey = formatDateKey(date);
+                
+                // Find matching day data - try both dateKey and direct date string comparison
+                const dayData = stats.dailyRevenue.find(d => {
+                    // Compare dateKey strings
+                    if (d.dateKey === dateKey) return true;
+                    // Also try comparing the date object directly
+                    if (d.dateObj && d.dateObj.getTime() === date.getTime()) return true;
+                    // Fallback: compare formatted date strings
+                    const dbDateKey = formatDateKey(d.dateObj || new Date(d.dateKey));
+                    return dbDateKey === dateKey;
+                });
+                
                 chartData.push({
                     date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-                    revenue: 0
+                    revenue: dayData ? dayData.revenue : 0
                 });
-
-                const dayData = stats.dailyRevenue.find(d => d.dateKey === dateKey);
-                if (dayData) {
-                    chartData[chartData.length - 1].revenue = dayData.revenue;
-                }
             }
         } else if (chartPeriod === '3months') {
             // Weekly for 12 weeks

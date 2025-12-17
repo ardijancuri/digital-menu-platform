@@ -2,6 +2,7 @@
 -- Run this file to create all necessary tables
 
 -- Drop existing tables if they exist (for development)
+DROP TABLE IF EXISTS daily_revenue CASCADE;
 DROP TABLE IF EXISTS order_items CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS staff CASCADE;
@@ -30,12 +31,19 @@ CREATE TABLE applications (
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     business_name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
+    email TEXT UNIQUE,
     slug TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user', 'manager')),
+    username TEXT UNIQUE,
+    owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    CONSTRAINT users_manager_constraints 
+        CHECK (
+            (role = 'manager' AND username IS NOT NULL AND owner_id IS NOT NULL) OR
+            (role != 'manager')
+        )
 );
 
 -- Menu settings table: stores branding and customization
@@ -63,6 +71,8 @@ CREATE TABLE menu_settings (
     description_font TEXT DEFAULT 'Quicksand',
     description TEXT,
     opening_hours TEXT,
+    banner_images TEXT[] DEFAULT ARRAY[]::TEXT[],
+    default_language TEXT DEFAULT 'en',
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -71,6 +81,9 @@ CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    name_mk TEXT,
+    name_sq TEXT,
+    name_tr TEXT,
     position INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -80,9 +93,15 @@ CREATE TABLE menu_items (
     id SERIAL PRIMARY KEY,
     category_id INTEGER REFERENCES categories(id) ON DELETE CASCADE,
     name TEXT NOT NULL,
+    name_mk TEXT,
+    name_sq TEXT,
+    name_tr TEXT,
     description TEXT,
+    description_mk TEXT,
+    description_sq TEXT,
+    description_tr TEXT,
     price NUMERIC(10, 2) NOT NULL,
-    image_url TEXT,
+    images TEXT[] DEFAULT ARRAY[]::TEXT[],
     tag TEXT CHECK (tag IN ('New', 'Hot', 'Bestseller', NULL)),
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -94,9 +113,22 @@ CREATE INDEX idx_applications_slug ON applications(slug);
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_slug ON users(slug);
 CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_owner_id ON users(owner_id);
 CREATE INDEX idx_menu_settings_user_id ON menu_settings(user_id);
+CREATE INDEX idx_menu_settings_banner_images ON menu_settings USING GIN (banner_images);
 CREATE INDEX idx_categories_user_id ON categories(user_id);
+CREATE INDEX idx_categories_name_mk ON categories(name_mk);
+CREATE INDEX idx_categories_name_sq ON categories(name_sq);
+CREATE INDEX idx_categories_name_tr ON categories(name_tr);
 CREATE INDEX idx_menu_items_category_id ON menu_items(category_id);
+CREATE INDEX idx_menu_items_name_mk ON menu_items(name_mk);
+CREATE INDEX idx_menu_items_name_sq ON menu_items(name_sq);
+CREATE INDEX idx_menu_items_name_tr ON menu_items(name_tr);
+CREATE INDEX idx_menu_items_desc_mk ON menu_items(description_mk);
+CREATE INDEX idx_menu_items_desc_sq ON menu_items(description_sq);
+CREATE INDEX idx_menu_items_desc_tr ON menu_items(description_tr);
+CREATE INDEX idx_menu_items_images ON menu_items USING GIN (images);
 
 -- POS Tables
 
@@ -147,6 +179,18 @@ CREATE TABLE order_items (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- Daily revenue table: stores daily revenue reports
+CREATE TABLE daily_revenue (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    date DATE NOT NULL,
+    total_revenue NUMERIC(10, 2) DEFAULT 0.00,
+    order_count INTEGER DEFAULT 0,
+    staff_revenue JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, date)
+);
+
 -- Create indexes for POS tables
 CREATE INDEX idx_tables_user_id ON tables(user_id);
 CREATE INDEX idx_staff_user_id ON staff(user_id);
@@ -154,7 +198,10 @@ CREATE INDEX idx_orders_user_id ON orders(user_id);
 CREATE INDEX idx_orders_table_id ON orders(table_id);
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
+CREATE INDEX idx_orders_staff_id ON orders(staff_id);
 CREATE INDEX idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX idx_daily_revenue_user_id ON daily_revenue(user_id);
+CREATE INDEX idx_daily_revenue_date ON daily_revenue(date);
 
 -- Success message
 -- Create default admin user
@@ -165,7 +212,7 @@ VALUES (
     'Platform Admin', 
     'admin@example.com', 
     'admin', 
-    '$2b$10$Pe2jtLSK1t9W3823PKj/..cT.mbZSWunIkt9vRQuuaDDeMwpMv9iLa', 
+    '$2a$10$bwGSdhDzpNzZQwJBKZTohesSPwpNJZn56kFQPFhiC/sXTPj7X9672', 
     'admin', 
     true
 );

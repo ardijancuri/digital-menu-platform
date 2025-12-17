@@ -76,26 +76,71 @@ export const adminLogin = async (req, res) => {
 };
 
 /**
- * User (restaurant owner) login
+ * User (restaurant owner) and Manager login
+ * Supports both email (owners) and username (managers)
  */
 export const userLogin = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, username, password } = req.body;
+        const identifier = email || username;
 
-        // Find user
-        const result = await query(
-            'SELECT * FROM users WHERE email = $1 AND role = $2',
-            [email, 'user']
-        );
-
-        if (result.rows.length === 0) {
-            return res.status(401).json({
+        if (!identifier || !password) {
+            return res.status(400).json({
                 success: false,
-                message: 'Invalid credentials'
+                message: 'Email/username and password are required'
             });
         }
 
-        const user = result.rows[0];
+        // Determine if login is by email (owner) or username (manager)
+        const isEmail = email !== undefined;
+        let user;
+
+        if (isEmail) {
+            // Owner login by email
+            const result = await query(
+                'SELECT * FROM users WHERE email = $1 AND role = $2',
+                [email, 'user']
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid credentials'
+                });
+            }
+
+            user = result.rows[0];
+        } else {
+            // Manager login by username
+            const result = await query(
+                'SELECT * FROM users WHERE username = $1 AND role = $2',
+                [username, 'manager']
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Invalid credentials'
+                });
+            }
+
+            user = result.rows[0];
+
+            // Verify owner account is active
+            if (user.owner_id) {
+                const ownerResult = await query(
+                    'SELECT is_active FROM users WHERE id = $1',
+                    [user.owner_id]
+                );
+
+                if (ownerResult.rows.length === 0 || !ownerResult.rows[0].is_active) {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'Your account has been disabled. Please contact the owner.'
+                    });
+                }
+            }
+        }
 
         // Check if account is active
         if (!user.is_active) {
@@ -116,24 +161,46 @@ export const userLogin = async (req, res) => {
         }
 
         // Generate token
-        const token = generateToken({
+        const tokenData = {
             id: user.id,
-            email: user.email,
             role: user.role,
             slug: user.slug
-        });
+        };
+
+        if (user.email) {
+            tokenData.email = user.email;
+        }
+        if (user.username) {
+            tokenData.username = user.username;
+        }
+        if (user.owner_id) {
+            tokenData.owner_id = user.owner_id;
+        }
+
+        const token = generateToken(tokenData);
+
+        const userResponse = {
+            id: user.id,
+            business_name: user.business_name,
+            role: user.role,
+            slug: user.slug
+        };
+
+        if (user.email) {
+            userResponse.email = user.email;
+        }
+        if (user.username) {
+            userResponse.username = user.username;
+        }
+        if (user.owner_id) {
+            userResponse.owner_id = user.owner_id;
+        }
 
         res.json({
             success: true,
             message: 'Login successful',
             token,
-            user: {
-                id: user.id,
-                email: user.email,
-                business_name: user.business_name,
-                role: user.role,
-                slug: user.slug
-            }
+            user: userResponse
         });
     } catch (error) {
         console.error('User login error:', error);

@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
+import { useAuth } from '../../context/AuthContext';
 
 const TableManagement = () => {
+    const { isManager } = useAuth();
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -74,6 +76,7 @@ const TableManagement = () => {
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
                     />
+                    {!isManager() && (
                     <button
                         onClick={() => setShowAddModal(true)}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
@@ -81,6 +84,7 @@ const TableManagement = () => {
                         <i className="fas fa-plus"></i>
                         Add Table
                     </button>
+                    )}
                 </div>
             </div>
 
@@ -101,12 +105,14 @@ const TableManagement = () => {
                                 }`}>
                                 <i className="fas fa-chair"></i>
                             </div>
+                            {!isManager() && (
                             <button
                                 onClick={() => handleDeleteTable(table.id)}
                                 className="text-gray-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                             >
                                 <i className="fas fa-trash"></i>
                             </button>
+                            )}
                         </div>
 
                         <h3 className="text-lg font-bold text-gray-900 mb-1">{table.name}</h3>

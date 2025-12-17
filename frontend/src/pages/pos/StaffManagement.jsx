@@ -6,6 +6,7 @@ const StaffManagement = () => {
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newStaff, setNewStaff] = useState({ name: '', pin_code: '', role: 'server' });
+    const [resettingRevenue, setResettingRevenue] = useState(false);
 
     useEffect(() => {
         fetchStaff();
@@ -46,19 +47,64 @@ const StaffManagement = () => {
         }
     };
 
+    const handleResetRevenue = async () => {
+        const confirmMessage = 'Are you sure you want to reset revenue? This will:\n' +
+            '1. Store today\'s revenue in the reports\n' +
+            '2. Delete all of today\'s orders\n' +
+            '3. Generate a PDF report of all today\'s orders\n\n' +
+            'This action cannot be undone!';
+        
+        if (!window.confirm(confirmMessage)) return;
+
+        setResettingRevenue(true);
+        try {
+            const response = await posAPI.resetStaffRevenue();
+            
+            // Create blob URL and open in new tab
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+            
+            // Clean up the URL after a delay
+            setTimeout(() => {
+                window.URL.revokeObjectURL(url);
+            }, 100);
+
+            fetchStaff(); // Refresh staff list to show reset revenue
+        } catch (error) {
+            console.error('Error resetting revenue:', error);
+            alert(error.response?.data?.message || 'Failed to reset revenue');
+        } finally {
+            setResettingRevenue(false);
+        }
+    };
+
+
+    const totalRevenue = staffList.reduce((sum, staff) => sum + (staff.revenue || 0), 0);
+
     if (loading) return <div className="p-8 text-center">Loading staff...</div>;
 
     return (
         <div>
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-2xl font-bold text-gray-800">Staff Management</h2>
-                <button
-                    onClick={() => setShowAddModal(true)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                    <i className="fas fa-plus"></i>
-                    Add Staff
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={handleResetRevenue}
+                        disabled={resettingRevenue}
+                        className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        <i className="fas fa-sync-alt"></i>
+                        {resettingRevenue ? 'Resetting...' : 'Generate Report'}
+                    </button>
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                        <i className="fas fa-plus"></i>
+                        Add Staff
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -67,6 +113,7 @@ const StaffManagement = () => {
                         <tr>
                             <th className="px-6 py-4 font-semibold text-gray-600">Name</th>
                             <th className="px-6 py-4 font-semibold text-gray-600">Role</th>
+                            <th className="px-6 py-4 font-semibold text-gray-600">Revenue</th>
                             <th className="px-6 py-4 font-semibold text-gray-600">Joined</th>
                             <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
                         </tr>
@@ -83,22 +130,39 @@ const StaffManagement = () => {
                                         {staff.role}
                                     </span>
                                 </td>
+                                <td className="px-6 py-4 font-semibold text-gray-900">
+                                    {Math.round(staff.revenue || 0).toLocaleString()} MKD
+                                </td>
                                 <td className="px-6 py-4 text-gray-500 text-sm">
                                     {new Date(staff.created_at).toLocaleDateString()}
                                 </td>
                                 <td className="px-6 py-4 text-right">
-                                    <button
-                                        onClick={() => handleDeleteStaff(staff.id)}
-                                        className="text-gray-400 hover:text-red-500 transition-colors"
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
+                                    <div className="flex items-center justify-end gap-3">
+                                        <button
+                                            onClick={() => handleDeleteStaff(staff.id)}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Delete Staff"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         ))}
+                        {staffList.length > 0 && (
+                            <tr className="bg-gray-100 font-bold">
+                                <td className="px-6 py-4 text-gray-900" colSpan="2">
+                                    Total Revenue
+                                </td>
+                                <td className="px-6 py-4 text-gray-900">
+                                    {Math.round(totalRevenue).toLocaleString()} MKD
+                                </td>
+                                <td className="px-6 py-4" colSpan="2"></td>
+                            </tr>
+                        )}
                         {staffList.length === 0 && (
                             <tr>
-                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
                                     No staff members found. Add your first employee!
                                 </td>
                             </tr>

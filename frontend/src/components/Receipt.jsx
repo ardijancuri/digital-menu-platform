@@ -1,11 +1,47 @@
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
-const Receipt = ({ order, businessName, onClose }) => {
+const Receipt = ({ order, businessName, onClose, autoPrint = false }) => {
     const receiptRef = useRef();
+    const printedOrderIdsRef = useRef(new Set());
 
     const handlePrint = () => {
         window.print();
     };
+
+    // Auto-print when autoPrint prop is true
+    useEffect(() => {
+        if (autoPrint && order && order.id && !printedOrderIdsRef.current.has(order.id)) {
+            // Small delay to ensure DOM is fully rendered
+            const timer = setTimeout(() => {
+                window.print();
+                printedOrderIdsRef.current.add(order.id);
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [autoPrint, order?.id]);
+
+    // Keyboard shortcuts (F9 and Ctrl+P)
+    useEffect(() => {
+        const handleKeyDown = (event) => {
+            // F9 Key
+            if (event.key === 'F9') {
+                event.preventDefault();
+                handlePrint();
+            }
+            
+            // Ctrl + P
+            if (event.ctrlKey && event.key === 'p') {
+                event.preventDefault();
+                handlePrint();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -53,7 +89,7 @@ const Receipt = ({ order, businessName, onClose }) => {
                             <h3 className="font-bold text-gray-900 mb-3 print:text-sm print:mb-2">ITEMS</h3>
                         </div>
                         <div className="space-y-2 print:space-y-1">
-                            {order.items.map((item, idx) => (
+                            {order.items && order.items.length > 0 ? order.items.map((item, idx) => (
                                 <div key={idx} className="flex justify-between text-sm print:text-xs">
                                     <div className="flex-1">
                                         <span className="font-semibold">{item.quantity}x</span> {item.name}
@@ -62,7 +98,9 @@ const Receipt = ({ order, businessName, onClose }) => {
                                         {(parseFloat(item.price) * item.quantity).toFixed(2)} MKD
                                     </div>
                                 </div>
-                            ))}
+                            )) : (
+                                <div className="text-sm print:text-xs text-gray-500">No items</div>
+                            )}
                         </div>
                     </div>
 

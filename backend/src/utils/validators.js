@@ -36,8 +36,10 @@ export const sanitizeText = (text) => {
 export const checkValidation = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        const errorMessages = errors.array().map(err => err.msg);
         return res.status(400).json({
             success: false,
+            message: errorMessages[0] || 'Validation failed',
             errors: errors.array()
         });
     }
@@ -60,9 +62,32 @@ export const applicationValidation = [
 
 /**
  * Login validation rules
+ * Supports both email (owners) and username (managers)
  */
 export const loginValidation = [
-    validateEmail,
     body('password').notEmpty().withMessage('Password is required'),
+    // Email is optional (for owners) - only validate format if provided
+    body('email')
+        .optional({ checkFalsy: true })
+        .isEmail()
+        .withMessage('Invalid email format'),
+    // Username is optional (for managers) - only validate if provided
+    body('username')
+        .optional({ checkFalsy: true })
+        .isLength({ min: 1 })
+        .withMessage('Username cannot be empty'),
+    // Custom validation to ensure either email or username is provided
+    body().custom((value, { req }) => {
+        const email = req.body.email;
+        const username = req.body.username;
+        const hasEmail = email !== undefined && email !== null && email !== '';
+        const hasUsername = username !== undefined && username !== null && username !== '';
+        
+        if (!hasEmail && !hasUsername) {
+            throw new Error('Either email or username is required');
+        }
+        
+        return true;
+    }),
     checkValidation
 ];

@@ -1,5 +1,11 @@
 import { query } from '../db/database.js';
 import { uploadFile, deleteFile } from '../utils/supabase.js';
+import { hashPassword } from '../utils/passwordHelper.js';
+
+// Helper function to get effective user ID (owner_id for managers, id for owners)
+const getEffectiveUserId = (user) => {
+    return user.role === 'manager' && user.owner_id ? user.owner_id : user.id;
+};
 
 /**
  * Get menu settings
@@ -264,7 +270,7 @@ export const uploadLogo = async (req, res) => {
  */
 export const getCategories = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
 
         const result = await query(
             'SELECT * FROM categories WHERE user_id = $1 ORDER BY position ASC, id ASC',
@@ -411,7 +417,7 @@ export const deleteCategory = async (req, res) => {
  */
 export const getMenuItems = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
 
         const result = await query(
             `SELECT m.*, c.name as category_name, c.name_mk, c.name_sq, c.name_tr
@@ -719,6 +725,186 @@ export const deleteItemImage = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while removing image'
+        });
+    }
+};
+
+/**
+ * Create manager user
+ */
+export const createManager = async (req, res) => {
+    try {
+        const ownerId = req.user.id;
+
+        // Verify authenticated user is an owner (not a manager)
+        if (req.user.role !== 'user') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only restaurant owners can create managers'
+            });
+        }
+
+        const { username, password } = req.body;
+
+        if (!username || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username and password are required'
+            });
+        }
+
+        // Validate username (basic validation)
+        if (username.trim().length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username cannot be empty'
+            });
+        }
+
+        // Validate password requirements
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must be at least 6 characters long'
+            });
+        }
+
+        if (!/[A-Z]/.test(password)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must contain at least one uppercase letter'
+            });
+        }
+
+        if (!/[0-9]/.test(password)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Password must contain at least one number'
+            });
+        }
+
+        // Check if username already exists
+        const usernameCheck = await query(
+            'SELECT id FROM users WHERE username = $1',
+            [username.trim()]
+        );
+
+        if (usernameCheck.rows.length > 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Username already exists'
+            });
+        }
+
+        // Get owner's business_name for manager
+        const ownerResult = await query(
+            'SELECT business_name FROM users WHERE id = $1',
+            [ownerId]
+        );
+
+        if (ownerResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Owner not found'
+            });
+        }
+
+        // Hash password
+        const password_hash = await hashPassword(password);
+
+        // Create manager user
+        const result = await query(
+            `INSERT INTO users (business_name, username, password_hash, role, owner_id, slug) 
+             VALUES ($1, $2, $3, 'manager', $4, $5) 
+             RETURNING id, username, role, created_at`,
+            [ownerResult.rows[0].business_name, username.trim(), password_hash, ownerId, `manager-${Date.now()}`]
+        );
+
+        res.status(201).json({
+            success: true,
+            message: 'Manager created successfully',
+            manager: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Create manager error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while creating manager'
+        });
+    }
+};
+
+/**
+ * Get all managers for the authenticated owner
+ */
+export const getManagers = async (req, res) => {
+    try {
+        const ownerId = req.user.id;
+
+        // Verify authenticated user is an owner (not a manager)
+        if (req.user.role !== 'user') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only restaurant owners can view managers'
+            });
+        }
+
+        const result = await query(
+            'SELECT id, username, role, created_at FROM users WHERE owner_id = $1 AND role = $2 ORDER BY created_at DESC',
+            [ownerId, 'manager']
+        );
+
+        res.json({
+            success: true,
+            managers: result.rows
+        });
+    } catch (error) {
+        console.error('Get managers error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while fetching managers'
+        });
+    }
+};
+
+/**
+ * Delete manager user
+ */
+export const deleteManager = async (req, res) => {
+    try {
+        const ownerId = req.user.id;
+        const { id } = req.params;
+
+        // Verify authenticated user is an owner (not a manager)
+        if (req.user.role !== 'user') {
+            return res.status(403).json({
+                success: false,
+                message: 'Only restaurant owners can delete managers'
+            });
+        }
+
+        // Verify manager belongs to this owner
+        const result = await query(
+            'DELETE FROM users WHERE id = $1 AND owner_id = $2 AND role = $3 RETURNING *',
+            [id, ownerId, 'manager']
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Manager not found or does not belong to you'
+            });
+        }
+
+        res.json({
+            success: true,
+            message: 'Manager deleted successfully'
+        });
+    } catch (error) {
+        console.error('Delete manager error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while deleting manager'
         });
     }
 };

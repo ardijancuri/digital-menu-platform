@@ -3,12 +3,12 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const POSLayout = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, isManager } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-    const navItems = [
+    const allNavItems = [
         { path: '/pos', label: 'Dashboard', icon: 'fa-home' },
         { path: '/pos/order', label: 'New Order', icon: 'fa-plus-circle' },
         { path: '/pos/tables', label: 'Tables', icon: 'fa-chair' },
@@ -16,6 +16,11 @@ const POSLayout = () => {
         { path: '/pos/staff', label: 'Staff', icon: 'fa-users' },
         { path: '/pos/reports', label: 'Reports', icon: 'fa-chart-bar' },
     ];
+
+    // For managers, hide Staff and Reports
+    const navItems = isManager()
+        ? allNavItems.filter(item => item.path !== '/pos/staff' && item.path !== '/pos/reports')
+        : allNavItems;
 
     const currentSection = navItems.find(item => location.pathname === item.path)?.label || 'POS';
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -74,6 +79,7 @@ const POSLayout = () => {
 
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-gray-700 space-y-2">
+                    {!isManager() && (
                     <button
                         onClick={() => {
                             navigate('/dashboard');
@@ -84,6 +90,7 @@ const POSLayout = () => {
                         <i className="fas fa-arrow-left w-5"></i>
                         <span>Back to Dashboard</span>
                     </button>
+                    )}
                     <button
                         onClick={() => {
                             logout();

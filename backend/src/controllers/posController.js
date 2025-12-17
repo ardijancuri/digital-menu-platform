@@ -1,17 +1,23 @@
 import pool from '../db/database.js';
 import bcrypt from 'bcryptjs';
+import PDFDocument from 'pdfkit';
+
+// Helper function to get effective user ID (owner_id for managers, id for owners)
+const getEffectiveUserId = (user) => {
+    return user.role === 'manager' && user.owner_id ? user.owner_id : user.id;
+};
 
 // --- Tables Management ---
 
 export const getTables = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const result = await pool.query(
             `SELECT t.*, s.name as staff_name, o.id as order_id
              FROM tables t
              LEFT JOIN orders o ON t.id = o.table_id 
                 AND o.user_id = $1 
-                AND o.status IN ('pending', 'preparing', 'ready')
+                AND o.status IN ('pending', 'preparing')
              LEFT JOIN staff s ON o.staff_id = s.id
              WHERE t.user_id = $1 
              ORDER BY t.id ASC`,
@@ -26,7 +32,7 @@ export const getTables = async (req, res) => {
 
 export const createTable = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { name, capacity, position_x, position_y } = req.body;
 
         const result = await pool.query(
@@ -43,7 +49,7 @@ export const createTable = async (req, res) => {
 
 export const updateTableStatus = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { id } = req.params;
         const { status } = req.body; // 'available', 'occupied', 'reserved'
 
@@ -65,7 +71,7 @@ export const updateTableStatus = async (req, res) => {
 
 export const deleteTable = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { id } = req.params;
 
         const result = await pool.query(
@@ -88,12 +94,29 @@ export const deleteTable = async (req, res) => {
 
 export const getStaff = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const result = await pool.query(
             'SELECT id, name, role, created_at FROM staff WHERE user_id = $1 ORDER BY name ASC',
             [userId]
         );
-        res.json({ success: true, staff: result.rows });
+
+        // Calculate revenue for each staff member
+        const staffWithRevenue = await Promise.all(
+            result.rows.map(async (staff) => {
+                const revenueResult = await pool.query(
+                    `SELECT COALESCE(SUM(total_amount), 0) as revenue 
+                     FROM orders 
+                     WHERE user_id = $1 AND staff_id = $2`,
+                    [userId, staff.id]
+                );
+                return {
+                    ...staff,
+                    revenue: parseFloat(revenueResult.rows[0].revenue || 0)
+                };
+            })
+        );
+
+        res.json({ success: true, staff: staffWithRevenue });
     } catch (error) {
         console.error('Error fetching staff:', error);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -102,7 +125,7 @@ export const getStaff = async (req, res) => {
 
 export const createStaff = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { name, pin_code, role } = req.body;
 
         // In a real app, hash the PIN. For simplicity here, we'll store it directly or simple hash if needed.
@@ -123,7 +146,7 @@ export const createStaff = async (req, res) => {
 
 export const loginStaff = async (req, res) => {
     try {
-        const userId = req.user.id; // Admin user ID (restaurant owner)
+        const userId = getEffectiveUserId(req.user); // Admin user ID (restaurant owner)
         const { pin_code } = req.body;
 
         // Find staff member by PIN (this is tricky because we hashed it).
@@ -170,7 +193,7 @@ export const loginStaff = async (req, res) => {
 
 export const verifyStaffPin = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { staff_id, pin_code } = req.body;
 
         if (!staff_id || !pin_code) {
@@ -210,7 +233,7 @@ export const verifyStaffPin = async (req, res) => {
 
 export const deleteStaff = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { id } = req.params;
 
         const result = await pool.query(
@@ -237,7 +260,7 @@ export const createOrder = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { table_id, staff_id, items, payment_method, total_amount } = req.body;
 
         // 1. Create Order
@@ -269,7 +292,31 @@ export const createOrder = async (req, res) => {
 
         await client.query('COMMIT');
 
-        res.json({ success: true, order });
+        // Fetch complete order with items, table_name, and staff_name for receipt
+        const completeOrderResult = await client.query(
+            `SELECT o.*, t.name as table_name, s.name as staff_name,
+                   json_agg(json_build_object(
+                       'id', oi.id,
+                       'menu_item_id', oi.menu_item_id,
+                       'name', m.name,
+                       'quantity', oi.quantity,
+                       'price', oi.price,
+                       'notes', oi.notes,
+                       'created_at', oi.created_at
+                   )) as items
+            FROM orders o
+            LEFT JOIN tables t ON o.table_id = t.id
+            LEFT JOIN staff s ON o.staff_id = s.id
+            LEFT JOIN order_items oi ON o.id = oi.order_id
+            LEFT JOIN menu_items m ON oi.menu_item_id = m.id
+            WHERE o.id = $1
+            GROUP BY o.id, t.name, s.name`,
+            [order.id]
+        );
+
+        const completeOrder = completeOrderResult.rows[0];
+
+        res.json({ success: true, order: completeOrder });
     } catch (error) {
         await client.query('ROLLBACK');
         console.error('Error creating order:', error);
@@ -284,7 +331,7 @@ export const addItemsToOrder = async (req, res) => {
     try {
         await client.query('BEGIN');
 
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { order_id } = req.params;
         const { items } = req.body;
 
@@ -330,7 +377,7 @@ export const addItemsToOrder = async (req, res) => {
 
 export const getOrders = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { status } = req.query; // 'active' (pending/preparing/ready) or 'history' (completed/cancelled)
 
         let query = `
@@ -356,8 +403,6 @@ export const getOrders = async (req, res) => {
 
         if (status === 'active') {
             query += ` AND o.status IN ('preparing')`;
-        } else if (status === 'ready') {
-            query += ` AND o.status = 'ready'`;
         } else if (status === 'history') {
             query += ` AND o.status IN ('completed', 'cancelled')`;
         }
@@ -372,12 +417,76 @@ export const getOrders = async (req, res) => {
     }
 };
 
+export const updateOrderTable = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+
+        const userId = getEffectiveUserId(req.user);
+        const { id } = req.params;
+        const { table_id } = req.body;
+
+        // Verify order belongs to user
+        const orderCheck = await client.query(
+            'SELECT * FROM orders WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
+
+        if (orderCheck.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ success: false, message: 'Order not found' });
+        }
+
+        const order = orderCheck.rows[0];
+        const oldTableId = order.table_id;
+
+        // Update order's table_id
+        await client.query(
+            'UPDATE orders SET updated_at = NOW(), table_id = $1 WHERE id = $2',
+            [table_id || null, id]
+        );
+
+        // Handle old table: free it if no other active orders
+        if (oldTableId) {
+            const activeOrdersRes = await client.query(
+                `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing') AND id != $2`,
+                [oldTableId, id]
+            );
+
+            if (activeOrdersRes.rows.length === 0) {
+                await client.query(
+                    'UPDATE tables SET status = $1 WHERE id = $2',
+                    ['available', oldTableId]
+                );
+            }
+        }
+
+        // Handle new table: occupy it if order is active
+        if (table_id && order.status === 'preparing') {
+            await client.query(
+                'UPDATE tables SET status = $1 WHERE id = $2',
+                ['occupied', table_id]
+            );
+        }
+
+        await client.query('COMMIT');
+
+        res.json({ success: true, message: 'Order table updated' });
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error updating order table:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    } finally {
+        client.release();
+    }
+};
+
 export const updateOrderStatus = async (req, res) => {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
-        const userId = req.user.id;
+        const userId = getEffectiveUserId(req.user);
         const { id } = req.params;
         const { status, payment_status } = req.body;
 
@@ -395,7 +504,7 @@ export const updateOrderStatus = async (req, res) => {
             const deletedOrder = result.rows[0];
             if (deletedOrder.table_id) {
                 const activeOrdersRes = await client.query(
-                    `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing', 'ready') AND id != $2`,
+                    `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing') AND id != $2`,
                     [deletedOrder.table_id, id]
                 );
 
@@ -447,6 +556,14 @@ export const updateOrderStatus = async (req, res) => {
             );
         }
 
+        // If order is being reactivated (status changed to 'preparing' from completed/cancelled), occupy the table
+        if (status === 'preparing' && order.table_id) {
+            await client.query(
+                'UPDATE tables SET status = $1 WHERE id = $2',
+                ['occupied', order.table_id]
+            );
+        }
+
         await client.query('COMMIT');
 
         res.json({ success: true, order });
@@ -456,5 +573,379 @@ export const updateOrderStatus = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error' });
     } finally {
         client.release();
+    }
+};
+
+// --- Staff Revenue Management ---
+
+/**
+ * Get staff revenue breakdown
+ */
+export const getStaffRevenue = async (req, res) => {
+    try {
+        const userId = getEffectiveUserId(req.user);
+
+        // Get all staff
+        const staffResult = await pool.query(
+            'SELECT id, name FROM staff WHERE user_id = $1',
+            [userId]
+        );
+
+        // Calculate revenue for each staff member
+        const staffRevenue = await Promise.all(
+            staffResult.rows.map(async (staff) => {
+                const revenueResult = await pool.query(
+                    `SELECT COALESCE(SUM(total_amount), 0) as revenue 
+                     FROM orders 
+                     WHERE user_id = $1 AND staff_id = $2`,
+                    [userId, staff.id]
+                );
+                return {
+                    staff_id: staff.id,
+                    staff_name: staff.name,
+                    revenue: parseFloat(revenueResult.rows[0].revenue || 0)
+                };
+            })
+        );
+
+        // Calculate total revenue
+        const totalRevenue = staffRevenue.reduce((sum, item) => sum + item.revenue, 0);
+
+        res.json({
+            success: true,
+            staffRevenue,
+            totalRevenue
+        });
+    } catch (error) {
+        console.error('Error fetching staff revenue:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
+ * Reset staff revenue - Store today's revenue and delete today's orders
+ * Generates PDF report of all today's orders
+ */
+export const resetStaffRevenue = async (req, res) => {
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        const userId = getEffectiveUserId(req.user);
+
+        // Get today's date (start of day) in local timezone
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(today);
+        todayEnd.setHours(23, 59, 59, 999);
+        
+        // Format date as YYYY-MM-DD in local timezone (not UTC)
+        const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+        // Get ALL today's orders for PDF report (with table and staff info)
+        const allOrdersResult = await client.query(
+            `SELECT o.id, o.total_amount, o.status, o.created_at, o.payment_method, o.payment_status,
+                    t.name as table_name, s.name as staff_name
+             FROM orders o
+             LEFT JOIN tables t ON o.table_id = t.id
+             LEFT JOIN staff s ON o.staff_id = s.id
+             WHERE o.user_id = $1 
+             AND o.created_at >= $2 
+             AND o.created_at <= $3
+             ORDER BY o.created_at ASC`,
+            [userId, today, todayEnd]
+        );
+
+        const allTodayOrders = allOrdersResult.rows;
+
+        // Get all orders from today for revenue calculation
+        const ordersResult = await client.query(
+            `SELECT id, staff_id, total_amount 
+             FROM orders 
+             WHERE user_id = $1 
+             AND created_at >= $2 
+             AND created_at <= $3`,
+            [userId, today, todayEnd]
+        );
+
+        const todayOrders = ordersResult.rows;
+
+        // Calculate total revenue
+        const totalRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+
+        // Calculate revenue per staff member
+        const staffRevenueMap = {};
+        todayOrders.forEach(order => {
+            if (order.staff_id) {
+                if (!staffRevenueMap[order.staff_id]) {
+                    staffRevenueMap[order.staff_id] = 0;
+                }
+                staffRevenueMap[order.staff_id] += parseFloat(order.total_amount || 0);
+            }
+        });
+
+        // Get staff names for the breakdown
+        const staffIds = Object.keys(staffRevenueMap).map(id => parseInt(id));
+        let staffNames = {};
+        if (staffIds.length > 0) {
+            const staffResult = await client.query(
+                `SELECT id, name FROM staff WHERE id = ANY($1::int[])`,
+                [staffIds]
+            );
+            staffResult.rows.forEach(staff => {
+                staffNames[staff.id] = staff.name;
+            });
+        }
+
+        // Build staff_revenue JSONB object
+        const staffRevenueJson = {};
+        Object.keys(staffRevenueMap).forEach(staffId => {
+            staffRevenueJson[staffId] = {
+                name: staffNames[parseInt(staffId)] || 'Unknown',
+                revenue: staffRevenueMap[staffId]
+            };
+        });
+
+        // Get business name for PDF
+        const userResult = await client.query(
+            'SELECT business_name FROM users WHERE id = $1',
+            [userId]
+        );
+        const businessName = userResult.rows[0]?.business_name || 'Restaurant';
+
+        // Get existing daily_revenue if it exists (before generating PDF so we can include merged data)
+        const existingRevenueResult = await client.query(
+            'SELECT total_revenue, order_count, staff_revenue FROM daily_revenue WHERE user_id = $1 AND date = $2',
+            [userId, todayDateStr]
+        );
+
+        let finalTotalRevenue = totalRevenue;
+        let finalOrderCount = todayOrders.length;
+        let finalStaffRevenue = { ...staffRevenueJson };
+
+        if (existingRevenueResult.rows.length > 0) {
+            const existing = existingRevenueResult.rows[0];
+            // Add to existing values
+            finalTotalRevenue = parseFloat(existing.total_revenue || 0) + totalRevenue;
+            finalOrderCount = (existing.order_count || 0) + todayOrders.length;
+            
+            // Merge staff revenue - add revenue for each staff member
+            const existingStaffRevenue = existing.staff_revenue || {};
+            finalStaffRevenue = { ...existingStaffRevenue };
+            
+            Object.keys(staffRevenueJson).forEach(staffId => {
+                if (finalStaffRevenue[staffId]) {
+                    finalStaffRevenue[staffId].revenue = parseFloat(finalStaffRevenue[staffId].revenue || 0) + staffRevenueJson[staffId].revenue;
+                } else {
+                    finalStaffRevenue[staffId] = staffRevenueJson[staffId];
+                }
+            });
+        }
+
+        // Generate PDF report
+        const doc = new PDFDocument({ margin: 50 });
+        const chunks = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('error', async (error) => {
+            await client.query('ROLLBACK');
+            console.error('Error generating PDF:', error);
+            res.status(500).json({ success: false, message: 'Error generating PDF' });
+            client.release();
+        });
+        doc.on('end', async () => {
+            try {
+                const pdfBuffer = Buffer.concat(chunks);
+
+                // Store in daily_revenue table (use ON CONFLICT to add to existing if exists)
+
+                await client.query(
+                    `INSERT INTO daily_revenue (user_id, date, total_revenue, order_count, staff_revenue)
+                     VALUES ($1, $2, $3, $4, $5)
+                     ON CONFLICT (user_id, date) 
+                     DO UPDATE SET 
+                         total_revenue = EXCLUDED.total_revenue,
+                         order_count = EXCLUDED.order_count,
+                         staff_revenue = EXCLUDED.staff_revenue`,
+                    [userId, todayDateStr, finalTotalRevenue, finalOrderCount, JSON.stringify(finalStaffRevenue)]
+                );
+
+                // Delete all orders from today
+                if (todayOrders.length > 0) {
+                    const orderIds = todayOrders.map(order => order.id);
+                    
+                    // Delete order items first (cascade should handle this, but being explicit)
+                    await client.query(
+                        `DELETE FROM order_items WHERE order_id = ANY($1::int[])`,
+                        [orderIds]
+                    );
+
+                    // Delete orders
+                    await client.query(
+                        `DELETE FROM orders WHERE id = ANY($1::int[])`,
+                        [orderIds]
+                    );
+                }
+
+                // Set all tables to available status
+                await client.query(
+                    'UPDATE tables SET status = $1 WHERE user_id = $2',
+                    ['available', userId]
+                );
+
+                await client.query('COMMIT');
+
+                // Send PDF response
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="daily-report-${todayDateStr}.pdf"`);
+                res.send(pdfBuffer);
+            } catch (error) {
+                await client.query('ROLLBACK');
+                console.error('Error in PDF generation callback:', error);
+                res.status(500).json({ success: false, message: 'Server error' });
+            } finally {
+                client.release();
+            }
+        });
+
+        // PDF Content
+        doc.fontSize(20).text('Daily Report', { align: 'center' });
+        doc.fontSize(14).text(businessName, { align: 'center' });
+        doc.fontSize(12).text(`Date: ${today.toLocaleDateString()}`, { align: 'center' });
+        doc.moveDown(2);
+
+        // Summary
+        doc.fontSize(14).text('Summary', { underline: true, align: 'left' });
+        doc.fontSize(12).text(`Total Orders: ${finalOrderCount}`);
+        doc.text(`Total Revenue: ${Math.round(finalTotalRevenue).toLocaleString()} MKD`);
+        doc.moveDown();
+
+        // Staff Revenue Breakdown
+        doc.fontSize(14).text('Staff Revenue', { underline: true, align: 'left' });
+        doc.moveDown(0.5);
+
+        // Get staff members with revenue > 0 and sort by revenue descending
+        const staffWithRevenue = Object.keys(finalStaffRevenue)
+            .map(staffId => ({
+                id: staffId,
+                name: finalStaffRevenue[staffId].name || 'Unknown',
+                revenue: parseFloat(finalStaffRevenue[staffId].revenue || 0)
+            }))
+            .filter(staff => staff.revenue > 0)
+            .sort((a, b) => b.revenue - a.revenue);
+
+        if (staffWithRevenue.length > 0) {
+            doc.fontSize(10).font('Helvetica-Bold');
+            const staffTableTop = doc.y;
+            const staffTableLeft = 50;
+            const staffColWidths = { name: 300, revenue: 100 };
+
+            doc.text('Staff Member', staffTableLeft, staffTableTop);
+            doc.text('Revenue', staffTableLeft + staffColWidths.name, staffTableTop, { align: 'right' });
+
+            doc.font('Helvetica').fontSize(9);
+            let staffCurrentY = staffTableTop + 20;
+
+            staffWithRevenue.forEach(staff => {
+                if (staffCurrentY > 700) {
+                    doc.addPage();
+                    staffCurrentY = 50;
+                }
+
+                doc.text(staff.name, staffTableLeft, staffCurrentY);
+                doc.text(`${Math.round(staff.revenue).toLocaleString()} MKD`, 
+                    staffTableLeft + staffColWidths.name, staffCurrentY, { align: 'right' });
+
+                staffCurrentY += 15;
+            });
+        } else {
+            doc.fontSize(10).text('No staff revenue data available', { align: 'left' });
+        }
+
+        doc.moveDown(2);
+
+        // Orders Table
+        doc.fontSize(14);
+        doc.text('Orders', 50, doc.y, { underline: true, align: 'left' });
+        doc.moveDown(0.5);
+
+        // Table headers
+        const tableTop = doc.y;
+        const tableLeft = 50;
+        const colWidths = { id: 60, table: 80, staff: 100, amount: 80, status: 80, date: 100 };
+
+        doc.fontSize(10).font('Helvetica-Bold');
+        doc.text('ID', tableLeft, tableTop);
+        doc.text('Table', tableLeft + colWidths.id, tableTop);
+        doc.text('Staff', tableLeft + colWidths.id + colWidths.table, tableTop);
+        doc.text('Amount', tableLeft + colWidths.id + colWidths.table + colWidths.staff, tableTop);
+        doc.text('Status', tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount, tableTop);
+        doc.text('Time', tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount + colWidths.status, tableTop);
+
+        // Table rows
+        doc.font('Helvetica').fontSize(9);
+        let currentY = tableTop + 20;
+
+        allTodayOrders.forEach((order, index) => {
+            if (currentY > 700) {
+                doc.addPage();
+                currentY = 50;
+            }
+
+            const orderDate = new Date(order.created_at);
+            const timeStr = orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            doc.text(order.id.toString(), tableLeft, currentY);
+            doc.text(order.table_name || 'Takeaway', tableLeft + colWidths.id, currentY);
+            doc.text(order.staff_name || 'N/A', tableLeft + colWidths.id + colWidths.table, currentY);
+            doc.text(`${Math.round(parseFloat(order.total_amount || 0)).toLocaleString()} MKD`, 
+                tableLeft + colWidths.id + colWidths.table + colWidths.staff, currentY);
+            doc.text(order.status || 'N/A', 
+                tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount, currentY);
+            doc.text(timeStr, 
+                tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount + colWidths.status, currentY);
+
+            currentY += 15;
+        });
+
+        // Footer
+        doc.fontSize(8).text(
+            `Generated at ${new Date().toLocaleString()}`,
+            50,
+            doc.page.height - 50,
+            { align: 'center' }
+        );
+
+        doc.end();
+    } catch (error) {
+        await client.query('ROLLBACK');
+        console.error('Error resetting staff revenue:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+        client.release();
+    }
+};
+
+/**
+ * Get daily revenue records
+ */
+export const getDailyRevenue = async (req, res) => {
+    try {
+        const userId = getEffectiveUserId(req.user);
+
+        const result = await pool.query(
+            `SELECT id, date::text as date, total_revenue, order_count, staff_revenue, created_at
+             FROM daily_revenue
+             WHERE user_id = $1
+             ORDER BY date DESC
+             LIMIT 100`,
+            [userId]
+        );
+
+        res.json({
+            success: true,
+            dailyRevenue: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching daily revenue:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
     }
 };
