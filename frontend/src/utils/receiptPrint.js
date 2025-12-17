@@ -101,7 +101,7 @@ export const printKitchenTicket = (order) => {
 
     // Build the kitchen ticket HTML - only items and table
     const ticketHTML = `
-        <div style="width: 100%; max-width: 80mm; margin: 0 auto; padding-bottom: 40px;">
+        <div style="width: 100%; max-width: 80mm; margin: 0 auto; padding-bottom: 40px; margin-bottom: 40px;">
             <!-- Table Name -->
             <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px solid #1f2937; padding-bottom: 12px;">
                 <h2 style="font-size: 20px; font-weight: bold; color: #111827; margin: 0;">Table: ${tableName}</h2>
