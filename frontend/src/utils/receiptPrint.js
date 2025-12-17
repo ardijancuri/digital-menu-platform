@@ -20,6 +20,171 @@ const formatTime = (dateString) => {
     });
 };
 
+/**
+ * Print kitchen ticket - only shows items and table name
+ * Used when placing orders to print items that need to be prepared
+ */
+export const printKitchenTicket = (order) => {
+    if (!order) {
+        console.error('No order provided for printing');
+        return;
+    }
+
+    // Create a temporary container for the kitchen ticket
+    const printContainer = document.createElement('div');
+    printContainer.id = 'kitchen-ticket-print-container';
+    printContainer.style.position = 'fixed';
+    printContainer.style.left = '-9999px';
+    printContainer.style.top = '0';
+    printContainer.style.width = '80mm';
+    printContainer.style.maxWidth = '80mm';
+    printContainer.style.backgroundColor = 'white';
+    printContainer.style.padding = '16px';
+    printContainer.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+    printContainer.style.color = 'black';
+
+    // Get table name or "Takeaway"
+    const tableName = order.table_name || 'Takeaway';
+
+    // Group items by round (similar to OrderHistory logic)
+    let itemsHTML = '';
+    if (order.items && order.items.length > 0) {
+        // Sort items by creation time
+        const sortedItems = [...order.items].sort((a, b) =>
+            new Date(a.created_at || 0) - new Date(b.created_at || 0)
+        );
+
+        // Find the timestamp of the last item
+        const lastItemTime = new Date(sortedItems[sortedItems.length - 1].created_at || 0).getTime();
+        const ROUND_THRESHOLD_MS = 1000;
+
+        // Group items: New Round (latest batch) vs Previous
+        const previousItems = [];
+        const newItems = [];
+
+        sortedItems.forEach(item => {
+            const itemTime = new Date(item.created_at || 0).getTime();
+            if (lastItemTime - itemTime < ROUND_THRESHOLD_MS) {
+                newItems.push(item);
+            } else {
+                previousItems.push(item);
+            }
+        });
+
+        // If no previous items, show all items normally without label
+        if (previousItems.length === 0) {
+            itemsHTML = newItems.map((item) => `
+                <div style="font-size: 14px; font-weight: 600;">
+                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
+                </div>
+            `).join('');
+        } else {
+            // Show previous items with reduced opacity
+            itemsHTML = previousItems.map((item) => `
+                <div style="font-size: 14px; font-weight: 600; opacity: 0.75;">
+                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
+                </div>
+            `).join('');
+
+            // Add "New Round" separator
+            itemsHTML += `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+                    <div style="flex: 1; height: 1px; background-color: #bfdbfe;"></div>
+                    <span style="font-size: 10px; font-weight: bold; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; background-color: #dbeafe; padding: 4px 8px; border-radius: 9999px;">
+                        New Round
+                    </span>
+                    <div style="flex: 1; height: 1px; background-color: #bfdbfe;"></div>
+                </div>
+            `;
+
+            // Show new items
+            itemsHTML += newItems.map((item) => `
+                <div style="font-size: 14px; font-weight: 600;">
+                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
+                </div>
+            `).join('');
+        }
+    } else {
+        itemsHTML = '<div style="font-size: 12px; color: #6b7280;">No items</div>';
+    }
+
+    // Build the kitchen ticket HTML - only items and table
+    const ticketHTML = `
+        <div style="width: 100%; max-width: 80mm; margin: 0 auto;">
+            <!-- Table Name -->
+            <div style="text-align: center; margin-bottom: 16px; border-bottom: 2px solid #1f2937; padding-bottom: 12px;">
+                <h2 style="font-size: 20px; font-weight: bold; color: #111827; margin: 0;">Table: ${tableName}</h2>
+            </div>
+
+            <!-- Items -->
+            <div style="margin-bottom: 16px;">
+                <div style="padding-top: 12px; margin-bottom: 12px;">
+                    <h3 style="font-weight: bold; color: #111827; margin-bottom: 12px; font-size: 16px; margin: 0 0 12px 0;">ITEMS TO PREPARE</h3>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    ${itemsHTML}
+                </div>
+            </div>
+        </div>
+    `;
+
+    printContainer.innerHTML = ticketHTML;
+
+    // Add print styles
+    const printStyles = document.createElement('style');
+    printStyles.id = 'kitchen-ticket-print-styles';
+    printStyles.textContent = `
+        @media print {
+            @page {
+                margin: 0;
+                size: auto;
+            }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: auto !important;
+            }
+            body * {
+                visibility: hidden;
+            }
+            #kitchen-ticket-print-container {
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                width: 80mm !important;
+                max-width: 80mm !important;
+                margin: 0 auto !important;
+                padding: 16px !important;
+                background: white !important;
+                visibility: visible !important;
+            }
+            #kitchen-ticket-print-container * {
+                visibility: visible !important;
+            }
+        }
+    `;
+
+    // Append to body
+    document.body.appendChild(printStyles);
+    document.body.appendChild(printContainer);
+
+    // Trigger print after a small delay to ensure DOM is ready
+    setTimeout(() => {
+        window.print();
+
+        // Clean up after printing (with a delay to ensure print dialog has opened)
+        setTimeout(() => {
+            if (printContainer.parentNode) {
+                printContainer.parentNode.removeChild(printContainer);
+            }
+            if (printStyles.parentNode) {
+                printStyles.parentNode.removeChild(printStyles);
+            }
+        }, 1000);
+    }, 100);
+};
+
 export const printReceipt = (order, businessName) => {
     if (!order) {
         console.error('No order provided for printing');

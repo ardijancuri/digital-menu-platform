@@ -3,7 +3,7 @@ import { posAPI } from '../../services/posAPI';
 import { userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import PinModal from '../../components/PinModal';
-import Receipt from '../../components/Receipt';
+import { printKitchenTicket } from '../../utils/receiptPrint';
 
 const OrderTaking = () => {
     const { isManager, user } = useAuth();
@@ -24,8 +24,6 @@ const OrderTaking = () => {
     const [step, setStep] = useState(1); // 1 = Select Table, 3 = Select Products
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
     const [pinError, setPinError] = useState('');
-    const [showReceipt, setShowReceipt] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -101,6 +99,23 @@ const OrderTaking = () => {
             // If we have an active order ID, add items to existing order
             if (activeOrderId) {
                 await posAPI.addItemsToOrder(activeOrderId, { items: itemsData });
+                
+                // Fetch the updated order to get all items for printing
+                try {
+                    const activeRes = await posAPI.getOrders('active');
+                    const activeOrders = activeRes.data.orders || [];
+                    const updatedOrder = activeOrders.find(order => order.id === activeOrderId);
+                    
+                    if (updatedOrder) {
+                        // Print kitchen ticket for the updated order
+                        printKitchenTicket(updatedOrder);
+                    }
+                } catch (error) {
+                    console.error('Error fetching updated order:', error);
+                }
+                
+                // Clear cart but stay on product selection step
+                setCart([]);
             } else {
                 // Create new order
                 const orderData = {
@@ -112,18 +127,25 @@ const OrderTaking = () => {
                 };
                 const orderResponse = await posAPI.createOrder(orderData);
                 
-                // Show receipt with auto-print for new orders only
+                // Print kitchen ticket directly for new orders
                 if (orderResponse && orderResponse.data.success && orderResponse.data.order) {
-                    setSelectedOrder(orderResponse.data.order);
-                    setShowReceipt(true);
+                    printKitchenTicket(orderResponse.data.order);
+                    
+                    // Reset state after a short delay to ensure print dialog opens
+                    setTimeout(() => {
+                        setCart([]);
+                        setSelectedTable(null);
+                        setSelectedStaff('');
+                        setActiveOrderId(null);
+                        setRequiredStaffId(null);
+                        setRequiredStaffName('');
+                        setStep(1);
+                        // Refresh tables to update their status
+                        fetchData();
+                    }, 200);
                 }
             }
-
-            setCart([]);
-            setSelectedTable(null);
-            setSelectedStaff('');
-            setActiveOrderId(null);
-            setStep(1);
+            
             // Refresh tables to update their status
             await fetchData();
         } catch (error) {
@@ -489,19 +511,6 @@ const OrderTaking = () => {
                 staffName={requiredStaffName}
                 error={pinError}
             />
-
-            {/* Receipt Modal with Auto-Print */}
-            {showReceipt && selectedOrder && (
-                <Receipt
-                    order={selectedOrder}
-                    businessName={user?.business_name || 'Restaurant'}
-                    autoPrint={true}
-                    onClose={() => {
-                        setShowReceipt(false);
-                        setSelectedOrder(null);
-                    }}
-                />
-            )}
         </div>
     );
 };
