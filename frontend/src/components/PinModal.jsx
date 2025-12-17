@@ -106,10 +106,19 @@ const PinModal = ({ isOpen, onClose, onConfirm, staffName, error: externalError 
                 <div className="relative bg-white rounded-3xl text-left overflow-hidden shadow-xl transform transition-all w-full max-w-sm">
                     <div className="bg-white px-6 pt-6 pb-6 relative">
                         <div className="text-center">
-                            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">
                                 Enter Staff PIN
                             </h3>
-
+                            {staffName && (
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Please enter PIN for <span className="font-semibold">{staffName}</span>
+                                </p>
+                            )}
+                            {!staffName && (
+                                <p className="text-sm text-gray-600 mb-4">
+                                    Enter the staff member's PIN to continue
+                                </p>
+                            )}
 
                             <form onSubmit={handleSubmit}>
                                 <div className="mb-4">

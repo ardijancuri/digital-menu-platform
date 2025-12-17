@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
 import { useAuth } from '../../context/AuthContext';
-import Receipt from '../../components/Receipt';
+import { printReceipt } from '../../utils/receiptPrint';
 
 const OrderHistory = () => {
     const { user } = useAuth();
@@ -9,9 +9,6 @@ const OrderHistory = () => {
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('active'); // 'active' or 'history'
-    const [showReceipt, setShowReceipt] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState(null);
-    const [shouldAutoPrint, setShouldAutoPrint] = useState(false);
     const [changingTableOrderId, setChangingTableOrderId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -55,18 +52,18 @@ const OrderHistory = () => {
 
     const handleStatusUpdate = async (id, newStatus) => {
         try {
-            // If completing an order, show receipt first with auto-print
+            await posAPI.updateOrderStatus(id, { status: newStatus });
+            
+            // If completing an order, print receipt directly after status update
             if (newStatus === 'completed') {
-                const orderToComplete = orders.find(o => o.id === id);
-                if (orderToComplete) {
-                    setSelectedOrder(orderToComplete);
-                    setShouldAutoPrint(true);
-                    setShowReceipt(true);
-                    return; // Don't update status yet
+                const completedOrder = orders.find(o => o.id === id);
+                if (completedOrder) {
+                    // Update the order status locally for printing
+                    const orderToPrint = { ...completedOrder, status: 'completed' };
+                    printReceipt(orderToPrint, user?.business_name || 'Restaurant');
                 }
             }
-
-            await posAPI.updateOrderStatus(id, { status: newStatus });
+            
             fetchOrders();
         } catch (error) {
             console.error('Error updating order status:', error);
@@ -74,23 +71,8 @@ const OrderHistory = () => {
         }
     };
 
-    const handleCompleteOrder = async () => {
-        try {
-            await posAPI.updateOrderStatus(selectedOrder.id, { status: 'completed' });
-            setShowReceipt(false);
-            setSelectedOrder(null);
-            setShouldAutoPrint(false);
-            fetchOrders();
-        } catch (error) {
-            console.error('Error completing order:', error);
-            alert('Failed to complete order');
-        }
-    };
-
     const handlePrintReceipt = (order) => {
-        setSelectedOrder(order);
-        setShouldAutoPrint(false); // Manual print, no auto-print
-        setShowReceipt(true);
+        printReceipt(order, user?.business_name || 'Restaurant');
     };
 
     return (
@@ -307,22 +289,13 @@ const OrderHistory = () => {
                                     </>
                                 )}
                                 {filter === 'history' && (
-                                    <>
-                                        <button
-                                            onClick={() => handleStatusUpdate(order.id, 'preparing')}
-                                            className="w-full px-3 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 flex items-center justify-center gap-2"
-                                        >
-                                            <i className="fas fa-redo"></i>
-                                            Reactivate Order
-                                        </button>
-                                        <button
-                                            onClick={() => handlePrintReceipt(order)}
-                                            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                                        >
-                                            <i className="fas fa-print"></i>
-                                            Print Receipt
-                                        </button>
-                                    </>
+                                    <button
+                                        onClick={() => handlePrintReceipt(order)}
+                                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
+                                    >
+                                        <i className="fas fa-print"></i>
+                                        Print Receipt
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -333,26 +306,6 @@ const OrderHistory = () => {
                         </div>
                     )}
                 </div>
-            )}
-
-            {/* Receipt Modal */}
-            {showReceipt && selectedOrder && (
-                <Receipt
-                    order={selectedOrder}
-                    businessName={user?.business_name || 'Restaurant'}
-                    autoPrint={shouldAutoPrint}
-                    onClose={() => {
-                        // If order is being completed, handle completion
-                        if (selectedOrder.status !== 'completed' && selectedOrder.status !== 'cancelled') {
-                            handleCompleteOrder();
-                        } else {
-                            // Just close the receipt for already completed/cancelled orders
-                            setShowReceipt(false);
-                            setSelectedOrder(null);
-                            setShouldAutoPrint(false);
-                        }
-                    }}
-                />
             )}
         </div>
     );

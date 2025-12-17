@@ -17,6 +17,8 @@ const OrderTaking = () => {
     const [selectedTable, setSelectedTable] = useState(null);
     const [selectedStaff, setSelectedStaff] = useState('');
     const [activeOrderId, setActiveOrderId] = useState(null); // Track existing order ID for occupied tables
+    const [requiredStaffId, setRequiredStaffId] = useState(null); // Staff ID required for occupied tables
+    const [requiredStaffName, setRequiredStaffName] = useState(''); // Staff name for PIN modal display
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
     const [step, setStep] = useState(1); // 1 = Select Table, 3 = Select Products
@@ -134,13 +136,10 @@ const OrderTaking = () => {
     const handleTableSelect = async (tableId) => {
         setSelectedTable(tableId);
 
-        // If table is occupied, skip PIN and go directly to products
         const table = tables.find(t => t.id === tableId);
+        
+        // If table is occupied, get the active order to find the staff member who initially served it
         if (table && table.status === 'occupied') {
-            // Use the existing staff from the active order
-            setSelectedStaff(table.staff_id || '');
-
-            // Get the active order for this table
             try {
                 const activeRes = await posAPI.getOrders('active');
                 const activeOrders = activeRes.data.orders || [];
@@ -151,37 +150,69 @@ const OrderTaking = () => {
 
                 if (activeOrder) {
                     setActiveOrderId(activeOrder.id);
+                    // Set the required staff ID and name for PIN verification
+                    setRequiredStaffId(activeOrder.staff_id);
+                    setRequiredStaffName(activeOrder.staff_name || '');
+                } else {
+                    // If no active order found, reset
+                    setActiveOrderId(null);
+                    setRequiredStaffId(null);
+                    setRequiredStaffName('');
                 }
             } catch (error) {
                 console.error('Error fetching active order:', error);
+                setActiveOrderId(null);
+                setRequiredStaffId(null);
+                setRequiredStaffName('');
             }
-
-            setStep(3); // Go directly to product selection
         } else {
-            setActiveOrderId(null); // Reset for new orders
-            // Open PIN modal directly to find staff by PIN
-            setIsPinModalOpen(true);
-            setPinError('');
+            // For new orders, reset everything
+            setActiveOrderId(null);
+            setRequiredStaffId(null);
+            setRequiredStaffName('');
         }
+
+        // Always open PIN modal (for both new and occupied tables)
+        setIsPinModalOpen(true);
+        setPinError('');
     };
 
     const handlePinConfirm = async (pin) => {
         try {
             setPinError('');
-            // Use loginStaff which finds staff member by PIN
-            const response = await posAPI.loginStaff(pin);
             
-            if (response.data.success && response.data.staff) {
-                setSelectedStaff(response.data.staff.id);
-                setIsPinModalOpen(false);
-                setStep(3); // Go directly to product selection
+            // If this is an occupied table, verify PIN against the specific staff member
+            if (requiredStaffId) {
+                const response = await posAPI.verifyStaffPin(requiredStaffId, pin);
+                
+                if (response.data.success) {
+                    setSelectedStaff(requiredStaffId);
+                    setIsPinModalOpen(false);
+                    setStep(3); // Go to product selection
+                } else {
+                    setPinError('Invalid PIN. Please enter the PIN of the staff member who initially served this order.');
+                    throw new Error('Invalid PIN');
+                }
             } else {
-                setPinError('Invalid PIN. Please try again.');
-                throw new Error('Invalid PIN');
+                // For new orders, use loginStaff which finds staff member by PIN
+                const response = await posAPI.loginStaff(pin);
+                
+                if (response.data.success && response.data.staff) {
+                    setSelectedStaff(response.data.staff.id);
+                    setIsPinModalOpen(false);
+                    setStep(3); // Go to product selection
+                } else {
+                    setPinError('Invalid PIN. Please try again.');
+                    throw new Error('Invalid PIN');
+                }
             }
         } catch (error) {
             console.error('Error verifying PIN:', error);
-            setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
+            if (requiredStaffId) {
+                setPinError(error.response?.data?.message || 'Invalid PIN. Please enter the PIN of the staff member who initially served this order.');
+            } else {
+                setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
+            }
             throw error; // Re-throw so PinModal can handle it
         }
     };
@@ -189,8 +220,11 @@ const OrderTaking = () => {
     const handlePinModalClose = () => {
         setIsPinModalOpen(false);
         setPinError('');
-        // Reset table selection if PIN modal is closed
+        // Reset table selection and related state if PIN modal is closed
         setSelectedTable(null);
+        setActiveOrderId(null);
+        setRequiredStaffId(null);
+        setRequiredStaffName('');
     };
 
 
@@ -283,7 +317,7 @@ const OrderTaking = () => {
                 isOpen={isPinModalOpen}
                 onClose={handlePinModalClose}
                 onConfirm={handlePinConfirm}
-                staffName=""
+                staffName={requiredStaffName}
                 error={pinError}
             />
             </>
@@ -452,7 +486,7 @@ const OrderTaking = () => {
                 isOpen={isPinModalOpen}
                 onClose={handlePinModalClose}
                 onConfirm={handlePinConfirm}
-                staffName=""
+                staffName={requiredStaffName}
                 error={pinError}
             />
 
