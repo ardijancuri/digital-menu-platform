@@ -114,8 +114,18 @@ const OrderTaking = () => {
                     console.error('Error fetching updated order:', error);
                 }
                 
-                // Clear cart but stay on product selection step
-                setCart([]);
+                // Reset state and go back to tables tab after printing
+                setTimeout(() => {
+                    setCart([]);
+                    setSelectedTable(null);
+                    setSelectedStaff('');
+                    setActiveOrderId(null);
+                    setRequiredStaffId(null);
+                    setRequiredStaffName('');
+                    setStep(1);
+                    // Refresh tables to update their status
+                    fetchData();
+                }, 200);
             } else {
                 // Create new order
                 const orderData = {

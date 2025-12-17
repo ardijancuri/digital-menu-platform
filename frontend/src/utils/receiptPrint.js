@@ -71,24 +71,11 @@ export const printKitchenTicket = (order) => {
             }
         });
 
-        // If no previous items, show all items normally without label
-        if (previousItems.length === 0) {
-            itemsHTML = newItems.map((item) => `
-                <div style="font-size: 14px; font-weight: 600;">
-                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
-                </div>
-            `).join('');
-        } else {
-            // Show previous items with reduced opacity
-            itemsHTML = previousItems.map((item) => `
-                <div style="font-size: 14px; font-weight: 600; opacity: 0.75;">
-                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
-                </div>
-            `).join('');
-
-            // Add "New Round" separator
-            itemsHTML += `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0;">
+        // If there's a new round (previous items exist), only show new items with label
+        if (previousItems.length > 0) {
+            // Add "New Round" label
+            itemsHTML = `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px 0; margin-bottom: 8px;">
                     <div style="flex: 1; height: 1px; background-color: #bfdbfe;"></div>
                     <span style="font-size: 10px; font-weight: bold; color: #2563eb; text-transform: uppercase; letter-spacing: 0.05em; background-color: #dbeafe; padding: 4px 8px; border-radius: 9999px;">
                         New Round
@@ -97,8 +84,15 @@ export const printKitchenTicket = (order) => {
                 </div>
             `;
 
-            // Show new items
+            // Only show new items (not previous items)
             itemsHTML += newItems.map((item) => `
+                <div style="font-size: 14px; font-weight: 600;">
+                    <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
+                </div>
+            `).join('');
+        } else {
+            // If no previous items (all items are from same round), show all items without label
+            itemsHTML = newItems.map((item) => `
                 <div style="font-size: 14px; font-weight: 600;">
                     <span style="font-size: 16px; font-weight: bold;">${item.quantity}x</span> ${item.name}
                 </div>
