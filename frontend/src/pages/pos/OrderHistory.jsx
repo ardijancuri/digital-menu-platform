@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import { printReceipt } from '../../utils/receiptPrint';
 
 const OrderHistory = () => {
-    const { user } = useAuth();
+    const { user, isAdmin, isUser } = useAuth();
     const [orders, setOrders] = useState([]);
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -73,6 +73,21 @@ const OrderHistory = () => {
 
     const handlePrintReceipt = (order) => {
         printReceipt(order, user?.business_name || 'Restaurant');
+    };
+
+    const handleDeleteOrder = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this order? This action cannot be undone.')) {
+            return;
+        }
+        
+        try {
+            await posAPI.updateOrderStatus(id, { status: 'cancelled' });
+            fetchOrders();
+            fetchTables(); // Refresh tables in case the order was occupying a table
+        } catch (error) {
+            console.error('Error deleting order:', error);
+            alert('Failed to delete order');
+        }
     };
 
     return (
@@ -280,22 +295,36 @@ const OrderHistory = () => {
                                                 Complete Order
                                             </button>
                                         )}
-                                        <button
-                                            onClick={() => handleStatusUpdate(order.id, 'cancelled')}
-                                            className="w-full px-3 py-2 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50"
-                                        >
-                                            Cancel
-                                        </button>
+                                        {(isAdmin() || isUser()) && (
+                                            <button
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                className="w-full px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center justify-center gap-2"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                                Delete Order
+                                            </button>
+                                        )}
                                     </>
                                 )}
                                 {filter === 'history' && (
-                                    <button
-                                        onClick={() => handlePrintReceipt(order)}
-                                        className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
-                                    >
-                                        <i className="fas fa-print"></i>
-                                        Print Receipt
-                                    </button>
+                                    <>
+                                        <button
+                                            onClick={() => handlePrintReceipt(order)}
+                                            className="w-full px-3 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 flex items-center justify-center gap-2"
+                                        >
+                                            <i className="fas fa-print"></i>
+                                            Print Receipt
+                                        </button>
+                                        {(isAdmin() || isUser()) && (
+                                            <button
+                                                onClick={() => handleDeleteOrder(order.id)}
+                                                className="w-full px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center justify-center gap-2"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                                Delete Order
+                                            </button>
+                                        )}
+                                    </>
                                 )}
                             </div>
                         </div>
