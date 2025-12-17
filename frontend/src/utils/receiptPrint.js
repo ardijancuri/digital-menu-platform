@@ -108,7 +108,7 @@ export const printKitchenTicket = (order) => {
             </div>
 
             <!-- Items -->
-            <div style="margin-bottom: 0;">
+            <div style="margin-bottom: 40px;">
                 <div style="padding-top: 12px; margin-bottom: 12px;">
                     <h3 style="font-weight: bold; color: #111827; margin-bottom: 12px; font-size: 16px; margin: 0 0 12px 0;">${titleText}</h3>
                 </div>
