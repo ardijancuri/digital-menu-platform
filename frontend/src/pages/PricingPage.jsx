@@ -64,10 +64,6 @@ const PricingPage = () => {
                             <p style={{ color: '#666', marginBottom: '2rem' }}>For large operations</p>
                             <ul style={{ listStyle: 'none', padding: 0, marginBottom: '2rem' }}>
                                 <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Everything in Premium</li>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Multiple locations</li>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ API access</li>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Dedicated account manager</li>
-                                <li style={{ padding: '0.75rem 0', borderBottom: '1px solid #f0f0f0' }}>✓ Custom integrations</li>
                             </ul>
                             <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Contact Sales</button>
                         </div>
