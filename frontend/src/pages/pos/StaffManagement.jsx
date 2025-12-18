@@ -60,15 +60,41 @@ const StaffManagement = () => {
         try {
             const response = await posAPI.resetStaffRevenue();
             
-            // Create blob URL and open in new tab
+            // Create blob URL for PDF
             const blob = new Blob([response.data], { type: 'application/pdf' });
             const url = window.URL.createObjectURL(blob);
-            window.open(url, '_blank');
             
-            // Clean up the URL after a delay
-            setTimeout(() => {
-                window.URL.revokeObjectURL(url);
-            }, 100);
+            // Create iframe for printing
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.src = url;
+            
+            document.body.appendChild(iframe);
+            
+            // Wait for PDF to load, then print
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch (error) {
+                        console.error('Error printing PDF:', error);
+                        // Fallback: open in new tab if print fails
+                        window.open(url, '_blank');
+                    }
+                    
+                    // Clean up after printing
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        window.URL.revokeObjectURL(url);
+                    }, 1000);
+                }, 250);
+            };
 
             fetchStaff(); // Refresh staff list to show reset revenue
         } catch (error) {

@@ -735,8 +735,12 @@ export const resetStaffRevenue = async (req, res) => {
             });
         }
 
-        // Generate PDF report
-        const doc = new PDFDocument({ margin: 50 });
+        // Generate PDF report in receipt format (80mm width)
+        const receiptWidth = 226.77; // 80mm in points (72 DPI)
+        const doc = new PDFDocument({ 
+            size: [receiptWidth, 1000], // Width fixed at 80mm, height will auto-extend
+            margin: 16 
+        });
         const chunks = [];
 
         doc.on('data', (chunk) => chunks.push(chunk));
@@ -801,30 +805,31 @@ export const resetStaffRevenue = async (req, res) => {
             }
         });
 
-        // PDF Content
-        doc.fontSize(20).text('Orders Report', { align: 'center' });
-        doc.fontSize(14).text(businessName, { align: 'center' });
-        doc.fontSize(12).text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
-        if (allOrders.length > 0) {
-            const firstOrderDate = new Date(allOrders[0].created_at);
-            const lastOrderDate = new Date(allOrders[allOrders.length - 1].created_at);
-            if (firstOrderDate.toDateString() === lastOrderDate.toDateString()) {
-                doc.fontSize(10).text(`Orders Date: ${firstOrderDate.toLocaleDateString()}`, { align: 'center' });
-            } else {
-                doc.fontSize(10).text(`Orders Date Range: ${firstOrderDate.toLocaleDateString()} - ${lastOrderDate.toLocaleDateString()}`, { align: 'center' });
-            }
-        }
-        doc.moveDown(2);
+        // PDF Content - Receipt Format
+        const pageWidth = receiptWidth - 32; // Account for margins
+        const leftMargin = 16;
+        
+        // Header
+        doc.fontSize(16).font('Helvetica-Bold').text('ORDERS REPORT', leftMargin, 16, { align: 'center', width: pageWidth });
+        doc.fontSize(12).font('Helvetica').text(businessName, leftMargin, doc.y + 4, { align: 'center', width: pageWidth });
+        doc.fontSize(9).text(new Date().toLocaleDateString(), leftMargin, doc.y + 4, { align: 'center', width: pageWidth });
+        
+        doc.moveDown(1);
+        doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
+        doc.moveDown(0.5);
 
         // Summary
-        doc.fontSize(14).text('Summary', { underline: true, align: 'left' });
-        doc.fontSize(12).text(`Total Orders: ${finalOrderCount}`);
-        doc.text(`Total Revenue: ${Math.round(finalTotalRevenue).toLocaleString()} MKD`);
-        doc.moveDown();
+        doc.fontSize(10).font('Helvetica-Bold').text('SUMMARY', leftMargin, doc.y);
+        doc.fontSize(9).font('Helvetica');
+        doc.text(`Total Orders: ${finalOrderCount}`, leftMargin, doc.y + 2);
+        doc.text(`Total Revenue: ${Math.round(finalTotalRevenue).toLocaleString()} MKD`, leftMargin, doc.y + 2);
+        doc.moveDown(0.5);
+        doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
+        doc.moveDown(0.5);
 
         // Staff Revenue Breakdown
-        doc.fontSize(14).text('Staff Revenue', { underline: true, align: 'left' });
-        doc.moveDown(0.5);
+        doc.fontSize(10).font('Helvetica-Bold').text('STAFF REVENUE', leftMargin, doc.y);
+        doc.moveDown(0.3);
 
         // Get staff members with revenue > 0 and sort by revenue descending
         const staffWithRevenue = Object.keys(finalStaffRevenue)
@@ -837,86 +842,47 @@ export const resetStaffRevenue = async (req, res) => {
             .sort((a, b) => b.revenue - a.revenue);
 
         if (staffWithRevenue.length > 0) {
-            doc.fontSize(10).font('Helvetica-Bold');
-            const staffTableTop = doc.y;
-            const staffTableLeft = 50;
-            const staffColWidths = { name: 300, revenue: 100 };
-
-            doc.text('Staff Member', staffTableLeft, staffTableTop);
-            doc.text('Revenue', staffTableLeft + staffColWidths.name, staffTableTop, { align: 'right' });
-
-            doc.font('Helvetica').fontSize(9);
-            let staffCurrentY = staffTableTop + 20;
-
+            doc.fontSize(8).font('Helvetica-Bold');
             staffWithRevenue.forEach(staff => {
-                if (staffCurrentY > 700) {
-                    doc.addPage();
-                    staffCurrentY = 50;
+                if (doc.y > 950) {
+                    doc.addPage({ size: [receiptWidth, 1000], margin: 16 });
                 }
-
-                doc.text(staff.name, staffTableLeft, staffCurrentY);
-                doc.text(`${Math.round(staff.revenue).toLocaleString()} MKD`, 
-                    staffTableLeft + staffColWidths.name, staffCurrentY, { align: 'right' });
-
-                staffCurrentY += 15;
+                const currentY = doc.y;
+                const staffName = staff.name.length > 20 ? staff.name.substring(0, 20) + '...' : staff.name;
+                const amount = `${Math.round(staff.revenue).toLocaleString()} MKD`;
+                doc.text(staffName, leftMargin, currentY);
+                doc.text(amount, leftMargin, currentY, { align: 'right', width: pageWidth });
+                doc.moveDown(0.3);
             });
         } else {
-            doc.fontSize(10).text('No staff revenue data available', { align: 'left' });
+            doc.fontSize(8).font('Helvetica').text('No staff revenue data', leftMargin, doc.y);
         }
 
-        doc.moveDown(2);
-
-        // Orders Table
-        doc.fontSize(14);
-        doc.text('Orders', 50, doc.y, { underline: true, align: 'left' });
+        doc.moveDown(0.5);
+        doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
         doc.moveDown(0.5);
 
-        // Table headers
-        const tableTop = doc.y;
-        const tableLeft = 50;
-        const colWidths = { id: 60, table: 80, staff: 100, amount: 80, status: 80, date: 100 };
-
-        doc.fontSize(10).font('Helvetica-Bold');
-        doc.text('ID', tableLeft, tableTop);
-        doc.text('Table', tableLeft + colWidths.id, tableTop);
-        doc.text('Staff', tableLeft + colWidths.id + colWidths.table, tableTop);
-        doc.text('Amount', tableLeft + colWidths.id + colWidths.table + colWidths.staff, tableTop);
-        doc.text('Status', tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount, tableTop);
-        doc.text('Time', tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount + colWidths.status, tableTop);
+        // Orders Table - Only Staff and Amount columns
+        doc.fontSize(10).font('Helvetica-Bold').text('ORDERS', leftMargin, doc.y);
+        doc.moveDown(0.3);
 
         // Table rows
-        doc.font('Helvetica').fontSize(9);
-        let currentY = tableTop + 20;
-
-        allOrders.forEach((order, index) => {
-            if (currentY > 700) {
-                doc.addPage();
-                currentY = 50;
+        doc.font('Helvetica').fontSize(8);
+        allOrders.forEach((order) => {
+            if (doc.y > 950) {
+                doc.addPage({ size: [receiptWidth, 1000], margin: 16 });
             }
 
-            const orderDate = new Date(order.created_at);
-            const timeStr = orderDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const currentY = doc.y;
+            const staffName = (order.staff_name || 'N/A');
+            const staffDisplay = staffName.length > 25 ? staffName.substring(0, 25) + '...' : staffName;
+            const amount = `${Math.round(parseFloat(order.total_amount || 0)).toLocaleString()} MKD`;
 
-            doc.text(order.id.toString(), tableLeft, currentY);
-            doc.text(order.table_name || 'Takeaway', tableLeft + colWidths.id, currentY);
-            doc.text(order.staff_name || 'N/A', tableLeft + colWidths.id + colWidths.table, currentY);
-            doc.text(`${Math.round(parseFloat(order.total_amount || 0)).toLocaleString()} MKD`, 
-                tableLeft + colWidths.id + colWidths.table + colWidths.staff, currentY);
-            doc.text(order.status || 'N/A', 
-                tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount, currentY);
-            doc.text(timeStr, 
-                tableLeft + colWidths.id + colWidths.table + colWidths.staff + colWidths.amount + colWidths.status, currentY);
-
-            currentY += 15;
+            doc.text(staffDisplay, leftMargin, currentY);
+            doc.text(amount, leftMargin, currentY, { align: 'right', width: pageWidth });
+            doc.moveDown(0.3);
         });
 
-        // Footer
-        doc.fontSize(8).text(
-            `Generated at ${new Date().toLocaleString()}`,
-            50,
-            doc.page.height - 50,
-            { align: 'center' }
-        );
 
         doc.end();
     } catch (error) {
