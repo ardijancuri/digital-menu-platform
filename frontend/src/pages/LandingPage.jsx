@@ -317,7 +317,7 @@ const LandingPage = () => {
 
                     <div style={{ borderTop: '1px solid #e5e5e5', paddingTop: '2rem', textAlign: 'center' }}>
                         <p style={{ color: '#999', fontSize: '0.875rem' }}>
-                            © 2025 MenuPlatform. All rights reserved.
+                            © 2025 OniPOS. Powered by <a href="https://oninova.net" target="_blank" rel="noopener noreferrer" style={{ color: '#000', textDecoration: 'none', fontWeight: '500' }}>ONINOVA</a>.
                         </p>
                     </div>
                 </div>
