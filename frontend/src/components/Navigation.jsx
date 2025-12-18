@@ -15,7 +15,7 @@ const Navigation = () => {
                         </div>
                     </Link>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <Link to="/login" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem', fontWeight: '500' }}>
+                        <Link to="/login" style={{ color: '#000', textDecoration: 'none', fontSize: '0.9375rem', fontWeight: '500' }}>
                             Sign In
                         </Link>
                         <Link to="/apply">
