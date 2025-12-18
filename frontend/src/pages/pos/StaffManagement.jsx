@@ -48,10 +48,10 @@ const StaffManagement = () => {
     };
 
     const handleResetRevenue = async () => {
-        const confirmMessage = 'Are you sure you want to reset revenue? This will:\n' +
-            '1. Store today\'s revenue in the reports\n' +
-            '2. Delete all of today\'s orders\n' +
-            '3. Generate a PDF report of all today\'s orders\n\n' +
+        const confirmMessage = 'Are you sure you want to generate report? This will:\n' +
+            '1. Store revenue in the reports\n' +
+            '2. Delete all current orders\n' +
+            '3. Generate a PDF report of all orders being deleted\n\n' +
             'This action cannot be undone!';
         
         if (!window.confirm(confirmMessage)) return;

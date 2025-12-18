@@ -632,16 +632,14 @@ export const resetStaffRevenue = async (req, res) => {
         await client.query('BEGIN');
         const userId = getEffectiveUserId(req.user);
 
-        // Get today's date (start of day) in local timezone
+        // Get today's date for daily_revenue table storage
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const todayEnd = new Date(today);
-        todayEnd.setHours(23, 59, 59, 999);
         
         // Format date as YYYY-MM-DD in local timezone (not UTC)
         const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-        // Get ALL today's orders for PDF report (with table and staff info)
+        // Get ALL orders for PDF report (with table and staff info) - no date filter
         const allOrdersResult = await client.query(
             `SELECT o.id, o.total_amount, o.status, o.created_at, o.payment_method, o.payment_status,
                     t.name as table_name, s.name as staff_name
@@ -649,32 +647,28 @@ export const resetStaffRevenue = async (req, res) => {
              LEFT JOIN tables t ON o.table_id = t.id
              LEFT JOIN staff s ON o.staff_id = s.id
              WHERE o.user_id = $1 
-             AND o.created_at >= $2 
-             AND o.created_at <= $3
              ORDER BY o.created_at ASC`,
-            [userId, today, todayEnd]
+            [userId]
         );
 
-        const allTodayOrders = allOrdersResult.rows;
+        const allOrders = allOrdersResult.rows;
 
-        // Get all orders from today for revenue calculation
+        // Get all orders for revenue calculation - no date filter
         const ordersResult = await client.query(
             `SELECT id, staff_id, total_amount 
              FROM orders 
-             WHERE user_id = $1 
-             AND created_at >= $2 
-             AND created_at <= $3`,
-            [userId, today, todayEnd]
+             WHERE user_id = $1`,
+            [userId]
         );
 
-        const todayOrders = ordersResult.rows;
+        const allOrdersForRevenue = ordersResult.rows;
 
-        // Calculate total revenue
-        const totalRevenue = todayOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+        // Calculate total revenue from all orders
+        const totalRevenue = allOrdersForRevenue.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
 
         // Calculate revenue per staff member
         const staffRevenueMap = {};
-        todayOrders.forEach(order => {
+        allOrdersForRevenue.forEach(order => {
             if (order.staff_id) {
                 if (!staffRevenueMap[order.staff_id]) {
                     staffRevenueMap[order.staff_id] = 0;
@@ -719,14 +713,14 @@ export const resetStaffRevenue = async (req, res) => {
         );
 
         let finalTotalRevenue = totalRevenue;
-        let finalOrderCount = todayOrders.length;
+        let finalOrderCount = allOrdersForRevenue.length;
         let finalStaffRevenue = { ...staffRevenueJson };
 
         if (existingRevenueResult.rows.length > 0) {
             const existing = existingRevenueResult.rows[0];
             // Add to existing values
             finalTotalRevenue = parseFloat(existing.total_revenue || 0) + totalRevenue;
-            finalOrderCount = (existing.order_count || 0) + todayOrders.length;
+            finalOrderCount = (existing.order_count || 0) + allOrdersForRevenue.length;
             
             // Merge staff revenue - add revenue for each staff member
             const existingStaffRevenue = existing.staff_revenue || {};
@@ -769,9 +763,9 @@ export const resetStaffRevenue = async (req, res) => {
                     [userId, todayDateStr, finalTotalRevenue, finalOrderCount, JSON.stringify(finalStaffRevenue)]
                 );
 
-                // Delete all orders from today
-                if (todayOrders.length > 0) {
-                    const orderIds = todayOrders.map(order => order.id);
+                // Delete all orders
+                if (allOrdersForRevenue.length > 0) {
+                    const orderIds = allOrdersForRevenue.map(order => order.id);
                     
                     // Delete order items first (cascade should handle this, but being explicit)
                     await client.query(
@@ -796,7 +790,7 @@ export const resetStaffRevenue = async (req, res) => {
 
                 // Send PDF response
                 res.setHeader('Content-Type', 'application/pdf');
-                res.setHeader('Content-Disposition', `inline; filename="daily-report-${todayDateStr}.pdf"`);
+                res.setHeader('Content-Disposition', `inline; filename="orders-report-${todayDateStr}.pdf"`);
                 res.send(pdfBuffer);
             } catch (error) {
                 await client.query('ROLLBACK');
@@ -808,9 +802,18 @@ export const resetStaffRevenue = async (req, res) => {
         });
 
         // PDF Content
-        doc.fontSize(20).text('Daily Report', { align: 'center' });
+        doc.fontSize(20).text('Orders Report', { align: 'center' });
         doc.fontSize(14).text(businessName, { align: 'center' });
-        doc.fontSize(12).text(`Date: ${today.toLocaleDateString()}`, { align: 'center' });
+        doc.fontSize(12).text(`Generated: ${new Date().toLocaleDateString()}`, { align: 'center' });
+        if (allOrders.length > 0) {
+            const firstOrderDate = new Date(allOrders[0].created_at);
+            const lastOrderDate = new Date(allOrders[allOrders.length - 1].created_at);
+            if (firstOrderDate.toDateString() === lastOrderDate.toDateString()) {
+                doc.fontSize(10).text(`Orders Date: ${firstOrderDate.toLocaleDateString()}`, { align: 'center' });
+            } else {
+                doc.fontSize(10).text(`Orders Date Range: ${firstOrderDate.toLocaleDateString()} - ${lastOrderDate.toLocaleDateString()}`, { align: 'center' });
+            }
+        }
         doc.moveDown(2);
 
         // Summary
@@ -885,7 +888,7 @@ export const resetStaffRevenue = async (req, res) => {
         doc.font('Helvetica').fontSize(9);
         let currentY = tableTop + 20;
 
-        allTodayOrders.forEach((order, index) => {
+        allOrders.forEach((order, index) => {
             if (currentY > 700) {
                 doc.addPage();
                 currentY = 50;
