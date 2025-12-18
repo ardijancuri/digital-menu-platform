@@ -739,7 +739,7 @@ export const resetStaffRevenue = async (req, res) => {
         const receiptWidth = 226.77; // 80mm in points (72 DPI)
         const doc = new PDFDocument({ 
             size: [receiptWidth, 1000], // Width fixed at 80mm, height will auto-extend
-            margin: 16 // Base margin, we'll adjust positioning manually
+            margin: 14 // Base margin, we'll adjust positioning manually
         });
         const chunks = [];
 
@@ -807,8 +807,8 @@ export const resetStaffRevenue = async (req, res) => {
 
         // PDF Content - Receipt Format
         // Adjust margins: smaller left margin, larger right margin to center content
-        const leftMargin = 14; // Reduced left margin
-        const rightMargin = 18; // Increased right margin
+        const leftMargin = 12; // Reduced left margin
+        const rightMargin = 20; // Increased right margin
         const pageWidth = receiptWidth - leftMargin - rightMargin; // Account for asymmetric margins
         
         // Header
