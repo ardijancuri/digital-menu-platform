@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://www.onipos.com/sitemap.xml
+Sitemap: https://onipos.com/sitemap.xml
+
