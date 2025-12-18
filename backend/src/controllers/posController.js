@@ -736,9 +736,9 @@ export const resetStaffRevenue = async (req, res) => {
         }
 
         // Generate PDF report in receipt format (80mm width)
-        const receiptWidth = 226.77; // 80mm in points (72 DPI)
+        const receiptWidth = 220; // 80mm in points (72 DPI)
         const doc = new PDFDocument({ 
-            size: [receiptWidth, 1000], // Width fixed at 80mm, height will auto-extend
+            size: [receiptWidth, 800], // Width fixed at 80mm, height will auto-extend
             margin: 14 // Base margin, we'll adjust positioning manually
         });
         const chunks = [];
