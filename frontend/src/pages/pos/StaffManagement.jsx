@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
+import { useAuth } from '../../context/AuthContext';
 
 const StaffManagement = () => {
+    const { isManager } = useAuth();
     const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newStaff, setNewStaff] = useState({ name: '', pin_code: '', role: 'server' });
     const [resettingRevenue, setResettingRevenue] = useState(false);
+    const [generatingReportFor, setGeneratingReportFor] = useState(null);
 
     useEffect(() => {
         fetchStaff();
@@ -105,6 +108,54 @@ const StaffManagement = () => {
         }
     };
 
+    const handleGenerateStaffReport = async (staffId) => {
+        setGeneratingReportFor(staffId);
+        try {
+            const response = await posAPI.getStaffReport(staffId);
+            
+            // Create blob URL for PDF
+            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            
+            // Create iframe for printing
+            const iframe = document.createElement('iframe');
+            iframe.style.position = 'fixed';
+            iframe.style.right = '0';
+            iframe.style.bottom = '0';
+            iframe.style.width = '0';
+            iframe.style.height = '0';
+            iframe.style.border = '0';
+            iframe.src = url;
+            
+            document.body.appendChild(iframe);
+            
+            // Wait for PDF to load, then print
+            iframe.onload = () => {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.focus();
+                        iframe.contentWindow.print();
+                    } catch (error) {
+                        console.error('Error printing PDF:', error);
+                        // Fallback: open in new tab if print fails
+                        window.open(url, '_blank');
+                    }
+                    
+                    // Clean up after printing
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                        window.URL.revokeObjectURL(url);
+                    }, 1000);
+                }, 250);
+            };
+        } catch (error) {
+            console.error('Error generating staff report:', error);
+            alert(error.response?.data?.message || 'Failed to generate staff report');
+        } finally {
+            setGeneratingReportFor(null);
+        }
+    };
+
 
     const totalRevenue = staffList.reduce((sum, staff) => sum + (staff.revenue || 0), 0);
 
@@ -112,35 +163,41 @@ const StaffManagement = () => {
 
     return (
         <div>
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Staff Management</h2>
-                <div className="flex gap-3">
-                    <button
-                        onClick={handleResetRevenue}
-                        disabled={resettingRevenue}
-                        className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <i className="fas fa-sync-alt"></i>
-                        {resettingRevenue ? 'Resetting...' : 'Generate Report'}
-                    </button>
-                    <button
-                        onClick={() => setShowAddModal(true)}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                        <i className="fas fa-plus"></i>
-                        Add Staff
-                    </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Staff Management</h2>
+                <div className="flex gap-3 w-full sm:w-auto">
+                    {!isManager() && (
+                        <button
+                            onClick={handleResetRevenue}
+                            disabled={resettingRevenue}
+                            className="bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 sm:flex-none justify-center"
+                        >
+                            <i className="fas fa-sync-alt"></i>
+                            <span className="hidden sm:inline">{resettingRevenue ? 'Resetting...' : 'Generate Report'}</span>
+                            <span className="sm:hidden">{resettingRevenue ? 'Resetting...' : 'Report'}</span>
+                        </button>
+                    )}
+                    {!isManager() && (
+                        <button
+                            onClick={() => setShowAddModal(true)}
+                            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-none justify-center"
+                        >
+                            <i className="fas fa-plus"></i>
+                            <span className="hidden sm:inline">Add Staff</span>
+                            <span className="sm:hidden">Add</span>
+                        </button>
+                    )}
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Desktop Table View */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <table className="w-full text-left">
                     <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                             <th className="px-6 py-4 font-semibold text-gray-600">Name</th>
                             <th className="px-6 py-4 font-semibold text-gray-600">Role</th>
                             <th className="px-6 py-4 font-semibold text-gray-600">Revenue</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600">Joined</th>
                             <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -159,18 +216,26 @@ const StaffManagement = () => {
                                 <td className="px-6 py-4 font-semibold text-gray-900">
                                     {Math.round(staff.revenue || 0).toLocaleString()} MKD
                                 </td>
-                                <td className="px-6 py-4 text-gray-500 text-sm">
-                                    {new Date(staff.created_at).toLocaleDateString()}
-                                </td>
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-3">
                                         <button
-                                            onClick={() => handleDeleteStaff(staff.id)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                            title="Delete Staff"
+                                            onClick={() => handleGenerateStaffReport(staff.id)}
+                                            disabled={generatingReportFor === staff.id}
+                                            className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Generate Report"
                                         >
-                                            <i className="fas fa-trash"></i>
+                                            <i className="fas fa-file-pdf"></i>
+                                            {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
                                         </button>
+                                        {!isManager() && (
+                                            <button
+                                                onClick={() => handleDeleteStaff(staff.id)}
+                                                className="text-gray-400 hover:text-red-500 transition-colors"
+                                                title="Delete Staff"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        )}
                                     </div>
                                 </td>
                             </tr>
@@ -183,18 +248,79 @@ const StaffManagement = () => {
                                 <td className="px-6 py-4 text-gray-900">
                                     {Math.round(totalRevenue).toLocaleString()} MKD
                                 </td>
-                                <td className="px-6 py-4" colSpan="2"></td>
+                                <td className="px-6 py-4"></td>
                             </tr>
                         )}
                         {staffList.length === 0 && (
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
                                     No staff members found. Add your first employee!
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-4">
+                {staffList.length === 0 ? (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center text-gray-500">
+                        No staff members found. Add your first employee!
+                    </div>
+                ) : (
+                    <>
+                        {staffList.map(staff => (
+                            <div key={staff.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                                <div className="flex items-start justify-between mb-3">
+                                    <div className="flex-1">
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">{staff.name}</h3>
+                                        <span className={`inline-block px-2 py-1 rounded-full text-xs font-bold uppercase ${staff.role === 'admin' ? 'bg-red-100 text-red-600' :
+                                                staff.role === 'manager' ? 'bg-purple-100 text-purple-600' :
+                                                    'bg-blue-100 text-blue-600'
+                                            }`}>
+                                            {staff.role}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="mb-4">
+                                    <p className="text-sm text-gray-600 mb-1">Revenue</p>
+                                    <p className="text-lg font-semibold text-gray-900">
+                                        {Math.round(staff.revenue || 0).toLocaleString()} MKD
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={() => handleGenerateStaffReport(staff.id)}
+                                        disabled={generatingReportFor === staff.id}
+                                        className="flex-1 bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                        title="Generate Report"
+                                    >
+                                        <i className="fas fa-file-pdf"></i>
+                                        {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
+                                    </button>
+                                    {!isManager() && (
+                                        <button
+                                            onClick={() => handleDeleteStaff(staff.id)}
+                                            className="px-4 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Delete Staff"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                        <div className="bg-gray-100 rounded-xl border border-gray-200 p-4">
+                            <div className="flex justify-between items-center">
+                                <span className="font-bold text-gray-900">Total Revenue</span>
+                                <span className="font-bold text-gray-900">
+                                    {Math.round(totalRevenue).toLocaleString()} MKD
+                                </span>
+                            </div>
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Add Staff Modal */}

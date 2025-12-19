@@ -140,16 +140,16 @@ const OrderTaking = () => {
                 // Print kitchen ticket directly for new orders
                 if (orderResponse && orderResponse.data.success && orderResponse.data.order) {
                     printKitchenTicket(orderResponse.data.order);
-                    
+
                     // Reset state after a short delay to ensure print dialog opens
                     setTimeout(() => {
-                        setCart([]);
-                        setSelectedTable(null);
-                        setSelectedStaff('');
-                        setActiveOrderId(null);
+            setCart([]);
+            setSelectedTable(null);
+            setSelectedStaff('');
+            setActiveOrderId(null);
                         setRequiredStaffId(null);
                         setRequiredStaffName('');
-                        setStep(1);
+            setStep(1);
                         // Refresh tables to update their status
                         fetchData();
                     }, 200);
@@ -205,8 +205,8 @@ const OrderTaking = () => {
         }
 
         // Always open PIN modal (for both new and occupied tables)
-        setIsPinModalOpen(true);
-        setPinError('');
+            setIsPinModalOpen(true);
+            setPinError('');
     };
 
     const handlePinConfirm = async (pin) => {
@@ -227,15 +227,15 @@ const OrderTaking = () => {
                 }
             } else {
                 // For new orders, use loginStaff which finds staff member by PIN
-                const response = await posAPI.loginStaff(pin);
-                
-                if (response.data.success && response.data.staff) {
-                    setSelectedStaff(response.data.staff.id);
-                    setIsPinModalOpen(false);
+            const response = await posAPI.loginStaff(pin);
+            
+            if (response.data.success && response.data.staff) {
+                setSelectedStaff(response.data.staff.id);
+                setIsPinModalOpen(false);
                     setStep(3); // Go to product selection
-                } else {
-                    setPinError('Invalid PIN. Please try again.');
-                    throw new Error('Invalid PIN');
+            } else {
+                setPinError('Invalid PIN. Please try again.');
+                throw new Error('Invalid PIN');
                 }
             }
         } catch (error) {
@@ -243,7 +243,7 @@ const OrderTaking = () => {
             if (requiredStaffId) {
                 setPinError(error.response?.data?.message || 'Invalid PIN. Please enter the PIN of the staff member who initially served this order.');
             } else {
-                setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
+            setPinError(error.response?.data?.message || 'Invalid PIN. Please try again.');
             }
             throw error; // Re-throw so PinModal can handle it
         }

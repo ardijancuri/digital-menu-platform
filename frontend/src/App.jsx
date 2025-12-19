@@ -105,7 +105,7 @@ function App() {
             <Route index element={<POSDashboard />} />
             <Route path="order" element={<OrderTaking />} />
             <Route path="tables" element={<TableManagement />} />
-            <Route path="staff" element={<ProtectedRoute restrictManagers><StaffManagement /></ProtectedRoute>} />
+            <Route path="staff" element={<StaffManagement />} />
             <Route path="orders" element={<OrderHistory />} />
             <Route path="reports" element={<ProtectedRoute restrictManagers><Reports /></ProtectedRoute>} />
           </Route>

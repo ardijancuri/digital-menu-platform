@@ -896,6 +896,140 @@ export const resetStaffRevenue = async (req, res) => {
 };
 
 /**
+ * Get staff report - Generate PDF report for a single staff member
+ * Does NOT delete orders or reset revenue
+ */
+export const getStaffReport = async (req, res) => {
+    try {
+        const userId = getEffectiveUserId(req.user);
+        const staffId = parseInt(req.params.id);
+
+        if (!staffId || isNaN(staffId)) {
+            return res.status(400).json({ success: false, message: 'Invalid staff ID' });
+        }
+
+        // Verify staff belongs to this user
+        const staffCheck = await pool.query(
+            'SELECT id, name, role FROM staff WHERE id = $1 AND user_id = $2',
+            [staffId, userId]
+        );
+
+        if (staffCheck.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Staff member not found' });
+        }
+
+        const staffMember = staffCheck.rows[0];
+
+        // Get all orders for this specific staff member
+        const ordersResult = await pool.query(
+            `SELECT o.id, o.total_amount, o.status, o.created_at, o.payment_method, o.payment_status,
+                    t.name as table_name, s.name as staff_name
+             FROM orders o
+             LEFT JOIN tables t ON o.table_id = t.id
+             LEFT JOIN staff s ON o.staff_id = s.id
+             WHERE o.user_id = $1 AND o.staff_id = $2
+             ORDER BY o.created_at ASC`,
+            [userId, staffId]
+        );
+
+        const staffOrders = ordersResult.rows;
+
+        // Calculate total revenue and order count for this staff member
+        const totalRevenue = staffOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+        const orderCount = staffOrders.length;
+
+        // Get business name for PDF
+        const userResult = await pool.query(
+            'SELECT business_name FROM users WHERE id = $1',
+            [userId]
+        );
+        const businessName = userResult.rows[0]?.business_name || 'Restaurant';
+
+        // Generate PDF report in receipt format (80mm width)
+        const receiptWidth = 220; // 80mm in points (72 DPI)
+        const doc = new PDFDocument({ 
+            size: [receiptWidth, 800], // Width fixed at 80mm, height will auto-extend
+            margin: 14 // Base margin, we'll adjust positioning manually
+        });
+        const chunks = [];
+
+        doc.on('data', (chunk) => chunks.push(chunk));
+        doc.on('error', (error) => {
+            console.error('Error generating PDF:', error);
+            res.status(500).json({ success: false, message: 'Error generating PDF' });
+        });
+        doc.on('end', () => {
+            try {
+                const pdfBuffer = Buffer.concat(chunks);
+
+                // Send PDF response
+                res.setHeader('Content-Type', 'application/pdf');
+                res.setHeader('Content-Disposition', `inline; filename="staff-report-${staffMember.name}-${new Date().toISOString().split('T')[0]}.pdf"`);
+                res.send(pdfBuffer);
+            } catch (error) {
+                console.error('Error in PDF generation callback:', error);
+                res.status(500).json({ success: false, message: 'Server error' });
+            }
+        });
+
+        // PDF Content - Receipt Format
+        // Adjust margins: smaller left margin, larger right margin to center content
+        const leftMargin = 12; // Reduced left margin
+        const rightMargin = 20; // Increased right margin
+        const pageWidth = receiptWidth - leftMargin - rightMargin; // Account for asymmetric margins
+        
+        // Header
+        doc.fontSize(16).font('Helvetica-Bold').text('STAFF REPORT', leftMargin, 16, { align: 'center', width: pageWidth });
+        doc.fontSize(12).font('Helvetica').text(staffMember.name, leftMargin, doc.y + 4, { align: 'center', width: pageWidth });
+        doc.fontSize(10).font('Helvetica').text(businessName, leftMargin, doc.y + 4, { align: 'center', width: pageWidth });
+        doc.fontSize(9).text(new Date().toLocaleDateString(), leftMargin, doc.y + 4, { align: 'center', width: pageWidth });
+        
+        doc.moveDown(1);
+        doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        // Summary
+        doc.fontSize(10).font('Helvetica-Bold').text('SUMMARY', leftMargin, doc.y);
+        doc.fontSize(9).font('Helvetica');
+        doc.text(`Total Orders: ${orderCount}`, leftMargin, doc.y + 2);
+        doc.text(`Total Revenue: ${Math.round(totalRevenue).toLocaleString()} MKD`, leftMargin, doc.y + 2);
+        doc.moveDown(0.5);
+        doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
+        doc.moveDown(0.5);
+
+        // Orders Table - Only Staff and Amount columns
+        doc.fontSize(10).font('Helvetica-Bold').text('ORDERS', leftMargin, doc.y);
+        doc.moveDown(0.3);
+
+        // Table rows
+        doc.font('Helvetica').fontSize(8);
+        if (staffOrders.length > 0) {
+            staffOrders.forEach((order) => {
+                if (doc.y > 950) {
+                    doc.addPage({ size: [receiptWidth, 1000], margin: 16 });
+                }
+
+                const currentY = doc.y;
+                const staffName = (order.staff_name || 'N/A');
+                const staffDisplay = staffName.length > 25 ? staffName.substring(0, 25) + '...' : staffName;
+                const amount = `${Math.round(parseFloat(order.total_amount || 0)).toLocaleString()} MKD`;
+
+                doc.text(staffDisplay, leftMargin, currentY);
+                doc.text(amount, leftMargin, currentY, { align: 'right', width: pageWidth });
+                doc.moveDown(0.3);
+            });
+        } else {
+            doc.fontSize(8).font('Helvetica').text('No orders found', leftMargin, doc.y);
+        }
+
+        doc.end();
+    } catch (error) {
+        console.error('Error generating staff report:', error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+};
+
+/**
  * Get daily revenue records
  */
 export const getDailyRevenue = async (req, res) => {

@@ -17,9 +17,9 @@ const POSLayout = () => {
         { path: '/pos/reports', label: 'Reports', icon: 'fa-chart-bar' },
     ];
 
-    // For managers, hide Staff and Reports
+    // For managers, hide Reports only
     const navItems = isManager()
-        ? allNavItems.filter(item => item.path !== '/pos/staff' && item.path !== '/pos/reports')
+        ? allNavItems.filter(item => item.path !== '/pos/reports')
         : allNavItems;
 
     const currentSection = navItems.find(item => location.pathname === item.path)?.label || 'POS';

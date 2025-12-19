@@ -30,6 +30,7 @@ export const posAPI = {
     deleteStaff: (id) => api.delete(`/pos/staff/${id}`),
     getStaffRevenue: () => api.get('/pos/staff/revenue'),
     resetStaffRevenue: () => api.post('/pos/staff/reset-revenue', {}, { responseType: 'blob' }),
+    getStaffReport: (staffId) => api.get(`/pos/staff/${staffId}/report`, { responseType: 'blob' }),
 
     // Orders
     getOrders: (status) => api.get(`/pos/orders?status=${status || ''}`),
