@@ -12,12 +12,11 @@ const ContactPage = () => {
 
     return (
         <PageLayout>
-            <section style={{ padding: '6rem 0 4rem' }}>
+            <section style={{ padding: '6rem 0 1rem' }}>
                 <div className="container">
                     <div style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
                         <div className="accent-line" style={{ margin: '0 auto 2rem' }}></div>
-                        <h1 className="heading-xl" style={{ color: '#000', marginBottom: '1.5rem' }}>Get in Touch</h1>
-                        <p className="body-lg">We'd love to hear from you</p>
+                        <h1 className="heading-xl" style={{ color: '#000', marginBottom: '0.5rem' }}>Get in Touch</h1>
                     </div>
                 </div>
             </section>
@@ -68,6 +67,7 @@ const ContactPage = () => {
                     </div>
                 </div>
             </section>
+            
         </PageLayout>
     );
 };
