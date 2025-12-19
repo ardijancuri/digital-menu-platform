@@ -99,19 +99,13 @@ const UserLogin = () => {
                             Sign In to Dashboard
                         </Button>
 
-                        <div className="text-center space-y-3">
+                        <div className="text-center">
                             <p className="text-sm text-gray-600">
                                 Don't have an account?{' '}
                                 <Link to="/apply" className="text-blue-600 hover:text-blue-700 font-semibold">
                                     Apply here
                                 </Link>
                             </p>
-                            <div className="pt-4 border-t border-gray-200">
-                                <Link to="/admin/login" className="text-sm text-gray-600 hover:text-gray-800 flex items-center justify-center gap-2">
-                                    <i className="fas fa-user-shield"></i>
-                                    Admin Login
-                                </Link>
-                            </div>
                         </div>
                     </form>
                 </div>
