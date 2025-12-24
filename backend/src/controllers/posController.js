@@ -440,6 +440,19 @@ export const updateOrderTable = async (req, res) => {
         const order = orderCheck.rows[0];
         const oldTableId = order.table_id;
 
+        // Validate that the new table is not occupied by another active order
+        if (table_id) {
+            const occupiedTableCheck = await client.query(
+                `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing') AND id != $2`,
+                [table_id, id]
+            );
+
+            if (occupiedTableCheck.rows.length > 0) {
+                await client.query('ROLLBACK');
+                return res.status(400).json({ success: false, message: 'Table is already occupied by another order' });
+            }
+        }
+
         // Update order's table_id
         await client.query(
             'UPDATE orders SET updated_at = NOW(), table_id = $1 WHERE id = $2',

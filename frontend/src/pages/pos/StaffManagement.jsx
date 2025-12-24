@@ -90,11 +90,11 @@ const StaffManagement = () => {
                         // Fallback: open in new tab if print fails
                         window.open(url, '_blank');
                     }
-                    
+            
                     // Clean up after printing
-                    setTimeout(() => {
+            setTimeout(() => {
                         document.body.removeChild(iframe);
-                        window.URL.revokeObjectURL(url);
+                window.URL.revokeObjectURL(url);
                     }, 1000);
                 }, 250);
             };
@@ -167,25 +167,25 @@ const StaffManagement = () => {
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Staff Management</h2>
                 <div className="flex gap-3 w-full sm:w-auto">
                     {!isManager() && (
-                        <button
-                            onClick={handleResetRevenue}
-                            disabled={resettingRevenue}
+                    <button
+                        onClick={handleResetRevenue}
+                        disabled={resettingRevenue}
                             className="bg-orange-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base flex-1 sm:flex-none justify-center"
-                        >
-                            <i className="fas fa-sync-alt"></i>
+                    >
+                        <i className="fas fa-sync-alt"></i>
                             <span className="hidden sm:inline">{resettingRevenue ? 'Resetting...' : 'Generate Report'}</span>
                             <span className="sm:hidden">{resettingRevenue ? 'Resetting...' : 'Report'}</span>
-                        </button>
+                    </button>
                     )}
                     {!isManager() && (
-                        <button
-                            onClick={() => setShowAddModal(true)}
+                    <button
+                        onClick={() => setShowAddModal(true)}
                             className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 text-sm sm:text-base flex-1 sm:flex-none justify-center"
-                        >
-                            <i className="fas fa-plus"></i>
+                    >
+                        <i className="fas fa-plus"></i>
                             <span className="hidden sm:inline">Add Staff</span>
                             <span className="sm:hidden">Add</span>
-                        </button>
+                    </button>
                     )}
                 </div>
             </div>
@@ -228,13 +228,13 @@ const StaffManagement = () => {
                                             {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
                                         </button>
                                         {!isManager() && (
-                                            <button
-                                                onClick={() => handleDeleteStaff(staff.id)}
-                                                className="text-gray-400 hover:text-red-500 transition-colors"
-                                                title="Delete Staff"
-                                            >
-                                                <i className="fas fa-trash"></i>
-                                            </button>
+                                        <button
+                                            onClick={() => handleDeleteStaff(staff.id)}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Delete Staff"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
                                         )}
                                     </div>
                                 </td>

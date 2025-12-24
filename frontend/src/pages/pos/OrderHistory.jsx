@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
 import { useAuth } from '../../context/AuthContext';
 import { printReceipt } from '../../utils/receiptPrint';
+import Modal from '../../components/Modal';
 
 const OrderHistory = () => {
     const { user, isAdmin, isUser } = useAuth();
@@ -11,6 +12,7 @@ const OrderHistory = () => {
     const [filter, setFilter] = useState('active'); // 'active' or 'history'
     const [changingTableOrderId, setChangingTableOrderId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [tableSearchTerm, setTableSearchTerm] = useState('');
 
     useEffect(() => {
         fetchOrders();
@@ -146,33 +148,14 @@ const OrderHistory = () => {
                                         </p>
                                     </div>
                                     <div className="text-base text-gray-800 font-semibold flex items-center gap-2">
-                                        {changingTableOrderId === order.id ? (
-                                            <select
-                                                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                defaultValue={order.table_id || 'null'}
-                                                onChange={(e) => handleTableChange(order.id, e.target.value)}
-                                                onBlur={() => setChangingTableOrderId(null)}
-                                                autoFocus
-                                            >
-                                                <option value="null">Takeaway</option>
-                                                {tables.map(table => (
-                                                    <option key={table.id} value={table.id}>
-                                                        {table.name}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <>
-                                                <span>{order.table_name ? `Table: ${order.table_name}` : 'Takeaway'}</span>
-                                                <button
-                                                    onClick={() => setChangingTableOrderId(order.id)}
-                                                    className="text-blue-600 hover:text-blue-800 bg-blue-100 py-1 px-1.5 rounded-md transition-colors"
-                                                    title="Change table"
-                                                >
-                                                    <i className="fas fa-edit text-lg"></i>
-                                                </button>
-                                            </>
-                                        )}
+                                        <span>{order.table_name ? `Table: ${order.table_name}` : 'Takeaway'}</span>
+                                        <button
+                                            onClick={() => setChangingTableOrderId(order.id)}
+                                            className="text-blue-600 hover:text-blue-800 bg-blue-100 py-1 px-1.5 rounded-md transition-colors"
+                                            title="Change table"
+                                        >
+                                            <i className="fas fa-edit text-lg"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 {order.staff_name && (
@@ -330,6 +313,81 @@ const OrderHistory = () => {
                     )}
                 </div>
             )}
+
+            {/* Table Selection Modal */}
+            {changingTableOrderId && (() => {
+                const currentOrder = orders.find(o => o.id === changingTableOrderId);
+                const filteredTables = tables.filter(table => 
+                    table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
+                );
+                
+                return (
+                    <Modal
+                        isOpen={!!changingTableOrderId}
+                        onClose={() => {
+                            setChangingTableOrderId(null);
+                            setTableSearchTerm('');
+                        }}
+                        title={null}
+                    >
+                        <div className="space-y-3">
+                            {/* Custom Header with Title and Search */}
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-gray-900">Select Table</h3>
+                                <input
+                                    type="text"
+                                    value={tableSearchTerm}
+                                    onChange={(e) => setTableSearchTerm(e.target.value)}
+                                    placeholder="Search tables..."
+                                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-40"
+                                />
+                            </div>
+
+                            {/* Takeaway Option */}
+                            <button
+                                onClick={() => {
+                                    handleTableChange(changingTableOrderId, 'null');
+                                }}
+                                className="w-full text-center px-3 py-2.5 rounded-lg hover:bg-gray-50 transition-colors border-2 border-gray-200 hover:border-gray-300"
+                            >
+                                <span className="text-gray-900 font-medium">Takeaway</span>
+                            </button>
+
+                            {/* Tables Grid */}
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                {filteredTables.map(table => {
+                                    const isOccupied = table.order_id && table.id !== currentOrder?.table_id;
+                                    const isCurrentTable = table.id === currentOrder?.table_id;
+                                    
+                                    return (
+                                        <button
+                                            key={table.id}
+                                            onClick={() => {
+                                                if (!isOccupied) {
+                                                    handleTableChange(changingTableOrderId, table.id.toString());
+                                                }
+                                            }}
+                                            disabled={isOccupied}
+                                            className={`h-16 rounded-lg transition-colors border-2 text-center flex items-center justify-center ${
+                                                isOccupied
+                                                    ? 'bg-orange-50 border-orange-400 text-orange-600 cursor-not-allowed'
+                                                    : isCurrentTable
+                                                    ? 'bg-blue-50 border-blue-200 text-blue-900 hover:bg-blue-100'
+                                                    : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300 text-gray-900'
+                                            }`}
+                                        >
+                                            <span className={`font-medium text-sm ${isOccupied ? 'italic' : ''}`}>
+                                                {table.name}
+                                                {isOccupied && <span className="block text-xs mt-0.5">(Occupied)</span>}
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </Modal>
+                );
+            })()}
         </div>
     );
 };
