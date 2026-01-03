@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import opIcon from '../assets/op-icon.png';
 
 const Navigation = () => {
     return (
@@ -6,9 +7,11 @@ const Navigation = () => {
             <div className="container" style={{ padding: '0.5rem 2rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', textDecoration: 'none' }}>
-                        <div style={{ width: '40px', height: '40px', background: '#000', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.25rem' }}>
-                            OP
-                        </div>
+                        <img 
+                            src={opIcon} 
+                            alt="ONIPOS Logo" 
+                            style={{ width: '40px', height: '40px', objectFit: 'contain' }}
+                        />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                             <span style={{ fontSize: '1.25rem', fontWeight: '600', color: '#000', lineHeight: '1.1' }}>ONIPOS</span>
                             <span style={{ fontSize: '0.7rem', color: '#666', lineHeight: '1.1' }}>Powered by ONINOVA</span>

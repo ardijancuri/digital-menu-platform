@@ -49,7 +49,7 @@ const Reports = () => {
                     dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 } else {
                     // If it's a string (YYYY-MM-DD), parse it using local timezone
-                    const dateParts = day.date.split('-');
+                const dateParts = day.date.split('-');
                     date = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
                     date.setHours(0, 0, 0, 0);
                     dateKey = `${dateParts[0]}-${dateParts[1].padStart(2, '0')}-${dateParts[2].padStart(2, '0')}`;
