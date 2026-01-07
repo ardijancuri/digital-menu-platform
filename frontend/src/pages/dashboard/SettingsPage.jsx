@@ -25,9 +25,10 @@ const SettingsPage = () => {
     const [newManager, setNewManager] = useState({ username: '', password: '' });
     const [creatingManager, setCreatingManager] = useState(false);
     
-    // Generate menu URL
+    // Generate menu URLs (path-based and subdomain-based)
     const menuUrl = user?.slug ? `${window.location.origin}/menu/${user.slug}` : '';
-    const qrCodeUrl = menuUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(menuUrl)}` : '';
+    const subdomainUrl = user?.slug ? `https://${user.slug}.onipos.com` : '';
+    const qrCodeUrl = subdomainUrl ? `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(subdomainUrl)}` : '';
 
     const fetchManagers = async () => {
         setLoadingManagers(true);
@@ -95,6 +96,7 @@ const SettingsPage = () => {
                 description: settings.description,
                 opening_hours: settings.opening_hours,
                 default_language: settings.default_language || 'en',
+                meta_title: settings.meta_title || '',
             });
             alert('Settings saved successfully!');
         } catch (err) {
@@ -281,13 +283,30 @@ const SettingsPage = () => {
                             Business Information
                         </h3>
                         <div className="space-y-4">
-                            <Input
-                                label="Description"
-                                name="description"
-                                value={settings.description || ''}
-                                onChange={handleInputChange}
-                                placeholder="Tell customers about your business..."
-                            />
+                            <div>
+                                <Input
+                                    label="Business Title (SEO)"
+                                    name="meta_title"
+                                    value={settings.meta_title || ''}
+                                    onChange={handleInputChange}
+                                    placeholder="e.g., Papilon Restaurant - Best Pizza in Town"
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    This appears in the browser tab and search engine results. If empty, Business Name is used.
+                                </p>
+                            </div>
+                            <div>
+                                <Input
+                                    label="Description (SEO)"
+                                    name="description"
+                                    value={settings.description || ''}
+                                    onChange={handleInputChange}
+                                    placeholder="Tell customers about your business..."
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Shown below your menu header and used as meta description for search engines.
+                                </p>
+                            </div>
                             <Input
                                 label="Opening Hours"
                                 name="opening_hours"
@@ -304,11 +323,54 @@ const SettingsPage = () => {
                             <i className="fas fa-qrcode text-blue-600"></i>
                             Menu QR Code
                         </h3>
-                        {menuUrl ? (
+                        {user?.slug ? (
                             <div className="space-y-4">
+                                {/* Subdomain URL (Primary) */}
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                        Menu URL
+                                        Subdomain URL <span className="text-xs font-normal text-green-600">(Recommended)</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={subdomainUrl}
+                                            readOnly
+                                            className="input flex-1 text-sm bg-green-50 border-green-200"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                try {
+                                                    await navigator.clipboard.writeText(subdomainUrl);
+                                                    alert('Subdomain URL copied to clipboard!');
+                                                } catch (err) {
+                                                    const textArea = document.createElement('textarea');
+                                                    textArea.value = subdomainUrl;
+                                                    textArea.style.position = 'fixed';
+                                                    textArea.style.opacity = '0';
+                                                    document.body.appendChild(textArea);
+                                                    textArea.select();
+                                                    try {
+                                                        document.execCommand('copy');
+                                                        alert('Subdomain URL copied to clipboard!');
+                                                    } catch (fallbackErr) {
+                                                        alert('Failed to copy URL. Please copy manually.');
+                                                    }
+                                                    document.body.removeChild(textArea);
+                                                }
+                                            }}
+                                            className="px-3 py-2 bg-green-100 hover:bg-green-200 rounded-lg transition-colors text-green-700"
+                                            title="Copy Subdomain URL"
+                                        >
+                                            <i className="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {/* Path-based URL (Alternative) */}
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        Alternative URL
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <input
@@ -324,7 +386,6 @@ const SettingsPage = () => {
                                                     await navigator.clipboard.writeText(menuUrl);
                                                     alert('URL copied to clipboard!');
                                                 } catch (err) {
-                                                    // Fallback for older browsers
                                                     const textArea = document.createElement('textarea');
                                                     textArea.value = menuUrl;
                                                     textArea.style.position = 'fixed';
@@ -347,8 +408,12 @@ const SettingsPage = () => {
                                         </button>
                                     </div>
                                 </div>
+                                
                                 {qrCodeUrl && (
                                     <div className="flex flex-col items-center gap-4">
+                                        <p className="text-xs text-gray-500 text-center">
+                                            QR code points to your subdomain URL
+                                        </p>
                                         <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
                                             <img
                                                 src={qrCodeUrl}

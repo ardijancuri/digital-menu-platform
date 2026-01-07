@@ -73,6 +73,7 @@ CREATE TABLE menu_settings (
     opening_hours TEXT,
     banner_images TEXT[] DEFAULT ARRAY[]::TEXT[],
     default_language TEXT DEFAULT 'en',
+    meta_title TEXT,
     updated_at TIMESTAMP DEFAULT NOW()
 );
 
@@ -117,6 +118,7 @@ CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_owner_id ON users(owner_id);
 CREATE INDEX idx_menu_settings_user_id ON menu_settings(user_id);
 CREATE INDEX idx_menu_settings_banner_images ON menu_settings USING GIN (banner_images);
+CREATE INDEX idx_menu_settings_meta_title ON menu_settings(meta_title);
 CREATE INDEX idx_categories_user_id ON categories(user_id);
 CREATE INDEX idx_categories_name_mk ON categories(name_mk);
 CREATE INDEX idx_categories_name_sq ON categories(name_sq);

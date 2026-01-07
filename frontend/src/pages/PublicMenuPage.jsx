@@ -4,8 +4,10 @@ import { publicAPI } from '../services/api';
 import Modal from '../components/Modal';
 import RightUpArrowIcon from '../assets/right up arrow.svg';
 
-const PublicMenuPage = () => {
-    const { slug } = useParams();
+const PublicMenuPage = ({ subdomainSlug }) => {
+    const { slug: routeSlug } = useParams();
+    // Use subdomain slug if provided, otherwise use route slug
+    const slug = subdomainSlug || routeSlug;
     const [menu, setMenu] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -30,6 +32,49 @@ const PublicMenuPage = () => {
     useEffect(() => {
         fetchMenu();
     }, [slug]);
+
+    // Dynamic meta tags (title, description, favicon)
+    useEffect(() => {
+        if (menu) {
+            // Set page title (meta_title or business_name)
+            document.title = menu.meta_title || menu.business_name || 'Menu';
+            
+            // Set meta description
+            let metaDescription = document.querySelector('meta[name="description"]');
+            if (!metaDescription) {
+                metaDescription = document.createElement('meta');
+                metaDescription.name = 'description';
+                document.head.appendChild(metaDescription);
+            }
+            metaDescription.content = menu.description || `Menu for ${menu.business_name}`;
+            
+            // Set favicon from logo_url
+            if (menu.logo_url) {
+                let favicon = document.querySelector('link[rel="icon"]');
+                if (!favicon) {
+                    favicon = document.createElement('link');
+                    favicon.rel = 'icon';
+                    document.head.appendChild(favicon);
+                }
+                favicon.href = menu.logo_url;
+                favicon.type = 'image/png';
+            }
+        }
+        
+        // Cleanup: restore original meta on unmount
+        return () => {
+            document.title = 'OniPOS - Digital Menu Platform';
+            const metaDescription = document.querySelector('meta[name="description"]');
+            if (metaDescription) {
+                metaDescription.content = 'Create beautiful digital menus in minutes. No coding required. Perfect for restaurants, cafes, and bars.';
+            }
+            // Reset favicon to default
+            const favicon = document.querySelector('link[rel="icon"]');
+            if (favicon) {
+                favicon.href = '/favicon.png';
+            }
+        };
+    }, [menu]);
 
     // Initialize language from URL or default
     useEffect(() => {

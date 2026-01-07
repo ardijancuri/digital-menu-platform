@@ -38,6 +38,36 @@ import StaffManagement from './pages/pos/StaffManagement';
 import OrderHistory from './pages/pos/OrderHistory';
 import Reports from './pages/pos/Reports';
 
+/**
+ * Extracts slug from subdomain if present
+ * Examples:
+ * - papilon.onipos.com -> 'papilon'
+ * - www.onipos.com -> null
+ * - onipos.com -> null
+ * - localhost -> null
+ */
+const getSlugFromSubdomain = () => {
+  const hostname = window.location.hostname;
+  
+  // Skip for localhost or IP addresses
+  if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
+    return null;
+  }
+  
+  const parts = hostname.split('.');
+  
+  // For production: papilon.onipos.com has 3 parts
+  // Skip if subdomain is 'www' or if it's just domain.tld
+  if (parts.length >= 3 && parts[0] !== 'www') {
+    return parts[0];
+  }
+  
+  return null;
+};
+
+// Get subdomain slug once at app initialization
+const subdomainSlug = getSlugFromSubdomain();
+
 function App() {
   return (
     <AuthProvider>
@@ -45,7 +75,8 @@ function App() {
         <ScrollToTop />
         <Routes>
           {/* Public Routes */}
-          <Route path="/" element={<LandingPage />} />
+          {/* If accessed via subdomain, show menu at root */}
+          <Route path="/" element={subdomainSlug ? <PublicMenuPage subdomainSlug={subdomainSlug} /> : <LandingPage />} />
           <Route path="/apply" element={<ApplyPage />} />
           <Route path="/login" element={<UserLogin />} />
           <Route path="/menu/:slug" element={<PublicMenuPage />} />
