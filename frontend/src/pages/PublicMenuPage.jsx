@@ -30,6 +30,21 @@ const PublicMenuPage = ({ subdomainSlug }) => {
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
 
     useEffect(() => {
+        const fetchMenu = async () => {
+            try {
+                const response = await publicAPI.getMenu(slug);
+                const fetchedMenu = response.data.menu;
+                setMenu(fetchedMenu);
+                // Default to first category open if it exists
+                const firstCategoryId = fetchedMenu?.categories?.[0]?.id;
+                setExpandedCategories(firstCategoryId ? new Set([firstCategoryId]) : new Set());
+            } catch (err) {
+                setError('Menu not found');
+            } finally {
+                setLoading(false);
+            }
+        };
+        
         fetchMenu();
     }, [slug]);
 
@@ -152,21 +167,6 @@ const PublicMenuPage = ({ subdomainSlug }) => {
         }
         if (isRightSwipe) {
             setCurrentBannerIndex(prev => (prev - 1 + length) % length);
-        }
-    };
-
-    const fetchMenu = async () => {
-        try {
-            const response = await publicAPI.getMenu(slug);
-            const fetchedMenu = response.data.menu;
-            setMenu(fetchedMenu);
-            // Default to first category open if it exists
-            const firstCategoryId = fetchedMenu?.categories?.[0]?.id;
-            setExpandedCategories(firstCategoryId ? new Set([firstCategoryId]) : new Set());
-        } catch (err) {
-            setError('Menu not found');
-        } finally {
-            setLoading(false);
         }
     };
 

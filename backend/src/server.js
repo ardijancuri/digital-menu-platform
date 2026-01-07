@@ -39,10 +39,38 @@ app.use(cors({
         
         // Check if the origin is in the allowed list
         if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
+            return callback(null, true);
         }
+        
+        // Check for wildcard subdomain patterns (e.g., *.onipos.com)
+        for (const allowedOrigin of allowedOrigins) {
+            // Extract domain from allowed origin (remove protocol if present)
+            const allowedDomain = allowedOrigin.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            const originDomain = origin.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            
+            // If allowed origin contains a wildcard pattern like *.domain.com
+            if (allowedDomain.includes('*.')) {
+                const domainPattern = allowedDomain.replace('*.', '');
+                // Check if origin matches subdomain pattern (e.g., subdomain.onipos.com)
+                // or is the main domain itself (e.g., onipos.com)
+                if (originDomain === domainPattern || originDomain.endsWith('.' + domainPattern)) {
+                    return callback(null, true);
+                }
+            }
+            // Also check if allowed origin is a main domain and origin is a subdomain of it
+            // e.g., if https://onipos.com is allowed, allow https://studio-cafe.onipos.com
+            else if (!allowedDomain.includes('*') && originDomain.includes('.')) {
+                const parts = originDomain.split('.');
+                if (parts.length >= 2) {
+                    const mainDomain = parts.slice(-2).join('.'); // Get last two parts (e.g., onipos.com)
+                    if (allowedDomain === mainDomain || allowedDomain.endsWith('.' + mainDomain)) {
+                        return callback(null, true);
+                    }
+                }
+            }
+        }
+        
+        callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
 }));
