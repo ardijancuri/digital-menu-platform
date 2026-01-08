@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { userAPI } from '../services/api';
 
 const POSLayout = () => {
     const { user, logout, isManager } = useAuth();
     const location = useLocation();
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [settings, setSettings] = useState(null);
 
     const allNavItems = [
         { path: '/pos', label: 'Dashboard', icon: 'fa-home' },
@@ -17,10 +19,36 @@ const POSLayout = () => {
         { path: '/pos/reports', label: 'Reports', icon: 'fa-chart-bar' },
     ];
 
-    // For managers, hide Reports only
-    const navItems = isManager()
-        ? allNavItems.filter(item => item.path !== '/pos/reports')
-        : allNavItems;
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await userAPI.getSettings();
+            setSettings(response.data.settings || {});
+        } catch (err) {
+            console.error('Failed to fetch settings:', err);
+            setSettings({ takeaway_only: false });
+        }
+    };
+
+    // Filter navigation items based on user role and settings
+    const navItems = (() => {
+        let filtered = allNavItems;
+        
+        // For managers, hide Reports
+        if (isManager()) {
+            filtered = filtered.filter(item => item.path !== '/pos/reports');
+        }
+        
+        // If takeaway_only is enabled, hide Tables
+        if (settings?.takeaway_only) {
+            filtered = filtered.filter(item => item.path !== '/pos/tables');
+        }
+        
+        return filtered;
+    })();
 
     const currentSection = navItems.find(item => location.pathname === item.path)?.label || 'POS';
     const currentTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });

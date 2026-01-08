@@ -24,10 +24,22 @@ const OrderTaking = () => {
     const [step, setStep] = useState(1); // 1 = Select Table, 3 = Select Products
     const [isPinModalOpen, setIsPinModalOpen] = useState(false);
     const [pinError, setPinError] = useState('');
+    const [settings, setSettings] = useState(null);
 
     useEffect(() => {
         fetchData();
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await userAPI.getSettings();
+            setSettings(response.data.settings || {});
+        } catch (err) {
+            console.error('Failed to fetch settings:', err);
+            setSettings({ takeaway_only: false });
+        }
+    };
 
     const fetchData = async () => {
         try {
@@ -281,8 +293,12 @@ const OrderTaking = () => {
             <>
             <div className="max-w-6xl mx-auto px-4">
                 <div className="mb-6">
-                    <h2 className="text-2xl font-bold text-gray-800 mb-2">Select Table or Order Type</h2>
-                    <p className="text-gray-600">Choose a table to start a new order</p>
+                    <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                        {settings?.takeaway_only ? 'Start New Order' : 'Select Table or Order Type'}
+                    </h2>
+                    <p className="text-gray-600">
+                        {settings?.takeaway_only ? 'Create a new takeaway order' : 'Choose a table to start a new order'}
+                    </p>
                 </div>
 
                 {/* To Go Option */}
@@ -299,50 +315,54 @@ const OrderTaking = () => {
                     </button>
                 </div>
 
-                {/* Tables Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                    {tables.map(table => (
-                        <button
-                            key={table.id}
-                            onClick={() => handleTableSelect(table.id)}
-                            className={`p-6 rounded-xl shadow-md transition-all relative ${table.status === 'available'
-                                ? 'bg-white hover:bg-blue-50 hover:shadow-lg border-2 border-gray-200 hover:border-blue-500'
-                                : table.status === 'reserved'
-                                    ? 'bg-yellow-50 border-2 border-yellow-400 hover:bg-yellow-100'
-                                    : 'bg-orange-50 border-2 border-orange-400 hover:bg-orange-100 hover:border-orange-500'
-                                }`}
-                        >
-                            {/* Status Badge */}
-                            <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${table.status === 'available' ? 'bg-green-500 text-white' :
-                                table.status === 'reserved' ? 'bg-yellow-500 text-white' :
-                                    'bg-orange-500 text-white'
-                                }`}>
-                                {table.status === 'available' ? 'Free' :
-                                    table.status === 'reserved' ? 'Reserved' :
-                                        'In Use'}
-                            </div>
-
-                            <div className="text-center mt-2">
-                                <i className={`fas fa-chair text-4xl mb-3 ${table.status === 'available' ? 'text-green-600' :
-                                    table.status === 'reserved' ? 'text-yellow-600' :
-                                        'text-orange-600'
-                                    }`}></i>
-                                <div className="font-bold text-gray-800 text-xl">{table.name}</div>
-                                {table.status === 'occupied' && table.staff_name && (
-                                    <div className="text-xs text-gray-500 mt-1">
-                                        <i className="fas fa-user mr-1"></i>{table.staff_name}
+                {/* Tables Grid - Hidden when takeaway_only is enabled */}
+                {!settings?.takeaway_only && (
+                    <>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {tables.map(table => (
+                                <button
+                                    key={table.id}
+                                    onClick={() => handleTableSelect(table.id)}
+                                    className={`p-6 rounded-xl shadow-md transition-all relative ${table.status === 'available'
+                                        ? 'bg-white hover:bg-blue-50 hover:shadow-lg border-2 border-gray-200 hover:border-blue-500'
+                                        : table.status === 'reserved'
+                                            ? 'bg-yellow-50 border-2 border-yellow-400 hover:bg-yellow-100'
+                                            : 'bg-orange-50 border-2 border-orange-400 hover:bg-orange-100 hover:border-orange-500'
+                                        }`}
+                                >
+                                    {/* Status Badge */}
+                                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold ${table.status === 'available' ? 'bg-green-500 text-white' :
+                                        table.status === 'reserved' ? 'bg-yellow-500 text-white' :
+                                            'bg-orange-500 text-white'
+                                        }`}>
+                                        {table.status === 'available' ? 'Free' :
+                                            table.status === 'reserved' ? 'Reserved' :
+                                                'In Use'}
                                     </div>
-                                )}
-                            </div>
-                        </button>
-                    ))}
-                </div>
 
-                {tables.length === 0 && (
-                    <div className="text-center py-12 text-gray-500">
-                        <i className="fas fa-chair text-4xl mb-3"></i>
-                        <p>No tables available. Add tables in Table Management.</p>
-                    </div>
+                                    <div className="text-center mt-2">
+                                        <i className={`fas fa-chair text-4xl mb-3 ${table.status === 'available' ? 'text-green-600' :
+                                            table.status === 'reserved' ? 'text-yellow-600' :
+                                                'text-orange-600'
+                                            }`}></i>
+                                        <div className="font-bold text-gray-800 text-xl">{table.name}</div>
+                                        {table.status === 'occupied' && table.staff_name && (
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                <i className="fas fa-user mr-1"></i>{table.staff_name}
+                                            </div>
+                                        )}
+                                    </div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {tables.length === 0 && (
+                            <div className="text-center py-12 text-gray-500">
+                                <i className="fas fa-chair text-4xl mb-3"></i>
+                                <p>No tables available. Add tables in Table Management.</p>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
             <PinModal

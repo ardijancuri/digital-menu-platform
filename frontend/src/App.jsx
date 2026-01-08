@@ -33,7 +33,7 @@ import PreviewPage from './pages/dashboard/PreviewPage';
 import POSLayout from './layouts/POSLayout';
 import POSDashboard from './pages/pos/POSDashboard';
 import OrderTaking from './pages/pos/OrderTaking';
-import TableManagement from './pages/pos/TableManagement';
+import ProtectedTablesRoute from './components/ProtectedTablesRoute';
 import StaffManagement from './pages/pos/StaffManagement';
 import OrderHistory from './pages/pos/OrderHistory';
 import Reports from './pages/pos/Reports';
@@ -135,7 +135,7 @@ function App() {
           >
             <Route index element={<POSDashboard />} />
             <Route path="order" element={<OrderTaking />} />
-            <Route path="tables" element={<TableManagement />} />
+            <Route path="tables" element={<ProtectedTablesRoute />} />
             <Route path="staff" element={<StaffManagement />} />
             <Route path="orders" element={<OrderHistory />} />
             <Route path="reports" element={<ProtectedRoute restrictManagers><Reports /></ProtectedRoute>} />

@@ -3,7 +3,6 @@ import { userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
-import ColorPicker from '../../components/ColorPicker';
 import ImageUpload from '../../components/ImageUpload';
 
 const SettingsPage = () => {
@@ -58,16 +57,13 @@ const SettingsPage = () => {
                 ...fetched,
                 business_name: fetched.business_name || '',
                 default_language: fetched.default_language || 'en',
+                takeaway_only: fetched.takeaway_only || false,
             });
         } catch (err) {
             console.error('Failed to fetch settings:', err);
         } finally {
             setLoading(false);
         }
-    };
-
-    const handleColorChange = (field, value) => {
-        setSettings(prev => ({ ...prev, [field]: value }));
     };
 
     const handleInputChange = (e) => {
@@ -89,6 +85,10 @@ const SettingsPage = () => {
     };
 
     const handleSave = async () => {
+        if (!settings) {
+            alert('Settings not loaded yet. Please wait.');
+            return;
+        }
         setSaving(true);
         try {
             await userAPI.updateSettings({
@@ -97,6 +97,7 @@ const SettingsPage = () => {
                 opening_hours: settings.opening_hours,
                 default_language: settings.default_language || 'en',
                 meta_title: settings.meta_title || '',
+                takeaway_only: settings.takeaway_only || false,
             });
             alert('Settings saved successfully!');
         } catch (err) {
@@ -205,6 +206,113 @@ const SettingsPage = () => {
                 </Button>
             </div>
 
+            {/* Manager Users Section - Only visible to owners - First Section */}
+            {isUser() && (
+                <div className="mb-8">
+                    <div className="card-flat">
+                        <div className="mb-6 flex items-center justify-between">
+                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <i className="fas fa-users-cog text-blue-600"></i>
+                                Manager Users
+                            </h3>
+                            <Button
+                                onClick={() => setShowManagerForm(!showManagerForm)}
+                                variant="primary"
+                                className="sm:w-auto w-full"
+                            >
+                                <i className="fas fa-plus mr-2"></i>
+                                {showManagerForm ? 'Cancel' : 'Add Manager'}
+                            </Button>
+                        </div>
+
+                        {/* Takeaway Order Only Setting */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="takeaway_only"
+                                    checked={settings?.takeaway_only || false}
+                                    onChange={(e) => {
+                                        setSettings(prev => ({ ...prev, takeaway_only: e.target.checked }));
+                                    }}
+                                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                />
+                                <div>
+                                    <span className="block text-sm font-semibold text-gray-700">
+                                        Enable Takeaway Order Only
+                                    </span>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        When enabled, the Tables page will be hidden and disabled in the POS system.
+                                    </p>
+                                </div>
+                            </label>
+                        </div>
+
+                        {showManagerForm && (
+                            <form onSubmit={handleCreateManager} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <Input
+                                        label="Username"
+                                        type="text"
+                                        value={newManager.username}
+                                        onChange={(e) => setNewManager({ ...newManager, username: e.target.value })}
+                                        placeholder="Enter username"
+                                        required
+                                    />
+                                    <div>
+                                        <Input
+                                            label="Password"
+                                            type="password"
+                                            value={newManager.password}
+                                            onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
+                                            placeholder="Enter password"
+                                            required
+                                        />
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Must be at least 6 characters, include 1 uppercase letter and 1 number
+                                        </p>
+                                    </div>
+                                </div>
+                                <Button type="submit" variant="primary" loading={creatingManager} className="w-full sm:w-auto">
+                                    <i className="fas fa-save mr-2"></i>
+                                    Create Manager
+                                </Button>
+                            </form>
+                        )}
+
+                        {loadingManagers ? (
+                            <div className="text-center py-8">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                            </div>
+                        ) : managers.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">No managers created yet.</p>
+                        ) : (
+                            <div className="space-y-2">
+                                {managers.map((manager) => (
+                                    <div
+                                        key={manager.id}
+                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                                    >
+                                        <div>
+                                            <p className="font-semibold text-gray-900">{manager.username}</p>
+                                            <p className="text-sm text-gray-500">
+                                                Created: {new Date(manager.created_at).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => handleDeleteManager(manager.id)}
+                                            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
             {/* Two Column Grid for Desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                 {/* Left Column */}
@@ -225,57 +333,6 @@ const SettingsPage = () => {
                         />
                     </div>
 
-                    {/* Logo Section */}
-                    <div className="card-flat">
-                        <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-center gap-2">
-                            <i className="fas fa-image text-blue-600"></i>
-                            Business Logo
-                        </h3>
-                        <ImageUpload
-                            onUpload={handleLogoUpload}
-                            currentImage={settings.logo_url}
-                            label="Upload your restaurant logo"
-                        />
-                        {uploading && (
-                            <div className="mt-2 flex items-center gap-2 text-blue-600 text-sm">
-                                <i className="fas fa-spinner fa-spin"></i>
-                                <span>Uploading...</span>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Language Settings */}
-                    <div className="card-flat">
-                        <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
-                            <i className="fas fa-language text-blue-600"></i>
-                            Language Settings
-                        </h3>
-                        <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-2">
-                                Default Language *
-                            </label>
-                            <select
-                                name="default_language"
-                                value={settings.default_language || 'en'}
-                                onChange={handleInputChange}
-                                className="input"
-                                required
-                            >
-                                {languages.map((lang) => (
-                                    <option key={lang.code} value={lang.code}>
-                                        {lang.label}
-                                    </option>
-                                ))}
-                            </select>
-                            <p className="text-xs text-gray-500 mt-2">
-                                This will be the default language shown when visitors first open your menu.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Right Column */}
-                <div className="space-y-6">
                     {/* Business Information */}
                     <div className="card-flat">
                         <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
@@ -315,6 +372,57 @@ const SettingsPage = () => {
                                 placeholder="Mon-Fri: 9AM-10PM, Sat-Sun: 10AM-11PM"
                             />
                         </div>
+                    </div>
+
+                    {/* Language Settings */}
+                    <div className="card-flat">
+                        <h3 className="text-xl font-bold mb-4 text-gray-900 flex items-center gap-2">
+                            <i className="fas fa-language text-blue-600"></i>
+                            Language Settings
+                        </h3>
+                        <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                Default Language *
+                            </label>
+                            <select
+                                name="default_language"
+                                value={settings.default_language || 'en'}
+                                onChange={handleInputChange}
+                                className="input"
+                                required
+                            >
+                                {languages.map((lang) => (
+                                    <option key={lang.code} value={lang.code}>
+                                        {lang.label}
+                                    </option>
+                                ))}
+                            </select>
+                            <p className="text-xs text-gray-500 mt-2">
+                                This will be the default language shown when visitors first open your menu.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                    {/* Logo Section */}
+                    <div className="card-flat">
+                        <h3 className="text-lg font-bold mb-3 text-gray-900 flex items-center gap-2">
+                            <i className="fas fa-image text-blue-600"></i>
+                            Business Logo
+                        </h3>
+                        <ImageUpload
+                            onUpload={handleLogoUpload}
+                            currentImage={settings.logo_url}
+                            label="Upload your restaurant logo"
+                        />
+                        {uploading && (
+                            <div className="mt-2 flex items-center gap-2 text-blue-600 text-sm">
+                                <i className="fas fa-spinner fa-spin"></i>
+                                <span>Uploading...</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* QR Code Section */}
@@ -440,90 +548,6 @@ const SettingsPage = () => {
                     </div>
                 </div>
             </div>
-
-            {/* Manager Users Section - Only visible to owners */}
-            {isUser() && (
-                <div className="mt-8">
-                    <div className="card-flat">
-                        <div className="mb-6 flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                                <i className="fas fa-users-cog text-blue-600"></i>
-                                Manager Users
-                            </h3>
-                            <Button
-                                onClick={() => setShowManagerForm(!showManagerForm)}
-                                variant="primary"
-                                className="sm:w-auto w-full"
-                            >
-                                <i className="fas fa-plus mr-2"></i>
-                                {showManagerForm ? 'Cancel' : 'Add Manager'}
-                            </Button>
-                        </div>
-
-                        {showManagerForm && (
-                            <form onSubmit={handleCreateManager} className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                                    <Input
-                                        label="Username"
-                                        type="text"
-                                        value={newManager.username}
-                                        onChange={(e) => setNewManager({ ...newManager, username: e.target.value })}
-                                        placeholder="Enter username"
-                                        required
-                                    />
-                                    <div>
-                                        <Input
-                                            label="Password"
-                                            type="password"
-                                            value={newManager.password}
-                                            onChange={(e) => setNewManager({ ...newManager, password: e.target.value })}
-                                            placeholder="Enter password"
-                                            required
-                                        />
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            Must be at least 6 characters, include 1 uppercase letter and 1 number
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button type="submit" variant="primary" loading={creatingManager} className="w-full sm:w-auto">
-                                    <i className="fas fa-save mr-2"></i>
-                                    Create Manager
-                                </Button>
-                            </form>
-                        )}
-
-                        {loadingManagers ? (
-                            <div className="text-center py-8">
-                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                            </div>
-                        ) : managers.length === 0 ? (
-                            <p className="text-gray-500 text-center py-8">No managers created yet.</p>
-                        ) : (
-                            <div className="space-y-2">
-                                {managers.map((manager) => (
-                                    <div
-                                        key={manager.id}
-                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
-                                    >
-                                        <div>
-                                            <p className="font-semibold text-gray-900">{manager.username}</p>
-                                            <p className="text-sm text-gray-500">
-                                                Created: {new Date(manager.created_at).toLocaleDateString()}
-                                            </p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleDeleteManager(manager.id)}
-                                            className="px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
         </div>
     );
 };
