@@ -61,7 +61,7 @@ const LandingPage = () => {
             <Navigation />
 
             {/* Hero Section */}
-            <section className="section-padding" style={{ marginTop: '60px', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
+            <section className="section-padding" style={{ marginTop: '50px', minHeight: '90vh', display: 'flex', alignItems: 'center' }}>
                 <div className="container">
                     <div style={{ maxWidth: '900px', margin: '0 auto', textAlign: 'center' }}>
                         <div className="animate-fade-in-up" style={{ marginBottom: '1.5rem' }}>

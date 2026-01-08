@@ -62,7 +62,7 @@ const ContactPage = () => {
 
                         <div style={{ marginTop: '3rem', textAlign: 'center' }}>
                             <p style={{ color: '#666', marginBottom: '1rem' }}>Or reach us at:</p>
-                            <p style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>support@onipos.com</p>
+                            <p style={{ fontSize: '1.125rem', fontWeight: '500', marginBottom: '0.5rem' }}>contact@oninova.net</p>
                         </div>
                     </div>
                 </div>
