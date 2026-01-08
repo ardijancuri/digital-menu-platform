@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import opIcon from '../assets/op-icon.png';
 
 const Footer = () => {
     return (
@@ -7,9 +8,11 @@ const Footer = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '3rem', marginBottom: '3rem' }}>
                     <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '1rem' }}>
-                            <div style={{ width: '32px', height: '32px', background: '#000', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1rem' }}>
-                                OP
-                            </div>
+                            <img 
+                                src={opIcon} 
+                                alt="ONIPOS Logo" 
+                                style={{ width: '32px', height: '32px', objectFit: 'contain' }}
+                            />
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <span style={{ fontSize: '1.125rem', fontWeight: '600', lineHeight: '1.1' }}>ONIPOS</span>
                                 <span style={{ fontSize: '0.7rem', color: '#666', lineHeight: '1.1' }}>Powered by ONINOVA</span>
