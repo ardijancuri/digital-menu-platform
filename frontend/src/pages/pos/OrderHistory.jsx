@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
+import { userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { printReceipt } from '../../utils/receiptPrint';
+import { printFiscalReceipt, isFiscalPrinterAvailable } from '../../utils/fiscalPrint';
 import Modal from '../../components/Modal';
 
 const OrderHistory = () => {
@@ -13,11 +15,23 @@ const OrderHistory = () => {
     const [changingTableOrderId, setChangingTableOrderId] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [tableSearchTerm, setTableSearchTerm] = useState('');
+    const [settings, setSettings] = useState(null);
 
     useEffect(() => {
         fetchOrders();
         fetchTables();
+        fetchSettings();
     }, [filter]);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await userAPI.getSettings();
+            setSettings(response.data.settings || {});
+        } catch (err) {
+            console.error('Failed to fetch settings:', err);
+            setSettings({ fiscal_printer_enabled: false });
+        }
+    };
 
     const fetchOrders = async () => {
         setLoading(true);
@@ -62,7 +76,27 @@ const OrderHistory = () => {
                 if (completedOrder) {
                     // Update the order status locally for printing
                     const orderToPrint = { ...completedOrder, status: 'completed' };
+                    
+                    // Print standard receipt
                     printReceipt(orderToPrint, user?.business_name || 'Restaurant');
+                    
+                    // Print fiscal receipt if enabled
+                    if (settings?.fiscal_printer_enabled) {
+                        if (isFiscalPrinterAvailable()) {
+                            const fiscalResult = await printFiscalReceipt(
+                                orderToPrint, 
+                                completedOrder.payment_method || 'cash',
+                                user?.business_name || settings?.business_name || 'Restaurant'
+                            );
+                            
+                            if (!fiscalResult.success) {
+                                console.error('Fiscal print failed:', fiscalResult.error);
+                                alert(`Fiscal receipt failed: ${fiscalResult.error}`);
+                            }
+                        } else {
+                            console.warn('Fiscal printer library not loaded. Skipping fiscal receipt.');
+                        }
+                    }
                 }
             }
             

@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { posAPI } from '../../services/posAPI';
+import { userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { printZReport, isFiscalPrinterAvailable } from '../../utils/fiscalPrint';
 
 const StaffManagement = () => {
     const { isManager } = useAuth();
@@ -10,10 +12,22 @@ const StaffManagement = () => {
     const [newStaff, setNewStaff] = useState({ name: '', pin_code: '', role: 'server' });
     const [resettingRevenue, setResettingRevenue] = useState(false);
     const [generatingReportFor, setGeneratingReportFor] = useState(null);
+    const [settings, setSettings] = useState(null);
 
     useEffect(() => {
         fetchStaff();
+        fetchSettings();
     }, []);
+
+    const fetchSettings = async () => {
+        try {
+            const response = await userAPI.getSettings();
+            setSettings(response.data.settings || {});
+        } catch (err) {
+            console.error('Failed to fetch settings:', err);
+            setSettings({ fiscal_printer_enabled: false });
+        }
+    };
 
     const fetchStaff = async () => {
         try {
@@ -54,7 +68,8 @@ const StaffManagement = () => {
         const confirmMessage = 'Are you sure you want to generate report? This will:\n' +
             '1. Store revenue in the reports\n' +
             '2. Delete all current orders\n' +
-            '3. Generate a PDF report of all orders being deleted\n\n' +
+            '3. Generate a PDF report of all orders being deleted\n' +
+            (settings?.fiscal_printer_enabled ? '4. Print fiscal Z-Report\n\n' : '\n') +
             'This action cannot be undone!';
         
         if (!window.confirm(confirmMessage)) return;
@@ -98,6 +113,20 @@ const StaffManagement = () => {
                     }, 1000);
                 }, 250);
             };
+
+            // Print fiscal Z-Report if enabled
+            if (settings?.fiscal_printer_enabled) {
+                if (isFiscalPrinterAvailable()) {
+                    const zReportResult = await printZReport();
+                    if (!zReportResult.success) {
+                        console.error('Z-Report failed:', zReportResult.error);
+                        alert(`Warning: Fiscal Z-Report failed: ${zReportResult.error}\n\nThe staff report was generated successfully.`);
+                    }
+                } else {
+                    console.warn('Fiscal printer library not loaded. Skipping Z-Report.');
+                    alert('Warning: Fiscal printer library not loaded. Z-Report was skipped.\n\nThe staff report was generated successfully.');
+                }
+            }
 
             fetchStaff(); // Refresh staff list to show reset revenue
         } catch (error) {

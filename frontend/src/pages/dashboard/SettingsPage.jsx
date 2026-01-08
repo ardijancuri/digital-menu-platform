@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import ImageUpload from '../../components/ImageUpload';
+import { testFiscalPrinterConnection } from '../../utils/fiscalPrint';
 
 const SettingsPage = () => {
     const languages = [
@@ -23,6 +24,8 @@ const SettingsPage = () => {
     const [showManagerForm, setShowManagerForm] = useState(false);
     const [newManager, setNewManager] = useState({ username: '', password: '' });
     const [creatingManager, setCreatingManager] = useState(false);
+    const [testingFiscalPrinter, setTestingFiscalPrinter] = useState(false);
+    const [fiscalPrinterStatus, setFiscalPrinterStatus] = useState(null);
     
     // Generate menu URLs (path-based and subdomain-based)
     const menuUrl = user?.slug ? `${window.location.origin}/menu/${user.slug}` : '';
@@ -58,6 +61,7 @@ const SettingsPage = () => {
                 business_name: fetched.business_name || '',
                 default_language: fetched.default_language || 'en',
                 takeaway_only: fetched.takeaway_only || false,
+                fiscal_printer_enabled: fetched.fiscal_printer_enabled || false,
             });
         } catch (err) {
             console.error('Failed to fetch settings:', err);
@@ -98,6 +102,7 @@ const SettingsPage = () => {
                 default_language: settings.default_language || 'en',
                 meta_title: settings.meta_title || '',
                 takeaway_only: settings.takeaway_only || false,
+                fiscal_printer_enabled: settings.fiscal_printer_enabled || false,
             });
             alert('Settings saved successfully!');
         } catch (err) {
@@ -193,6 +198,23 @@ const SettingsPage = () => {
         }
     };
 
+    const handleTestFiscalPrinter = async () => {
+        setTestingFiscalPrinter(true);
+        setFiscalPrinterStatus(null);
+        
+        try {
+            const result = await testFiscalPrinterConnection();
+            setFiscalPrinterStatus(result);
+        } catch (err) {
+            setFiscalPrinterStatus({
+                success: false,
+                error: err.message || 'Test failed'
+            });
+        } finally {
+            setTestingFiscalPrinter(false);
+        }
+    };
+
     return (
         <div className="max-w-6xl">
             <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -226,7 +248,7 @@ const SettingsPage = () => {
                         </div>
 
                         {/* Takeaway Order Only Setting */}
-                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                        <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <label className="flex items-center gap-3 cursor-pointer">
                                 <input
                                     type="checkbox"
@@ -246,6 +268,78 @@ const SettingsPage = () => {
                                     </p>
                                 </div>
                             </label>
+                        </div>
+
+                        {/* Fiscal Printer Setting */}
+                        <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex items-start justify-between gap-4">
+                                <label className="flex items-center gap-3 cursor-pointer flex-1">
+                                    <input
+                                        type="checkbox"
+                                        name="fiscal_printer_enabled"
+                                        checked={settings?.fiscal_printer_enabled || false}
+                                        onChange={(e) => {
+                                            setSettings(prev => ({ ...prev, fiscal_printer_enabled: e.target.checked }));
+                                            setFiscalPrinterStatus(null);
+                                        }}
+                                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <div>
+                                        <span className="block text-sm font-semibold text-gray-700">
+                                            Enable Fiscal Printer
+                                        </span>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            When enabled, fiscal receipts will be printed via Tremol/DAVID fiscal printer when completing orders.
+                                            Requires ZFPLab Server running on localhost:4444.
+                                        </p>
+                                    </div>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={handleTestFiscalPrinter}
+                                    disabled={testingFiscalPrinter}
+                                    className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                    {testingFiscalPrinter ? (
+                                        <span className="flex items-center gap-1">
+                                            <i className="fas fa-spinner fa-spin"></i>
+                                            Testing...
+                                        </span>
+                                    ) : (
+                                        <span className="flex items-center gap-1">
+                                            <i className="fas fa-plug"></i>
+                                            Test Connection
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
+                            
+                            {/* Fiscal Printer Status */}
+                            {fiscalPrinterStatus && (
+                                <div className={`mt-3 p-3 rounded-lg text-sm ${
+                                    fiscalPrinterStatus.success 
+                                        ? 'bg-green-100 text-green-800 border border-green-200' 
+                                        : 'bg-red-100 text-red-800 border border-red-200'
+                                }`}>
+                                    <div className="flex items-center gap-2 font-medium mb-1">
+                                        <i className={`fas ${fiscalPrinterStatus.success ? 'fa-check-circle' : 'fa-exclamation-circle'}`}></i>
+                                        {fiscalPrinterStatus.success ? 'Connection Successful' : 'Connection Failed'}
+                                    </div>
+                                    {fiscalPrinterStatus.error && (
+                                        <p className="text-xs">{fiscalPrinterStatus.error}</p>
+                                    )}
+                                    {fiscalPrinterStatus.deviceInfo && (
+                                        <p className="text-xs mt-1">
+                                            Device: {fiscalPrinterStatus.deviceInfo.serialPort} @ {fiscalPrinterStatus.deviceInfo.baudRate} baud
+                                        </p>
+                                    )}
+                                    {fiscalPrinterStatus.printerStatus?.warnings?.length > 0 && (
+                                        <p className="text-xs mt-1 text-yellow-700">
+                                            Warnings: {fiscalPrinterStatus.printerStatus.warnings.join(', ')}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         {showManagerForm && (

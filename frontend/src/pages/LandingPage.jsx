@@ -102,7 +102,7 @@ const LandingPage = () => {
                                 <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ 5 min setup</div>
                             </div>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ Free forever</div>
+                                <div style={{ fontSize: '0.875rem', color: '#666', marginBottom: '0.5rem' }}>✓ Easy to use</div>
                             </div>
                         </div>
                     </div>

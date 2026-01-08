@@ -79,7 +79,8 @@ export const updateSettings = async (req, res) => {
             business_name,
             default_language,
             meta_title,
-            takeaway_only
+            takeaway_only,
+            fiscal_printer_enabled
         } = req.body;
 
         // Update business_name in users table if provided
@@ -116,15 +117,16 @@ export const updateSettings = async (req, res) => {
            default_language = COALESCE($22, default_language),
            meta_title = COALESCE($23, meta_title),
            takeaway_only = COALESCE($24, takeaway_only),
+           fiscal_printer_enabled = COALESCE($25, fiscal_printer_enabled),
            updated_at = NOW()
-       WHERE user_id = $25
+       WHERE user_id = $26
        RETURNING *`,
             [primary_color, background_color, text_color, accent_color,
                 category_bg_color, item_card_bg_color, border_color, header_bg_color,
                 category_title_color, product_name_color, description_text_color, price_color,
                 category_icon_color,
                 business_name_font, category_font, product_name_font, description_font,
-                description, opening_hours, banner_images, breakline_color, default_language, meta_title, takeaway_only, userId]
+                description, opening_hours, banner_images, breakline_color, default_language, meta_title, takeaway_only, fiscal_printer_enabled, userId]
         );
 
         // Get updated business_name from users table
