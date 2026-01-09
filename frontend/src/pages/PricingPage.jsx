@@ -43,7 +43,7 @@ const PricingPage = () => {
                             <Link to="/apply"><button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }}>Get Started</button></Link>
                         </div>
 
-                        <div className="feature-card" style={{ padding: '3rem', border: '2px solid #000' }}>
+                        <div className="feature-card pricing-card-popular" style={{ padding: '3rem', border: '2px solid #000' }}>
                             <div style={{ background: '#000', color: 'white', padding: '0.25rem 0.75rem', borderRadius: '100px', fontSize: '0.75rem', display: 'inline-block', marginBottom: '1rem' }}>POPULAR</div>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Premium</h3>
                             <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€19<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>

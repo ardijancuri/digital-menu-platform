@@ -930,3 +930,9 @@ img {
         max-width: 1400px;
     }
 }
+
+/* Popular Pricing Card */
+.pricing-card-popular {
+    background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+    border-color: #0066ff !important;
+}
