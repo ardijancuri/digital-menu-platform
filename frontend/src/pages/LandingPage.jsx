@@ -87,11 +87,17 @@ const LandingPage = () => {
                                     Start Free Trial
                                 </button>
                             </Link>
-                            <Link to="/login">
-                                <button className="btn-secondary">
-                                    View Demo
-                                </button>
-                            </Link>
+                            <button 
+                                className="btn-secondary"
+                                onClick={() => {
+                                    const posSection = document.getElementById('pos-showcase');
+                                    if (posSection) {
+                                        posSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                    }
+                                }}
+                            >
+                                View Demo
+                            </button>
                         </div>
 
                         <div className="animate-fade-in delay-400" style={{ marginTop: '4rem', display: 'flex', gap: '3rem', justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -149,7 +155,7 @@ const LandingPage = () => {
             </div>
 
             {/* POS Showcase */}
-            <div style={{ paddingTop: '2rem' }}>
+            <div id="pos-showcase" style={{ paddingTop: '2rem' }}>
                 <LandingCarousel
                     title="Powerful Point of Sale"
                     subtitle="Everything you need to run your restaurant, all in one place."
