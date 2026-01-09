@@ -11,6 +11,34 @@
 // Operator passwords to try (different printers may have different defaults)
 const OPERATOR_PASSWORDS = ["0 ", "0000", "1   ", "0001"];
 
+// Connection pool - maintains a single persistent connection
+let connectionPool = {
+    fp: null,
+    deviceInfo: null,
+    lastHeader: null,
+    lastHealthCheck: 0,
+    isConnecting: false
+};
+
+// Configuration
+const HEALTH_CHECK_INTERVAL = 5000; // 5 seconds
+const CONNECTION_TIMEOUT = 30000; // 30 seconds
+
+/**
+ * Quick health check for existing connection
+ * @param {Object} fp - Tremol FP instance
+ * @returns {boolean} True if connection is healthy
+ */
+const isConnectionHealthy = (fp) => {
+    try {
+        // Quick check - just read status (fast operation)
+        const status = fp.ReadStatus();
+        return status !== null && status !== undefined;
+    } catch (e) {
+        return false;
+    }
+};
+
 /**
  * Check if the Tremol library is available
  */
@@ -21,10 +49,25 @@ export const isFiscalPrinterAvailable = () => {
 };
 
 /**
- * Connect to the fiscal printer
+ * Connect to the fiscal printer with connection pooling
  * @returns {Object|null} FP instance if connected, null otherwise
  */
 export const connectFiscalPrinter = () => {
+    const now = Date.now();
+    
+    // Check if we have a healthy existing connection
+    if (connectionPool.fp && 
+        (now - connectionPool.lastHealthCheck) < HEALTH_CHECK_INTERVAL) {
+        return connectionPool.fp; // Reuse immediately
+    }
+    
+    // Do a quick health check if connection exists
+    if (connectionPool.fp && isConnectionHealthy(connectionPool.fp)) {
+        connectionPool.lastHealthCheck = now;
+        return connectionPool.fp;
+    }
+    
+    // Connection unhealthy or doesn't exist - reconnect
     if (!isFiscalPrinterAvailable()) {
         console.error('Tremol fiscal printer library not loaded. Please add fp_core.js and fp.js to /libs/');
         return null;
@@ -36,8 +79,14 @@ export const connectFiscalPrinter = () => {
         // Connect to ZFPLab Server
         fp.ServerSetSettings("http://localhost", 4444);
         
-        // Try to find the connected printer
-        const device = fp.ServerFindDevice();
+        // Use cached device if available, otherwise search
+        let device = connectionPool.deviceInfo;
+        if (!device) {
+            device = fp.ServerFindDevice(); // SLOW - only run once
+            if (device) {
+                connectionPool.deviceInfo = device; // Cache it
+            }
+        }
         
         if (device) {
             fp.ServerSetDeviceSerialSettings(
@@ -45,16 +94,35 @@ export const connectFiscalPrinter = () => {
                 device.baudRate,
                 true // keepPortOpen
             );
-            console.log('Fiscal printer connected:', device);
+            
+            // Update pool
+            connectionPool.fp = fp;
+            connectionPool.lastHealthCheck = now;
+            
             return fp;
         } else {
             console.error('No fiscal printer device found');
+            // Clear cache if device not found
+            connectionPool.deviceInfo = null;
             return null;
         }
     } catch (error) {
         console.error('Failed to connect to fiscal printer:', error.message);
+        // Clear pool on error
+        connectionPool.fp = null;
         return null;
     }
+};
+
+/**
+ * Reset the fiscal printer connection pool
+ * Useful when you need to force a fresh connection
+ */
+export const resetFiscalPrinterConnection = () => {
+    connectionPool.fp = null;
+    connectionPool.deviceInfo = null;
+    connectionPool.lastHeader = null;
+    connectionPool.lastHealthCheck = 0;
 };
 
 /**
@@ -103,16 +171,20 @@ export const checkPrinterStatus = (fp) => {
  * @param {Object} fp - Tremol FP instance
  */
 export const ensureReceiptClosed = (fp) => {
-    // Try to close non-fiscal receipt first
-    try {
-        fp.CloseNonFiscReceipt();
-    } catch (e) {
-        // Ignore if not open
-    }
-    
-    // Check if fiscal receipt is open
+    // Check status first to avoid unnecessary commands
     try {
         const status = fp.ReadStatus();
+        
+        // Only try to close non-fiscal receipt if one is actually open
+        if (status.OptionNonFiscalReceiptOpen === 1) {
+            try {
+                fp.CloseNonFiscReceipt();
+            } catch (e) {
+                // Ignore if can't close
+            }
+        }
+        
+        // Check if fiscal receipt is open
         if (status.OptionFiscalReceiptOpen === 1) {
             // Try to close it properly
             try {
@@ -187,20 +259,30 @@ const centerText = (text, width = 42) => {
 };
 
 /**
- * Update fiscal printer header with business name
+ * Update fiscal printer header with business name (with caching)
  * @param {Object} fp - Tremol FP instance
  * @param {string} businessName - Business name to display
  */
 const updateFiscalHeader = (fp, businessName) => {
+    const headerText = businessName || 'Restaurant';
+    
+    // Skip if header hasn't changed
+    if (connectionPool.lastHeader === headerText) {
+        return;
+    }
+    
     try {
         // Clear line 1
         fp.ProgHeader('1', ' ');
         // Set business name on line 2 (centered)
-        fp.ProgHeader('2', centerText(businessName || 'Restaurant'));
+        fp.ProgHeader('2', centerText(headerText));
         // Clear remaining lines (3-8)
         for (let i = 3; i <= 8; i++) {
             fp.ProgHeader(i.toString(), ' ');
         }
+        
+        // Cache the header
+        connectionPool.lastHeader = headerText;
     } catch (error) {
         console.warn('Failed to update fiscal header:', error.message);
         // Non-critical error, continue with receipt
@@ -453,7 +535,7 @@ export const printZReport = async () => {
 };
 
 /**
- * Test the fiscal printer connection
+ * Test the fiscal printer connection (optimized to use connection pool)
  * @returns {Object} Result object with connection status and device info
  */
 export const testFiscalPrinterConnection = async () => {
@@ -475,29 +557,28 @@ export const testFiscalPrinterConnection = async () => {
     }
     
     try {
-        const fp = new window.Tremol.FP();
-        fp.ServerSetSettings("http://localhost", 4444);
+        // Use existing connection if healthy, otherwise create new one
+        let fp = connectionPool.fp;
+        if (!fp || !isConnectionHealthy(fp)) {
+            fp = connectFiscalPrinter();
+        }
         
-        // Try to find device
-        const device = fp.ServerFindDevice();
+        if (!fp) {
+            result.error = 'Could not connect to fiscal printer';
+            return result;
+        }
+        
         result.serverConnected = true;
+        result.printerFound = true;
+        result.deviceInfo = connectionPool.deviceInfo;
         
-        if (device) {
-            result.printerFound = true;
-            result.deviceInfo = device;
-            
-            // Connect and check status
-            fp.ServerSetDeviceSerialSettings(device.serialPort, device.baudRate, true);
-            
-            const status = checkPrinterStatus(fp);
-            result.printerStatus = status;
-            result.success = status.isReady;
-            
-            if (!status.isReady) {
-                result.error = status.errors.join(', ');
-            }
-        } else {
-            result.error = 'No fiscal printer found. Check USB/COM connection.';
+        // Check status
+        const status = checkPrinterStatus(fp);
+        result.printerStatus = status;
+        result.success = status.isReady;
+        
+        if (!status.isReady) {
+            result.error = status.errors.join(', ');
         }
         
     } catch (error) {

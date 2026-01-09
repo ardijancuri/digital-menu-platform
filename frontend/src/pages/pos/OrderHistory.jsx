@@ -3,7 +3,7 @@ import { posAPI } from '../../services/posAPI';
 import { userAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { printReceipt } from '../../utils/receiptPrint';
-import { printFiscalReceipt, isFiscalPrinterAvailable } from '../../utils/fiscalPrint';
+import { printFiscalReceipt, isFiscalPrinterAvailable, connectFiscalPrinter } from '../../utils/fiscalPrint';
 import Modal from '../../components/Modal';
 
 const OrderHistory = () => {
@@ -22,6 +22,14 @@ const OrderHistory = () => {
         fetchTables();
         fetchSettings();
     }, [filter]);
+
+    // Prewarm fiscal printer connection for optimal performance
+    useEffect(() => {
+        if (settings?.fiscal_printer_enabled && isFiscalPrinterAvailable()) {
+            // Establish connection early to cache device info
+            connectFiscalPrinter();
+        }
+    }, [settings?.fiscal_printer_enabled]);
 
     const fetchSettings = async () => {
         try {
