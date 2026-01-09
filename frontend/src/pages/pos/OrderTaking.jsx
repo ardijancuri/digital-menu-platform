@@ -476,7 +476,7 @@ const OrderTaking = () => {
             </div>
 
             {/* Right Side: Cart */}
-            <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden max-h-[50vh] lg:max-h-full">
+            <div className="w-full lg:w-96 bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col overflow-hidden max-h-[50vh] lg:max-h-[calc(100vh-8rem)] lg:self-start">
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
                     <h3 className="font-bold text-gray-800 flex items-center justify-between">
                         <span>Current Order</span>
