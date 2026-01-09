@@ -232,7 +232,7 @@ const SettingsPage = () => {
             {isUser() && (
                 <div className="mb-8">
                     <div className="card-flat">
-                        <div className="mb-6 flex items-center justify-between">
+                        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
                                 <i className="fas fa-users-cog text-blue-600"></i>
                                 Manager Users
@@ -272,7 +272,7 @@ const SettingsPage = () => {
 
                         {/* Fiscal Printer Setting */}
                         <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                            <div className="flex items-start justify-between gap-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                                 <label className="flex items-center gap-3 cursor-pointer flex-1">
                                     <input
                                         type="checkbox"
@@ -298,7 +298,7 @@ const SettingsPage = () => {
                                     type="button"
                                     onClick={handleTestFiscalPrinter}
                                     disabled={testingFiscalPrinter}
-                                    className="px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors disabled:opacity-50"
+                                    className="w-full sm:w-auto px-3 py-1.5 text-sm font-medium text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors disabled:opacity-50"
                                 >
                                     {testingFiscalPrinter ? (
                                         <span className="flex items-center gap-1">
