@@ -165,7 +165,7 @@ const ApplyPage = () => {
                             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                                 <p className="text-sm text-blue-800">
                                     <i className="fas fa-link mr-2"></i>
-                                    <strong>Your menu will be available at:</strong> /menu/{formData.slug || 'your-slug'}
+                                    <strong>Your menu will be available at:</strong> https://{formData.slug || 'your-slug'}.onipos.com
                                 </p>
                             </div>
                         </div>
