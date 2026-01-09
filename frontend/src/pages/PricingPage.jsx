@@ -16,7 +16,7 @@ const PricingPage = () => {
 
             <section style={{ padding: '2rem 0 6rem' }}>
                 <div className="container">
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
+                    <div className="pricing-grid">
                         <div className="feature-card" style={{ padding: '3rem' }}>
                             <h3 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '0.5rem' }}>Free</h3>
                             <div style={{ fontSize: '3rem', fontWeight: '600', margin: '1rem 0' }}>€0<span style={{ fontSize: '1.25rem', color: '#666' }}>/mo</span></div>
