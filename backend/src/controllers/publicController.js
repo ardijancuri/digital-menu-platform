@@ -106,28 +106,52 @@ export const getMenuHtml = async (req, res) => {
             // Production: Read the built frontend and inject SEO meta tags
             html = fs.readFileSync(frontendDistPath, 'utf-8');
 
-            // Replace the default meta tags with dynamic ones
-            // Using regex that handles various whitespace and closing styles
-            html = html
-                // Title tag
-                .replace(/<title>[^<]*<\/title>/, `<title>${safeTitle}</title>`)
-                // Meta name tags (handles both name="x" content="y" and content="y" name="x" orders)
-                .replace(/<meta[^>]*name="title"[^>]*content="[^"]*"[^>]*>/i, `<meta name="title" content="${safeTitle}">`)
-                .replace(/<meta[^>]*name="description"[^>]*>/i, `<meta name="description" content="${safeDescription}">`)
-                // Open Graph tags
-                .replace(/<meta[^>]*property="og:title"[^>]*>/i, `<meta property="og:title" content="${safeTitle}">`)
-                .replace(/<meta[^>]*property="og:description"[^>]*>/i, `<meta property="og:description" content="${safeDescription}">`)
-                .replace(/<meta[^>]*property="og:url"[^>]*>/i, `<meta property="og:url" content="${canonicalUrl}">`)
-                .replace(/<meta[^>]*property="og:image"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:image" content="${logoUrl}">`)
-                .replace(/<meta[^>]*property="og:site_name"[^>]*>/i, `<meta property="og:site_name" content="${safeBusinessName}">`)
-                // Twitter tags
-                .replace(/<meta[^>]*name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${safeTitle}">`)
-                .replace(/<meta[^>]*name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${safeDescription}">`)
-                .replace(/<meta[^>]*name="twitter:url"[^>]*>/i, `<meta name="twitter:url" content="${canonicalUrl}">`)
-                .replace(/<meta[^>]*name="twitter:image"[^>]*content="[^"]*"[^>]*>/i, `<meta name="twitter:image" content="${logoUrl}">`)
-                // Canonical and icon
-                .replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link rel="canonical" href="${canonicalUrl}">`)
-                .replace(/<link[^>]*rel="icon"[^>]*>/i, `<link rel="icon" type="image/png" href="${logoUrl}">`);
+            // Extract the script and stylesheet links from the original head (Vite build assets)
+            // Match any script tag with src containing /assets/ (handles type="module", crossorigin, etc.)
+            const scriptMatches = html.match(/<script[^>]*src="[^"]*\/assets\/[^"]*"[^>]*><\/script>/gi) || [];
+            // Match any link tag with href containing /assets/ (stylesheets)
+            const styleMatches = html.match(/<link[^>]*href="[^"]*\/assets\/[^"]*"[^>]*>/gi) || [];
+            // Match lib scripts
+            const libScripts = html.match(/<script[^>]*src="[^"]*\/libs\/[^"]*"[^>]*><\/script>/gi) || [];
+
+            // Build a clean head with only client SEO data
+            const newHead = `<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="${logoUrl}">
+
+    <!-- Primary Meta Tags -->
+    <title>${safeTitle}</title>
+    <meta name="title" content="${safeTitle}">
+    <meta name="description" content="${safeDescription}">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="${canonicalUrl}">
+    <meta property="og:title" content="${safeTitle}">
+    <meta property="og:description" content="${safeDescription}">
+    <meta property="og:image" content="${logoUrl}">
+    <meta property="og:site_name" content="${safeBusinessName}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="${canonicalUrl}">
+    <meta name="twitter:title" content="${safeTitle}">
+    <meta name="twitter:description" content="${safeDescription}">
+    <meta name="twitter:image" content="${logoUrl}">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="${canonicalUrl}">
+
+    <!-- App Assets -->
+    ${libScripts.join('\n    ')}
+    ${scriptMatches.join('\n    ')}
+    ${styleMatches.join('\n    ')}
+</head>`;
+
+            // Replace the entire head section (handles both <head> and <HEAD>)
+            html = html.replace(/<head[^>]*>[\s\S]*?<\/head>/i, newHead);
         } else {
             // Development or fallback: Serve a basic HTML page with SEO tags
             html = `
