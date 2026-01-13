@@ -1,4 +1,197 @@
 import { query } from '../db/database.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * Get menu SEO data for generating HTML page
+ */
+const getMenuSeoData = async (slug) => {
+    const result = await query(
+        `SELECT u.business_name, u.slug, u.is_active,
+                m.logo_url, m.description, m.meta_title
+         FROM users u
+         LEFT JOIN menu_settings m ON u.id = m.user_id
+         WHERE u.slug = $1 AND u.role = 'user'`,
+        [slug]
+    );
+
+    if (result.rows.length === 0) {
+        return null;
+    }
+
+    return result.rows[0];
+};
+
+/**
+ * Escape HTML entities to prevent XSS
+ */
+const escapeHtml = (str) => {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+};
+
+/**
+ * Serve HTML page with SEO meta tags for menu (subdomain or path-based)
+ * This endpoint serves a full HTML page that Google can crawl.
+ * Works for both subdomain access (studio-cafe.onipos.com) and path access (/menu/studio-cafe)
+ */
+export const getMenuHtml = async (req, res) => {
+    try {
+        // Get slug from params (path-based) or from subdomain
+        const slug = req.params.slug || req.subdomainSlug;
+
+        if (!slug) {
+            return res.status(400).send('Menu not specified');
+        }
+
+        const menuData = await getMenuSeoData(slug);
+
+        if (!menuData) {
+            return res.status(404).send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu Not Found - OniPOS</title>
+    <meta name="robots" content="noindex">
+</head>
+<body>
+    <h1>Menu not found</h1>
+</body>
+</html>`);
+        }
+
+        if (!menuData.is_active) {
+            return res.status(403).send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Menu Unavailable - OniPOS</title>
+    <meta name="robots" content="noindex">
+</head>
+<body>
+    <h1>This menu is currently unavailable</h1>
+</body>
+</html>`);
+        }
+
+        const title = menuData.meta_title || menuData.business_name || 'Menu';
+        const description = menuData.description || `Digital menu for ${menuData.business_name}`;
+        const logoUrl = menuData.logo_url || 'https://onipos.com/favicon.png';
+        // Use subdomain URL as canonical for subdomain requests
+        const canonicalUrl = req.subdomainSlug
+            ? `https://${slug}.onipos.com/`
+            : `https://onipos.com/menu/${slug}`;
+
+        const safeTitle = escapeHtml(title);
+        const safeDescription = escapeHtml(description);
+        const safeBusinessName = escapeHtml(menuData.business_name);
+
+        // Try to read the built frontend index.html
+        const frontendDistPath = path.join(__dirname, '../../../frontend/dist/index.html');
+
+        let html;
+
+        if (fs.existsSync(frontendDistPath)) {
+            // Production: Read the built frontend and inject SEO meta tags
+            html = fs.readFileSync(frontendDistPath, 'utf-8');
+
+            // Replace the default meta tags with dynamic ones
+            html = html
+                .replace(/<title>.*?<\/title>/, `<title>${safeTitle}</title>`)
+                .replace(/<meta name="title" content=".*?"[^>]*>/, `<meta name="title" content="${safeTitle}" />`)
+                .replace(/<meta name="description" content=".*?"[^>]*>/, `<meta name="description" content="${safeDescription}" />`)
+                .replace(/<meta property="og:title" content=".*?"[^>]*>/, `<meta property="og:title" content="${safeTitle}" />`)
+                .replace(/<meta property="og:description" content=".*?"[^>]*>/, `<meta property="og:description" content="${safeDescription}" />`)
+                .replace(/<meta property="og:url" content=".*?"[^>]*>/, `<meta property="og:url" content="${canonicalUrl}" />`)
+                .replace(/<meta property="og:image" content=".*?"[^>]*>/, `<meta property="og:image" content="${logoUrl}" />`)
+                .replace(/<meta property="og:site_name" content=".*?"[^>]*>/, `<meta property="og:site_name" content="${safeBusinessName}" />`)
+                .replace(/<meta name="twitter:title" content=".*?"[^>]*>/, `<meta name="twitter:title" content="${safeTitle}" />`)
+                .replace(/<meta name="twitter:description" content=".*?"[^>]*>/, `<meta name="twitter:description" content="${safeDescription}" />`)
+                .replace(/<meta name="twitter:url" content=".*?"[^>]*>/, `<meta name="twitter:url" content="${canonicalUrl}" />`)
+                .replace(/<meta name="twitter:image" content=".*?"[^>]*>/, `<meta name="twitter:image" content="${logoUrl}" />`)
+                .replace(/<link rel="canonical" href=".*?"[^>]*>/, `<link rel="canonical" href="${canonicalUrl}" />`)
+                .replace(/<link rel="icon"[^>]*>/, `<link rel="icon" type="image/png" href="${logoUrl}" />`);
+        } else {
+            // Development or fallback: Serve a basic HTML page with SEO tags
+            html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Primary Meta Tags (SEO) -->
+    <title>${safeTitle}</title>
+    <meta name="title" content="${safeTitle}">
+    <meta name="description" content="${safeDescription}">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="${canonicalUrl}">
+    <meta property="og:title" content="${safeTitle}">
+    <meta property="og:description" content="${safeDescription}">
+    <meta property="og:image" content="${logoUrl}">
+    <meta property="og:site_name" content="${safeBusinessName}">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:url" content="${canonicalUrl}">
+    <meta name="twitter:title" content="${safeTitle}">
+    <meta name="twitter:description" content="${safeDescription}">
+    <meta name="twitter:image" content="${logoUrl}">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="${canonicalUrl}">
+    <link rel="icon" type="image/png" href="${logoUrl}">
+</head>
+<body>
+    <noscript>
+        <h1>${safeBusinessName}</h1>
+        <p>${safeDescription}</p>
+        <p>Please enable JavaScript to view the full menu.</p>
+    </noscript>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-family: system-ui, sans-serif;">
+            <div style="text-align: center;">
+                <h1 style="margin-bottom: 8px;">${safeBusinessName}</h1>
+                <p style="color: #666;">${safeDescription}</p>
+                <p style="color: #999; font-size: 14px;">Loading menu...</p>
+            </div>
+        </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>`;
+        }
+
+        res.send(html);
+    } catch (error) {
+        console.error('Get menu HTML error:', error);
+        res.status(500).send(`
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Error - OniPOS</title>
+</head>
+<body>
+    <h1>Server error</h1>
+</body>
+</html>`);
+    }
+};
 
 /**
  * Get public menu by slug

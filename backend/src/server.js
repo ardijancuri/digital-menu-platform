@@ -11,6 +11,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import publicRoutes from './routes/publicRoutes.js';
 import posRoutes from './routes/posRoutes.js';
+import { getMenuHtml } from './controllers/publicController.js';
 
 // Load environment variables
 dotenv.config();
@@ -79,6 +80,55 @@ app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// In production, serve the frontend build static assets
+const frontendDistPath = path.join(__dirname, '../../frontend/dist');
+app.use('/assets', express.static(path.join(frontendDistPath, 'assets')));
+app.use('/libs', express.static(path.join(frontendDistPath, 'libs')));
+app.use('/favicon.png', express.static(path.join(frontendDistPath, 'favicon.png')));
+
+/**
+ * Middleware to detect subdomain and extract slug for SEO
+ * Handles requests like: studio-cafe.onipos.com
+ */
+const subdomainDetector = (req, res, next) => {
+    const host = req.hostname || req.headers.host?.split(':')[0] || '';
+    const baseDomain = process.env.BASE_DOMAIN || 'onipos.com';
+
+    // Check if this is a subdomain request
+    if (host.endsWith(`.${baseDomain}`)) {
+        const subdomain = host.replace(`.${baseDomain}`, '');
+        // Skip www and other reserved subdomains
+        if (subdomain && subdomain !== 'www' && subdomain !== 'api' && subdomain !== 'admin') {
+            req.subdomainSlug = subdomain;
+        }
+    }
+
+    next();
+};
+
+// Apply subdomain detection middleware
+app.use(subdomainDetector);
+
+/**
+ * SEO Route: Serve HTML with meta tags for subdomain menu pages
+ * When a subdomain is detected (e.g., studio-cafe.onipos.com), serve SEO-optimized HTML
+ * This handles the root path "/" for subdomain requests
+ */
+app.get('/', (req, res, next) => {
+    if (req.subdomainSlug) {
+        // Subdomain detected - serve SEO HTML
+        return getMenuHtml(req, res);
+    }
+    // No subdomain - continue to next handler (404 or serve frontend)
+    next();
+});
+
+/**
+ * SEO Route: Serve HTML with meta tags for path-based menu pages
+ * Handles: /menu/:slug (e.g., onipos.com/menu/terracota)
+ */
+app.get('/menu/:slug', getMenuHtml);
 
 // Health check route
 app.get('/api/health', (req, res) => {
