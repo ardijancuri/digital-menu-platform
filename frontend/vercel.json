@@ -1,6 +1,16 @@
 {
     "rewrites": [
         {
+            "source": "/",
+            "has": [
+                {
+                    "type": "host",
+                    "value": "^(?<slug>[a-z0-9-]+)\\.onipos\\.com$"
+                }
+            ],
+            "destination": "/api/menu-seo?slug=:slug"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }
