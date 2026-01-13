@@ -107,21 +107,27 @@ export const getMenuHtml = async (req, res) => {
             html = fs.readFileSync(frontendDistPath, 'utf-8');
 
             // Replace the default meta tags with dynamic ones
+            // Using regex that handles various whitespace and closing styles
             html = html
-                .replace(/<title>.*?<\/title>/, `<title>${safeTitle}</title>`)
-                .replace(/<meta name="title" content=".*?"[^>]*>/, `<meta name="title" content="${safeTitle}" />`)
-                .replace(/<meta name="description" content=".*?"[^>]*>/, `<meta name="description" content="${safeDescription}" />`)
-                .replace(/<meta property="og:title" content=".*?"[^>]*>/, `<meta property="og:title" content="${safeTitle}" />`)
-                .replace(/<meta property="og:description" content=".*?"[^>]*>/, `<meta property="og:description" content="${safeDescription}" />`)
-                .replace(/<meta property="og:url" content=".*?"[^>]*>/, `<meta property="og:url" content="${canonicalUrl}" />`)
-                .replace(/<meta property="og:image" content=".*?"[^>]*>/, `<meta property="og:image" content="${logoUrl}" />`)
-                .replace(/<meta property="og:site_name" content=".*?"[^>]*>/, `<meta property="og:site_name" content="${safeBusinessName}" />`)
-                .replace(/<meta name="twitter:title" content=".*?"[^>]*>/, `<meta name="twitter:title" content="${safeTitle}" />`)
-                .replace(/<meta name="twitter:description" content=".*?"[^>]*>/, `<meta name="twitter:description" content="${safeDescription}" />`)
-                .replace(/<meta name="twitter:url" content=".*?"[^>]*>/, `<meta name="twitter:url" content="${canonicalUrl}" />`)
-                .replace(/<meta name="twitter:image" content=".*?"[^>]*>/, `<meta name="twitter:image" content="${logoUrl}" />`)
-                .replace(/<link rel="canonical" href=".*?"[^>]*>/, `<link rel="canonical" href="${canonicalUrl}" />`)
-                .replace(/<link rel="icon"[^>]*>/, `<link rel="icon" type="image/png" href="${logoUrl}" />`);
+                // Title tag
+                .replace(/<title>[^<]*<\/title>/, `<title>${safeTitle}</title>`)
+                // Meta name tags (handles both name="x" content="y" and content="y" name="x" orders)
+                .replace(/<meta[^>]*name="title"[^>]*content="[^"]*"[^>]*>/i, `<meta name="title" content="${safeTitle}">`)
+                .replace(/<meta[^>]*name="description"[^>]*>/i, `<meta name="description" content="${safeDescription}">`)
+                // Open Graph tags
+                .replace(/<meta[^>]*property="og:title"[^>]*>/i, `<meta property="og:title" content="${safeTitle}">`)
+                .replace(/<meta[^>]*property="og:description"[^>]*>/i, `<meta property="og:description" content="${safeDescription}">`)
+                .replace(/<meta[^>]*property="og:url"[^>]*>/i, `<meta property="og:url" content="${canonicalUrl}">`)
+                .replace(/<meta[^>]*property="og:image"[^>]*content="[^"]*"[^>]*>/i, `<meta property="og:image" content="${logoUrl}">`)
+                .replace(/<meta[^>]*property="og:site_name"[^>]*>/i, `<meta property="og:site_name" content="${safeBusinessName}">`)
+                // Twitter tags
+                .replace(/<meta[^>]*name="twitter:title"[^>]*>/i, `<meta name="twitter:title" content="${safeTitle}">`)
+                .replace(/<meta[^>]*name="twitter:description"[^>]*>/i, `<meta name="twitter:description" content="${safeDescription}">`)
+                .replace(/<meta[^>]*name="twitter:url"[^>]*>/i, `<meta name="twitter:url" content="${canonicalUrl}">`)
+                .replace(/<meta[^>]*name="twitter:image"[^>]*content="[^"]*"[^>]*>/i, `<meta name="twitter:image" content="${logoUrl}">`)
+                // Canonical and icon
+                .replace(/<link[^>]*rel="canonical"[^>]*>/i, `<link rel="canonical" href="${canonicalUrl}">`)
+                .replace(/<link[^>]*rel="icon"[^>]*>/i, `<link rel="icon" type="image/png" href="${logoUrl}">`);
         } else {
             // Development or fallback: Serve a basic HTML page with SEO tags
             html = `
