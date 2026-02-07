@@ -503,10 +503,10 @@ export const updateOrderStatus = async (req, res) => {
         const { id } = req.params;
         const { status, payment_status } = req.body;
 
-        // If status is cancelled, DELETE the order instead of updating
+        // If status is cancelled, soft-delete the order (keep in DB for history)
         if (status === 'cancelled') {
-            const deleteQuery = 'DELETE FROM orders WHERE id = $1 AND user_id = $2 RETURNING *';
-            const result = await client.query(deleteQuery, [id, userId]);
+            const cancelQuery = 'UPDATE orders SET status = $1, updated_at = NOW() WHERE id = $2 AND user_id = $3 RETURNING *';
+            const result = await client.query(cancelQuery, ['cancelled', id, userId]);
 
             if (result.rows.length === 0) {
                 await client.query('ROLLBACK');
@@ -514,23 +514,23 @@ export const updateOrderStatus = async (req, res) => {
             }
 
             // Also update table status to 'available' if it was occupied by this order
-            const deletedOrder = result.rows[0];
-            if (deletedOrder.table_id) {
+            const cancelledOrder = result.rows[0];
+            if (cancelledOrder.table_id) {
                 const activeOrdersRes = await client.query(
                     `SELECT id FROM orders WHERE table_id = $1 AND status IN ('pending', 'preparing') AND id != $2`,
-                    [deletedOrder.table_id, id]
+                    [cancelledOrder.table_id, id]
                 );
 
                 if (activeOrdersRes.rows.length === 0) {
                     await client.query(
                         'UPDATE tables SET status = $1 WHERE id = $2',
-                        ['available', deletedOrder.table_id]
+                        ['available', cancelledOrder.table_id]
                     );
                 }
             }
 
             await client.query('COMMIT');
-            return res.json({ success: true, message: 'Order cancelled and deleted', deleted: true });
+            return res.json({ success: true, message: 'Order cancelled', order: cancelledOrder });
         }
 
         let updateQuery = 'UPDATE orders SET updated_at = NOW()';
@@ -666,11 +666,11 @@ export const resetStaffRevenue = async (req, res) => {
 
         const allOrders = allOrdersResult.rows;
 
-        // Get all orders for revenue calculation - no date filter
+        // Get non-cancelled orders for revenue calculation - no date filter
         const ordersResult = await client.query(
-            `SELECT id, staff_id, total_amount 
-             FROM orders 
-             WHERE user_id = $1`,
+            `SELECT id, staff_id, total_amount
+             FROM orders
+             WHERE user_id = $1 AND status != 'cancelled'`,
             [userId]
         );
 
@@ -780,22 +780,15 @@ export const resetStaffRevenue = async (req, res) => {
                     [userId, todayDateStr, finalTotalRevenue, finalOrderCount, JSON.stringify(finalStaffRevenue)]
                 );
 
-                // Delete all orders
-                if (allOrdersForRevenue.length > 0) {
-                    const orderIds = allOrdersForRevenue.map(order => order.id);
-                    
-                    // Delete order items first (cascade should handle this, but being explicit)
-                    await client.query(
-                        `DELETE FROM order_items WHERE order_id = ANY($1::int[])`,
-                        [orderIds]
-                    );
-
-                    // Delete orders
-                    await client.query(
-                        `DELETE FROM orders WHERE id = ANY($1::int[])`,
-                        [orderIds]
-                    );
-                }
+                // Delete ALL orders (completed + cancelled) to end the day
+                await client.query(
+                    `DELETE FROM order_items WHERE order_id IN (SELECT id FROM orders WHERE user_id = $1)`,
+                    [userId]
+                );
+                await client.query(
+                    `DELETE FROM orders WHERE user_id = $1`,
+                    [userId]
+                );
 
                 // Set all tables to available status
                 await client.query(

@@ -11,11 +11,13 @@ if (!supabaseUrl || !supabaseKey) {
     console.warn('Supabase credentials missing. Uploads will fail if not provided.');
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: {
-        persistSession: false
-    }
-});
+const supabase = supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            persistSession: false
+        }
+    })
+    : null;
 
 let bucketReadyPromise = null;
 
@@ -71,6 +73,7 @@ const ensureBucketExists = async (bucketName) => {
 
 export const uploadFile = async (file, bucket = supabaseBucket) => {
     try {
+        if (!supabase) throw new Error('Supabase is not configured. Set SUPABASE_URL and SUPABASE_KEY in your .env file.');
         await ensureBucketExists(bucket);
 
         const timestamp = Date.now();
@@ -106,6 +109,7 @@ export const uploadFile = async (file, bucket = supabaseBucket) => {
 
 export const deleteFile = async (fileUrl, bucket = supabaseBucket) => {
     try {
+        if (!supabase) return;
         // Extract file path from URL
         // URL format: https://.../storage/v1/object/public/bucket/path/to/file
         const urlParts = fileUrl.split(`${bucket}/`);

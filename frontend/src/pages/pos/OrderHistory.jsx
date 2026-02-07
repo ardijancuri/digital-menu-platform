@@ -180,11 +180,18 @@ const OrderHistory = () => {
                             return orderMatch || tableMatch;
                         })
                         .map(order => (
-                        <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col">
+                        <div key={order.id} className={`rounded-xl shadow-sm border p-4 flex flex-col ${order.status === 'cancelled' ? 'bg-red-50/40 border-red-200' : 'bg-white border-gray-200'}`}>
                             <div className="mb-3">
                                 <div className="flex items-center justify-between mb-2">
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-bold text-gray-900">Order #{order.id}</h3>
+                                        <div className="flex items-center gap-2">
+                                            <h3 className="text-lg font-bold text-gray-900">Order #{order.id}</h3>
+                                            {order.status === 'cancelled' && (
+                                                <span className="px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
+                                                    Deleted
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-sm text-gray-500">
                                             {new Date(order.created_at).toLocaleString()}
                                         </p>
@@ -334,7 +341,7 @@ const OrderHistory = () => {
                                             <i className="fas fa-print"></i>
                                             Print Receipt
                                         </button>
-                                        {(isAdmin() || isUser()) && (
+                                        {(isAdmin() || isUser()) && order.status !== 'cancelled' && (
                                             <button
                                                 onClick={() => handleDeleteOrder(order.id)}
                                                 className="w-full px-3 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 flex items-center justify-center gap-2"
