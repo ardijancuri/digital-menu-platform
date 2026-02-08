@@ -104,9 +104,9 @@ export const getStaff = async (req, res) => {
         const staffWithRevenue = await Promise.all(
             result.rows.map(async (staff) => {
                 const revenueResult = await pool.query(
-                    `SELECT COALESCE(SUM(total_amount), 0) as revenue 
-                     FROM orders 
-                     WHERE user_id = $1 AND staff_id = $2`,
+                    `SELECT COALESCE(SUM(total_amount), 0) as revenue
+                     FROM orders
+                     WHERE user_id = $1 AND staff_id = $2 AND status != 'cancelled'`,
                     [userId, staff.id]
                 );
                 return {
@@ -608,9 +608,9 @@ export const getStaffRevenue = async (req, res) => {
         const staffRevenue = await Promise.all(
             staffResult.rows.map(async (staff) => {
                 const revenueResult = await pool.query(
-                    `SELECT COALESCE(SUM(total_amount), 0) as revenue 
-                     FROM orders 
-                     WHERE user_id = $1 AND staff_id = $2`,
+                    `SELECT COALESCE(SUM(total_amount), 0) as revenue
+                     FROM orders
+                     WHERE user_id = $1 AND staff_id = $2 AND status != 'cancelled'`,
                     [userId, staff.id]
                 );
                 return {
@@ -933,7 +933,7 @@ export const getStaffReport = async (req, res) => {
              FROM orders o
              LEFT JOIN tables t ON o.table_id = t.id
              LEFT JOIN staff s ON o.staff_id = s.id
-             WHERE o.user_id = $1 AND o.staff_id = $2
+             WHERE o.user_id = $1 AND o.staff_id = $2 AND o.status != 'cancelled'
              ORDER BY o.created_at ASC`,
             [userId, staffId]
         );
