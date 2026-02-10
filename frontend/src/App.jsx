@@ -11,6 +11,7 @@ import UserLogin from './pages/UserLogin';
 import FeaturesPage from './pages/FeaturesPage';
 import PricingPage from './pages/PricingPage';
 
+import MapPage from './pages/MapPage';
 import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import SupportPage from './pages/SupportPage';
@@ -21,6 +22,7 @@ import TermsPage from './pages/TermsPage';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminApplications from './pages/admin/AdminApplications';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminMapListings from './pages/admin/AdminMapListings';
 
 // Dashboard Pages
 import DashboardLayout from './pages/dashboard/DashboardLayout';
@@ -82,6 +84,7 @@ function App() {
           <Route path="/menu/:slug" element={<PublicMenuPage />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
+          {import.meta.env.DEV && <Route path="/map" element={<MapPage />} />}
 
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
@@ -104,6 +107,14 @@ function App() {
             element={
               <ProtectedRoute requireAdmin>
                 <AdminUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/map-listings"
+            element={
+              <ProtectedRoute requireAdmin>
+                <AdminMapListings />
               </ProtectedRoute>
             }
           />

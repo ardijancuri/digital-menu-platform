@@ -1,0 +1,195 @@
+/* Map Page Layout */
+.map-page {
+    display: flex;
+    height: calc(100dvh - 80px);
+    margin-top: 80px;
+    position: relative;
+    overflow: hidden;
+}
+
+.map-page .map-container {
+    flex: 1;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar */
+.map-sidebar {
+    width: 360px;
+    height: 100%;
+    background: #ffffff;
+    border-right: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    z-index: 2;
+}
+
+.map-sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.map-sidebar-search {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.map-sidebar-search:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.map-sidebar-select {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    background: white;
+    cursor: pointer;
+}
+
+.map-sidebar-btn {
+    padding: 8px 12px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-sidebar-btn:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+}
+
+.map-sidebar-toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.map-sidebar-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* Sidebar Business Cards */
+.map-sidebar-card {
+    padding: 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 4px;
+    border: 1px solid transparent;
+}
+
+.map-sidebar-card:hover {
+    background: #f9fafb;
+}
+
+.map-sidebar-card--active {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+}
+
+/* Mobile Toggle Button */
+.map-sidebar-toggle {
+    display: none;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 10px 20px;
+    background: #1f2937;
+    color: white;
+    border: none;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    align-items: center;
+    justify-content: center;
+}
+
+/* Leaflet Popup Overrides */
+.leaflet-popup-content-wrapper {
+    border-radius: 10px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+    padding: 12px 14px !important;
+}
+
+.leaflet-popup-content {
+    margin: 0 !important;
+    min-width: 200px !important;
+    font-size: 12px !important;
+}
+
+.leaflet-popup-close-button {
+    top: 6px !important;
+    right: 8px !important;
+    font-size: 16px !important;
+    color: #9ca3af !important;
+}
+
+.leaflet-popup-tip {
+    box-shadow: none !important;
+}
+
+/* Remove div icon default styles */
+.custom-map-marker-wrapper {
+    background: none !important;
+    border: none !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .map-page {
+        flex-direction: column-reverse;
+    }
+
+    .map-sidebar {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 55%;
+        border-right: none;
+        border-top: 1px solid #e5e7eb;
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .map-sidebar--open {
+        transform: translateY(0);
+    }
+
+    .map-sidebar-toggle {
+        display: flex;
+    }
+
+    .map-page .map-container {
+        height: 100%;
+    }
+}

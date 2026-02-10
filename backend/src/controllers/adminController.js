@@ -101,6 +101,13 @@ export const approveApplication = async (req, res) => {
             [userId]
         );
 
+        // Auto-create dormant map listing for the new business
+        await client.query(
+            `INSERT INTO map_listings (user_id, source, business_name, business_type, phone, email, menu_slug, is_active)
+             VALUES ($1, 'platform', $2, $3, $4, $5, $6, false)`,
+            [userId, application.business_name, application.business_type || 'restaurant', application.phone, application.email, application.slug]
+        );
+
         // Update application status
         await client.query(
             'UPDATE applications SET status = $1 WHERE id = $2',

@@ -55,6 +55,9 @@ const AdminUsers = () => {
                         <Button onClick={() => navigate('/admin/applications')} variant="secondary">
                             Applications
                         </Button>
+                        <Button onClick={() => navigate('/admin/map-listings')} variant="secondary">
+                            Map Listings
+                        </Button>
                         <Button onClick={logout} variant="danger">
                             Logout
                         </Button>

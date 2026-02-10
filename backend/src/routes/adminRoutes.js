@@ -9,6 +9,13 @@ import {
     toggleUserStatus,
     deleteUser
 } from '../controllers/adminController.js';
+import {
+    getAdminMapListings,
+    createMapListing,
+    updateMapListing,
+    deleteMapListing,
+    getUnlinkedPlatformUsers
+} from '../controllers/mapController.js';
 
 const router = express.Router();
 
@@ -24,5 +31,12 @@ router.post('/applications/:id/reject', rejectApplication);
 router.get('/users', getUsers);
 router.put('/users/:id/toggle', toggleUserStatus);
 router.delete('/users/:id', deleteUser);
+
+// Map listing management
+router.get('/map-listings/unlinked-users', getUnlinkedPlatformUsers);
+router.get('/map-listings', getAdminMapListings);
+router.post('/map-listings', createMapListing);
+router.put('/map-listings/:id', updateMapListing);
+router.delete('/map-listings/:id', deleteMapListing);
 
 export default router;

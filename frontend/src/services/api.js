@@ -64,6 +64,11 @@ export const adminAPI = {
     getUsers: () => api.get('/admin/users'),
     toggleUserStatus: (id) => api.put(`/admin/users/${id}/toggle`),
     deleteUser: (id) => api.delete(`/admin/users/${id}`),
+    getMapListings: () => api.get('/admin/map-listings'),
+    getUnlinkedPlatformUsers: () => api.get('/admin/map-listings/unlinked-users'),
+    createMapListing: (data) => api.post('/admin/map-listings', data),
+    updateMapListing: (id, data) => api.put(`/admin/map-listings/${id}`, data),
+    deleteMapListing: (id) => api.delete(`/admin/map-listings/${id}`),
 };
 
 // User API
@@ -110,6 +115,7 @@ export const userAPI = {
 // Public API
 export const publicAPI = {
     getMenu: (slug) => api.get(`/public/menu/${slug}`),
+    getMapListings: (params) => api.get('/public/map-listings', { params }),
 };
 
 export default api;

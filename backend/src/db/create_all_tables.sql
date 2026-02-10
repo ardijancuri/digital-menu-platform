@@ -236,6 +236,37 @@ CREATE INDEX idx_daily_revenue_user_id ON daily_revenue(user_id);
 CREATE INDEX idx_daily_revenue_date ON daily_revenue(date);
 
 -- ============================================================
+-- 11. MAP LISTINGS TABLE
+-- ============================================================
+CREATE TABLE map_listings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    source TEXT NOT NULL DEFAULT 'external' CHECK (source IN ('platform', 'external')),
+    business_name TEXT NOT NULL,
+    business_type TEXT NOT NULL DEFAULT 'restaurant'
+        CHECK (business_type IN ('restaurant', 'cafe', 'bar', 'bakery', 'fast_food', 'pizzeria', 'pub', 'other')),
+    address TEXT,
+    latitude NUMERIC(10, 7),
+    longitude NUMERIC(10, 7),
+    phone TEXT,
+    email TEXT,
+    website_url TEXT,
+    menu_slug TEXT,
+    opening_hours JSONB DEFAULT '{}'::jsonb,
+    is_featured BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_map_listings_user_id ON map_listings(user_id);
+CREATE INDEX idx_map_listings_business_type ON map_listings(business_type);
+CREATE INDEX idx_map_listings_is_active ON map_listings(is_active);
+CREATE INDEX idx_map_listings_is_featured ON map_listings(is_featured);
+CREATE INDEX idx_map_listings_location ON map_listings(latitude, longitude);
+CREATE INDEX idx_map_listings_source ON map_listings(source);
+
+-- ============================================================
 -- SEED: Default Admin User
 -- Email: admin@menuplatform.com | Password: Admin123!
 -- ============================================================

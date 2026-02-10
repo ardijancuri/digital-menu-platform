@@ -56,7 +56,10 @@ const AdminApplications = () => {
                     <h1 className="text-2xl font-bold">Admin Panel</h1>
                     <div className="flex space-x-4">
                         <Button onClick={() => navigate('/admin/users')} variant="secondary">
-                            Manage Users
+                            Users
+                        </Button>
+                        <Button onClick={() => navigate('/admin/map-listings')} variant="secondary">
+                            Map Listings
                         </Button>
                         <Button onClick={logout} variant="danger">
                             Logout
