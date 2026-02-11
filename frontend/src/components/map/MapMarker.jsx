@@ -1,3 +1,4 @@
+import { useRef, useEffect } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { getTypeConfig } from '../../utils/mapHelpers';
@@ -42,9 +43,19 @@ const createMarkerIcon = (listing) => {
 
 const MapMarker = ({ listing, isSelected, onSelect }) => {
     const icon = createMarkerIcon(listing);
+    const markerRef = useRef(null);
+
+    useEffect(() => {
+        if (isSelected && markerRef.current) {
+            setTimeout(() => {
+                markerRef.current.openPopup();
+            }, 300);
+        }
+    }, [isSelected]);
 
     return (
         <Marker
+            ref={markerRef}
             position={[parseFloat(listing.latitude), parseFloat(listing.longitude)]}
             icon={icon}
             eventHandlers={{
