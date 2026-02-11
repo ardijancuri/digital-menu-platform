@@ -84,7 +84,7 @@ function App() {
           <Route path="/menu/:slug" element={<PublicMenuPage />} />
           <Route path="/features" element={<FeaturesPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          {import.meta.env.DEV && <Route path="/map" element={<MapPage />} />}
+          <Route path="/map" element={<MapPage />} />
 
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />

@@ -9,7 +9,7 @@ const Navigation = () => {
 
     const navLinks = [
         { path: '/about', label: 'About' },
-        ...(import.meta.env.DEV ? [{ path: '/map', label: 'Map' }] : []),
+        { path: '/map', label: 'Map' },
         { path: '/pricing', label: 'Pricing' },
         { path: '/features', label: 'Features' },
         { path: '/contact', label: 'Contact' }

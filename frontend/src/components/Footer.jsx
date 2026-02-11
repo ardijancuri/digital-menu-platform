@@ -28,9 +28,7 @@ const Footer = () => {
                         <ul style={{ listStyle: 'none', padding: 0 }}>
                             <li style={{ marginBottom: '0.5rem' }}><Link to="/features" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Features</Link></li>
                             <li style={{ marginBottom: '0.5rem' }}><Link to="/pricing" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Pricing</Link></li>
-                            {import.meta.env.DEV && (
-                                <li style={{ marginBottom: '0.5rem' }}><Link to="/map" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Map</Link></li>
-                            )}
+                            <li style={{ marginBottom: '0.5rem' }}><Link to="/map" style={{ color: '#666', textDecoration: 'none', fontSize: '0.9375rem' }}>Map</Link></li>
 
                         </ul>
                     </div>
