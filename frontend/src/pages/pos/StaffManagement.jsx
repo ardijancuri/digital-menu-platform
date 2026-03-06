@@ -6,6 +6,7 @@ import { printZReport, isFiscalPrinterAvailable } from '../../utils/fiscalPrint'
 
 const StaffManagement = () => {
     const { isManager } = useAuth();
+    const canViewRevenue = !isManager();
     const [staffList, setStaffList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -226,7 +227,9 @@ const StaffManagement = () => {
                         <tr>
                             <th className="px-6 py-4 font-semibold text-gray-600">Name</th>
                             <th className="px-6 py-4 font-semibold text-gray-600">Role</th>
-                            <th className="px-6 py-4 font-semibold text-gray-600">Revenue</th>
+                            {canViewRevenue && (
+                                <th className="px-6 py-4 font-semibold text-gray-600">Revenue</th>
+                            )}
                             <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -242,9 +245,11 @@ const StaffManagement = () => {
                                         {staff.role}
                                     </span>
                                 </td>
-                                <td className="px-6 py-4 font-semibold text-gray-900">
-                                    {Math.round(staff.revenue || 0).toLocaleString()} MKD
-                                </td>
+                                {canViewRevenue && (
+                                    <td className="px-6 py-4 font-semibold text-gray-900">
+                                        {Math.round(staff.revenue || 0).toLocaleString()} MKD
+                                    </td>
+                                )}
                                 <td className="px-6 py-4 text-right">
                                     <div className="flex items-center justify-end gap-3">
                                         <button
@@ -269,7 +274,7 @@ const StaffManagement = () => {
                                 </td>
                             </tr>
                         ))}
-                        {staffList.length > 0 && (
+                        {staffList.length > 0 && canViewRevenue && (
                             <tr className="bg-gray-100 font-bold">
                                 <td className="px-6 py-4 text-gray-900" colSpan="2">
                                     Total Revenue
@@ -282,7 +287,7 @@ const StaffManagement = () => {
                         )}
                         {staffList.length === 0 && (
                             <tr>
-                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={canViewRevenue ? 4 : 3} className="px-6 py-8 text-center text-gray-500">
                                     No staff members found. Add your first employee!
                                 </td>
                             </tr>
@@ -312,12 +317,14 @@ const StaffManagement = () => {
                                         </span>
                                     </div>
                                 </div>
-                                <div className="mb-4">
-                                    <p className="text-sm text-gray-600 mb-1">Revenue</p>
-                                    <p className="text-lg font-semibold text-gray-900">
-                                        {Math.round(staff.revenue || 0).toLocaleString()} MKD
-                                    </p>
-                                </div>
+                                {canViewRevenue && (
+                                    <div className="mb-4">
+                                        <p className="text-sm text-gray-600 mb-1">Revenue</p>
+                                        <p className="text-lg font-semibold text-gray-900">
+                                            {Math.round(staff.revenue || 0).toLocaleString()} MKD
+                                        </p>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-3">
                                     <button
                                         onClick={() => handleGenerateStaffReport(staff.id)}
@@ -340,14 +347,16 @@ const StaffManagement = () => {
                                 </div>
                             </div>
                         ))}
-                        <div className="bg-gray-100 rounded-xl border border-gray-200 p-4">
-                            <div className="flex justify-between items-center">
-                                <span className="font-bold text-gray-900">Total Revenue</span>
-                                <span className="font-bold text-gray-900">
-                                    {Math.round(totalRevenue).toLocaleString()} MKD
-                                </span>
+                        {canViewRevenue && (
+                            <div className="bg-gray-100 rounded-xl border border-gray-200 p-4">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold text-gray-900">Total Revenue</span>
+                                    <span className="font-bold text-gray-900">
+                                        {Math.round(totalRevenue).toLocaleString()} MKD
+                                    </span>
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </>
                 )}
             </div>
