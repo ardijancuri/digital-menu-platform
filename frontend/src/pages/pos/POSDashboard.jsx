@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const POSDashboard = () => {
     const { isManager } = useAuth();
+    const manager = isManager();
     const [stats, setStats] = useState({
         todaySales: 0,
         activeOrders: 0,
@@ -40,14 +41,14 @@ const POSDashboard = () => {
             ];
 
             // Only fetch staff data if user is not a manager
-            if (!isManager()) {
+            if (!manager) {
                 fetchPromises.push(posAPI.getStaff());
             }
 
             const results = await Promise.all(fetchPromises);
             const ordersResponse = results[0];
             const tablesResponse = results[1];
-            const staffResponse = !isManager() ? results[2] : null;
+            const staffResponse = !manager ? results[2] : null;
 
             // Calculate today's sales from completed orders
             const today = new Date();
@@ -101,8 +102,8 @@ const POSDashboard = () => {
             {/* Stats Grid */}
             <div className={`grid grid-cols-1 md:grid-cols-2 ${
                 settings?.takeaway_only 
-                    ? (isManager() ? 'lg:grid-cols-2' : 'lg:grid-cols-3')
-                    : (isManager() ? 'lg:grid-cols-3' : 'lg:grid-cols-4')
+                    ? (manager ? 'lg:grid-cols-2' : 'lg:grid-cols-3')
+                    : (manager ? 'lg:grid-cols-3' : 'lg:grid-cols-4')
             } gap-6 mb-8`}>
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
@@ -145,7 +146,7 @@ const POSDashboard = () => {
                     </div>
                 )}
 
-                {!isManager() && (
+                {!manager && (
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
                         <div className="bg-purple-100 p-3 rounded-lg text-purple-600">
@@ -186,8 +187,10 @@ const POSDashboard = () => {
                     <div className="bg-gray-100 p-4 rounded-full mb-4 text-gray-600 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
                         <i className="fas fa-history text-2xl"></i>
                     </div>
-                    <h4 className="text-xl font-bold mb-2">Order History</h4>
-                    <p className="text-gray-500 text-sm">View past orders and receipts</p>
+                    <h4 className="text-xl font-bold mb-2">{manager ? 'Active Orders' : 'Order History'}</h4>
+                    <p className="text-gray-500 text-sm">
+                        {manager ? 'View and manage current orders' : 'View past orders and receipts'}
+                    </p>
                 </Link>
             </div>
         </div>

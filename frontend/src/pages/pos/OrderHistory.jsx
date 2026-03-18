@@ -7,7 +7,7 @@ import { printFiscalReceipt, isFiscalPrinterAvailable, connectFiscalPrinter } fr
 import Modal from '../../components/Modal';
 
 const OrderHistory = () => {
-    const { user, isAdmin, isUser } = useAuth();
+    const { user, isAdmin, isUser, isManager } = useAuth();
     const [orders, setOrders] = useState([]);
     const [tables, setTables] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,12 +16,14 @@ const OrderHistory = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [tableSearchTerm, setTableSearchTerm] = useState('');
     const [settings, setSettings] = useState(null);
+    const manager = isManager();
+    const effectiveFilter = manager ? 'active' : filter;
 
     useEffect(() => {
         fetchOrders();
         fetchTables();
         fetchSettings();
-    }, [filter]);
+    }, [effectiveFilter]);
 
     // Prewarm fiscal printer connection for optimal performance
     useEffect(() => {
@@ -44,7 +46,7 @@ const OrderHistory = () => {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const response = await posAPI.getOrders(filter);
+            const response = await posAPI.getOrders(effectiveFilter);
             setOrders(response.data.orders);
         } catch (error) {
             console.error('Error fetching orders:', error);
@@ -138,7 +140,7 @@ const OrderHistory = () => {
         <div>
             <div className="mb-4 flex flex-col gap-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                    <h2 className="text-2xl font-bold text-gray-800">Orders</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">{manager ? 'Active Orders' : 'Orders'}</h2>
                     <input
                         type="text"
                         value={searchTerm}
@@ -147,23 +149,25 @@ const OrderHistory = () => {
                         className="w-full sm:w-80 px-4 py-2.5 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                     />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className={`grid grid-cols-1 ${manager ? '' : 'sm:grid-cols-2'} gap-2`}>
                     <button
                         onClick={() => setFilter('active')}
-                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${effectiveFilter === 'active' ? 'bg-blue-600 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
                             }`}
                     >
                         <i className="fas fa-fire mr-2"></i>
                         Active Orders
                     </button>
-                    <button
-                        onClick={() => setFilter('history')}
-                        className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${filter === 'history' ? 'bg-gray-800 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
-                            }`}
-                    >
-                        <i className="fas fa-history mr-2"></i>
-                        Order History
-                    </button>
+                    {!manager && (
+                        <button
+                            onClick={() => setFilter('history')}
+                            className={`w-full px-4 py-2.5 rounded-lg text-sm sm:text-base font-semibold transition-all text-center ${effectiveFilter === 'history' ? 'bg-gray-800 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                                }`}
+                        >
+                            <i className="fas fa-history mr-2"></i>
+                            Order History
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -233,7 +237,7 @@ const OrderHistory = () => {
                                         const ROUND_THRESHOLD_MS = 1000;
 
                                         // Skip grouping for history or completed orders
-                                        if (filter === 'history' || order.status === 'completed' || order.status === 'cancelled') {
+                                        if (effectiveFilter === 'history' || order.status === 'completed' || order.status === 'cancelled') {
                                             return sortedItems.map((item, idx) => (
                                                 <li key={idx} className="flex justify-between text-sm">
                                                     <span className="text-gray-800">
@@ -311,7 +315,7 @@ const OrderHistory = () => {
                             </div>
 
                             <div className="flex flex-col gap-2">
-                                {filter === 'active' && (
+                                {effectiveFilter === 'active' && (
                                     <>
                                         {order.status === 'preparing' && (
                                             <button
@@ -332,7 +336,7 @@ const OrderHistory = () => {
                                         )}
                                     </>
                                 )}
-                                {filter === 'history' && (
+                                {effectiveFilter === 'history' && (
                                     <>
                                         <button
                                             onClick={() => handlePrintReceipt(order)}
@@ -357,7 +361,7 @@ const OrderHistory = () => {
                     ))}
                     {orders.length === 0 && (
                         <div className="col-span-full text-center py-12 bg-white rounded-xl border border-gray-200 text-gray-500">
-                            No orders found.
+                            {manager ? 'No active orders found.' : 'No orders found.'}
                         </div>
                     )}
                 </div>

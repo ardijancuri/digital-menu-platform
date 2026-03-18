@@ -9,12 +9,13 @@ const POSLayout = () => {
     const navigate = useNavigate();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [settings, setSettings] = useState(null);
+    const manager = isManager();
 
     const allNavItems = [
         { path: '/pos', label: 'Dashboard', icon: 'fa-home' },
         { path: '/pos/order', label: 'New Order', icon: 'fa-plus-circle' },
         { path: '/pos/tables', label: 'Tables', icon: 'fa-chair' },
-        { path: '/pos/orders', label: 'Order History', icon: 'fa-list' },
+        { path: '/pos/orders', label: manager ? 'Active Orders' : 'Order History', icon: 'fa-list' },
         { path: '/pos/staff', label: 'Staff', icon: 'fa-users' },
         { path: '/pos/reports', label: 'Reports', icon: 'fa-chart-bar' },
     ];
@@ -38,7 +39,7 @@ const POSLayout = () => {
         let filtered = allNavItems;
         
         // For managers, hide Reports
-        if (isManager()) {
+        if (manager) {
             filtered = filtered.filter(item => item.path !== '/pos/reports');
         }
         
@@ -107,7 +108,7 @@ const POSLayout = () => {
 
                 {/* Footer Actions */}
                 <div className="p-4 border-t border-gray-700 space-y-2">
-                    {!isManager() && (
+                    {!manager && (
                     <button
                         onClick={() => {
                             navigate('/dashboard');
