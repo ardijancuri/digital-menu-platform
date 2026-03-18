@@ -6,6 +6,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const POSDashboard = () => {
     const { isManager } = useAuth();
+    const canViewTodaySales = !isManager();
     const manager = isManager();
     const [stats, setStats] = useState({
         todaySales: 0,
@@ -35,10 +36,11 @@ const POSDashboard = () => {
     const fetchDashboardData = async () => {
         try {
             // Fetch all necessary data
-            const fetchPromises = [
-                posAPI.getOrders('history'),
-                posAPI.getTables()
-            ];
+            const fetchPromises = [posAPI.getTables()];
+
+            if (canViewTodaySales) {
+                fetchPromises.unshift(posAPI.getOrders('history'));
+            }
 
             // Only fetch staff data if user is not a manager
             if (!manager) {
@@ -46,22 +48,26 @@ const POSDashboard = () => {
             }
 
             const results = await Promise.all(fetchPromises);
-            const ordersResponse = results[0];
-            const tablesResponse = results[1];
-            const staffResponse = !manager ? results[2] : null;
+            const ordersResponse = canViewTodaySales ? results[0] : null;
+            const tablesResponse = canViewTodaySales ? results[1] : results[0];
+            const staffResponse = !manager
+                ? results[canViewTodaySales ? 2 : 1]
+                : null;
 
             // Calculate today's sales from completed orders
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            const completedOrders = ordersResponse.data.orders.filter(order => order.status === 'completed');
-            const todaySales = completedOrders
-                .filter(order => {
-                    const orderDate = new Date(order.created_at);
-                    orderDate.setHours(0, 0, 0, 0);
-                    return orderDate.getTime() === today.getTime();
-                })
-                .reduce((sum, order) => sum + parseFloat(order.total_amount), 0);
+            const todaySales = canViewTodaySales
+                ? ordersResponse.data.orders
+                    .filter(order => order.status === 'completed')
+                    .filter(order => {
+                        const orderDate = new Date(order.created_at);
+                        orderDate.setHours(0, 0, 0, 0);
+                        return orderDate.getTime() === today.getTime();
+                    })
+                    .reduce((sum, order) => sum + parseFloat(order.total_amount), 0)
+                : 0;
 
             // Count active orders (preparing only)
             const activeOrdersResponse = await posAPI.getOrders('active');
@@ -102,21 +108,23 @@ const POSDashboard = () => {
             {/* Stats Grid */}
             <div className={`grid grid-cols-1 md:grid-cols-2 ${
                 settings?.takeaway_only 
-                    ? (manager ? 'lg:grid-cols-2' : 'lg:grid-cols-3')
-                    : (manager ? 'lg:grid-cols-3' : 'lg:grid-cols-4')
+                    ? (manager ? 'lg:grid-cols-1' : 'lg:grid-cols-3')
+                    : (manager ? 'lg:grid-cols-2' : 'lg:grid-cols-4')
             } gap-6 mb-8`}>
-                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                    <div className="flex items-center justify-between mb-4">
-                        <div className="bg-green-100 p-3 rounded-lg text-green-600">
-                            <i className="fas fa-dollar-sign text-xl"></i>
+                {canViewTodaySales && (
+                    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="bg-green-100 p-3 rounded-lg text-green-600">
+                                <i className="fas fa-dollar-sign text-xl"></i>
+                            </div>
+                            <span className="text-sm text-gray-500 font-medium">Today's Sales</span>
                         </div>
-                        <span className="text-sm text-gray-500 font-medium">Today's Sales</span>
+                        <h3 className="text-2xl font-bold text-gray-900">{Math.round(stats.todaySales)} MKD</h3>
+                        <p className="text-sm text-gray-600 mt-2">
+                            Completed orders today
+                        </p>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-900">{Math.round(stats.todaySales)} MKD</h3>
-                    <p className="text-sm text-gray-600 mt-2">
-                        Completed orders today
-                    </p>
-                </div>
+                )}
 
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
