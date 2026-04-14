@@ -10,6 +10,27 @@ const isValidDateInput = (value) => {
     return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === value;
 };
 
+const formatDateOnly = (value) => {
+    if (!value) {
+        return null;
+    }
+
+    if (typeof value === 'string') {
+        return value.slice(0, 10);
+    }
+
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
+    }
+
+    return null;
+};
+
+const serializeApplication = (application) => ({
+    ...application,
+    last_payment_date: formatDateOnly(application.last_payment_date),
+});
+
 /**
  * Get all applications
  */
@@ -29,7 +50,7 @@ export const getApplications = async (req, res) => {
 
         res.json({
             success: true,
-            applications: result.rows
+            applications: result.rows.map(serializeApplication)
         });
     } catch (error) {
         console.error('Get applications error:', error);
@@ -170,7 +191,7 @@ export const rejectApplication = async (req, res) => {
         res.json({
             success: true,
             message: 'Application rejected',
-            application: result.rows[0]
+            application: serializeApplication(result.rows[0])
         });
     } catch (error) {
         console.error('Reject application error:', error);
@@ -238,7 +259,7 @@ export const updateApplicationPayment = async (req, res) => {
         res.json({
             success: true,
             message: 'Payment details updated successfully',
-            application: result.rows[0]
+            application: serializeApplication(result.rows[0])
         });
     } catch (error) {
         console.error('Update application payment error:', error);

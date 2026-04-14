@@ -5,6 +5,19 @@ import { useAuth } from '../../context/AuthContext';
 import { getTypeConfig } from '../../utils/mapHelpers';
 import Button from '../../components/Button';
 
+const normalizeDateInputValue = (value) => {
+    if (!value) {
+        return '';
+    }
+
+    if (typeof value === 'string') {
+        return value.slice(0, 10);
+    }
+
+    const parsedDate = new Date(value);
+    return Number.isNaN(parsedDate.getTime()) ? '' : parsedDate.toISOString().slice(0, 10);
+};
+
 const AdminApplications = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
@@ -27,7 +40,7 @@ const AdminApplications = () => {
                     response.data.applications.map((app) => [
                         app.id,
                         {
-                            last_payment_date: app.last_payment_date || '',
+                            last_payment_date: normalizeDateInputValue(app.last_payment_date),
                             paid_months: app.paid_months?.toString() || '',
                         }
                     ])
