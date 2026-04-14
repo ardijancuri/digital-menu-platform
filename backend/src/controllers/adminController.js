@@ -194,14 +194,6 @@ export const updateApplicationPayment = async (req, res) => {
             ? null
             : Number(paid_months);
 
-        if ((normalizedLastPaymentDate && normalizedPaidMonths === null) ||
-            (!normalizedLastPaymentDate && normalizedPaidMonths !== null)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Last payment date and paid months must be provided together'
-            });
-        }
-
         if (normalizedLastPaymentDate && !isValidDateInput(normalizedLastPaymentDate)) {
             return res.status(400).json({
                 success: false,
