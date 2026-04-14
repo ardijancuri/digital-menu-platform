@@ -1,6 +1,15 @@
 import { query, getClient } from '../db/database.js';
 import { coerceBusinessType } from '../utils/businessTypes.js';
 
+const isValidDateInput = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+        return false;
+    }
+
+    const parsedDate = new Date(`${value}T00:00:00.000Z`);
+    return !Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === value;
+};
+
 /**
  * Get all applications
  */
@@ -168,6 +177,82 @@ export const rejectApplication = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Server error while rejecting application'
+        });
+    }
+};
+
+/**
+ * Update payment details for an approved application
+ */
+export const updateApplicationPayment = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { last_payment_date, paid_months } = req.body;
+
+        const normalizedLastPaymentDate = last_payment_date || null;
+        const normalizedPaidMonths = paid_months === '' || paid_months === undefined || paid_months === null
+            ? null
+            : Number(paid_months);
+
+        if ((normalizedLastPaymentDate && normalizedPaidMonths === null) ||
+            (!normalizedLastPaymentDate && normalizedPaidMonths !== null)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Last payment date and paid months must be provided together'
+            });
+        }
+
+        if (normalizedLastPaymentDate && !isValidDateInput(normalizedLastPaymentDate)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid last payment date'
+            });
+        }
+
+        if (normalizedPaidMonths !== null && (!Number.isInteger(normalizedPaidMonths) || normalizedPaidMonths <= 0)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Paid months must be a positive whole number'
+            });
+        }
+
+        const applicationResult = await query(
+            'SELECT id, status FROM applications WHERE id = $1',
+            [id]
+        );
+
+        if (applicationResult.rows.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'Application not found'
+            });
+        }
+
+        if (applicationResult.rows[0].status !== 'approved') {
+            return res.status(400).json({
+                success: false,
+                message: 'Payment info can only be updated for approved applications'
+            });
+        }
+
+        const result = await query(
+            `UPDATE applications
+             SET last_payment_date = $1, paid_months = $2
+             WHERE id = $3
+             RETURNING *`,
+            [normalizedLastPaymentDate, normalizedPaidMonths, id]
+        );
+
+        res.json({
+            success: true,
+            message: 'Payment details updated successfully',
+            application: result.rows[0]
+        });
+    } catch (error) {
+        console.error('Update application payment error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Server error while updating payment details'
         });
     }
 };

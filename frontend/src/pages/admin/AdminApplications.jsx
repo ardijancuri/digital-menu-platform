@@ -9,8 +9,10 @@ const AdminApplications = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
     const [applications, setApplications] = useState([]);
+    const [paymentDrafts, setPaymentDrafts] = useState({});
     const [filter, setFilter] = useState('pending');
     const [loading, setLoading] = useState(true);
+    const [savingPaymentId, setSavingPaymentId] = useState(null);
 
     useEffect(() => {
         fetchApplications();
@@ -20,6 +22,17 @@ const AdminApplications = () => {
         try {
             const response = await adminAPI.getApplications(filter);
             setApplications(response.data.applications);
+            setPaymentDrafts(
+                Object.fromEntries(
+                    response.data.applications.map((app) => [
+                        app.id,
+                        {
+                            last_payment_date: app.last_payment_date || '',
+                            paid_months: app.paid_months?.toString() || '',
+                        }
+                    ])
+                )
+            );
         } catch (err) {
             console.error('Failed to fetch applications:', err);
         } finally {
@@ -46,6 +59,33 @@ const AdminApplications = () => {
             fetchApplications();
         } catch (err) {
             alert('Failed to reject application');
+        }
+    };
+
+    const handlePaymentDraftChange = (id, field, value) => {
+        setPaymentDrafts((prev) => ({
+            ...prev,
+            [id]: {
+                ...(prev[id] || { last_payment_date: '', paid_months: '' }),
+                [field]: value,
+            },
+        }));
+    };
+
+    const handleSavePayment = async (id) => {
+        const draft = paymentDrafts[id] || { last_payment_date: '', paid_months: '' };
+
+        try {
+            setSavingPaymentId(id);
+            await adminAPI.updateApplicationPayment(id, {
+                last_payment_date: draft.last_payment_date || null,
+                paid_months: draft.paid_months === '' ? null : Number(draft.paid_months),
+            });
+            await fetchApplications();
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update payment details');
+        } finally {
+            setSavingPaymentId(null);
         }
     };
 
@@ -100,36 +140,79 @@ const AdminApplications = () => {
                     <div className="grid gap-4">
                         {applications.map((app) => {
                             const typeConfig = getTypeConfig(app.business_type);
+                            const paymentDraft = paymentDrafts[app.id] || { last_payment_date: '', paid_months: '' };
 
                             return (
                                 <div key={app.id} className="card">
-                                    <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                            <h3 className="text-lg font-semibold">{app.business_name}</h3>
-                                            <p className="text-sm text-gray-600">{typeConfig.label}</p>
-                                            <div className="mt-2 space-y-1 text-sm">
-                                                <p><strong>Owner:</strong> {app.owner_name}</p>
-                                                <p><strong>Email:</strong> {app.email}</p>
-                                                <p><strong>Phone:</strong> {app.phone}</p>
-                                                <p><strong>Slug:</strong> /menu/{app.slug}</p>
-                                                <p><strong>Applied:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex-1">
+                                                <h3 className="text-lg font-semibold">{app.business_name}</h3>
+                                                <p className="text-sm text-gray-600">{typeConfig.label}</p>
+                                                <div className="mt-2 space-y-1 text-sm">
+                                                    <p><strong>Owner:</strong> {app.owner_name}</p>
+                                                    <p><strong>Email:</strong> {app.email}</p>
+                                                    <p><strong>Phone:</strong> {app.phone}</p>
+                                                    <p><strong>Slug:</strong> /menu/{app.slug}</p>
+                                                    <p><strong>Applied:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
+                                                </div>
                                             </div>
+                                            {app.status === 'pending' && (
+                                                <div className="flex space-x-2">
+                                                    <Button onClick={() => handleApprove(app.id)} variant="primary">
+                                                        Approve
+                                                    </Button>
+                                                    <Button onClick={() => handleReject(app.id)} variant="danger">
+                                                        Reject
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {app.status !== 'pending' && (
+                                                <span className={`px-3 py-1 rounded-full text-sm font-medium ${app.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {app.status}
+                                                </span>
+                                            )}
                                         </div>
-                                        {app.status === 'pending' && (
-                                            <div className="flex space-x-2">
-                                                <Button onClick={() => handleApprove(app.id)} variant="primary">
-                                                    Approve
-                                                </Button>
-                                                <Button onClick={() => handleReject(app.id)} variant="danger">
-                                                    Reject
-                                                </Button>
+
+                                        {app.status === 'approved' && (
+                                            <div className="border-t border-gray-200 pt-4">
+                                                <h4 className="text-sm font-semibold text-gray-900 mb-3">Payment Tracking</h4>
+                                                <div className="grid md:grid-cols-3 gap-3 items-end">
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                            Last Payment Date
+                                                        </label>
+                                                        <input
+                                                            type="date"
+                                                            value={paymentDraft.last_payment_date}
+                                                            onChange={(e) => handlePaymentDraftChange(app.id, 'last_payment_date', e.target.value)}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                                                            Paid Months
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            min="1"
+                                                            step="1"
+                                                            value={paymentDraft.paid_months}
+                                                            onChange={(e) => handlePaymentDraftChange(app.id, 'paid_months', e.target.value)}
+                                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                                                            placeholder="e.g. 3"
+                                                        />
+                                                    </div>
+                                                    <Button
+                                                        onClick={() => handleSavePayment(app.id)}
+                                                        variant="primary"
+                                                        disabled={savingPaymentId === app.id}
+                                                    >
+                                                        {savingPaymentId === app.id ? 'Saving...' : 'Save Payment'}
+                                                    </Button>
+                                                </div>
                                             </div>
-                                        )}
-                                        {app.status !== 'pending' && (
-                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${app.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                {app.status}
-                                            </span>
                                         )}
                                     </div>
                                 </div>

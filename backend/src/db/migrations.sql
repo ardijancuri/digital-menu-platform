@@ -24,6 +24,8 @@ CREATE TABLE applications (
     slug TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    last_payment_date DATE,
+    paid_months INTEGER CHECK (paid_months IS NULL OR paid_months > 0),
     created_at TIMESTAMP DEFAULT NOW()
 );
 

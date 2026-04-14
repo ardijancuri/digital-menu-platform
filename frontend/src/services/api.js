@@ -61,6 +61,7 @@ export const adminAPI = {
     getApplications: (status) => api.get('/admin/applications', { params: { status } }),
     approveApplication: (id) => api.post(`/admin/applications/${id}/approve`),
     rejectApplication: (id) => api.post(`/admin/applications/${id}/reject`),
+    updateApplicationPayment: (id, data) => api.put(`/admin/applications/${id}/payment`, data),
     getUsers: () => api.get('/admin/users'),
     toggleUserStatus: (id) => api.put(`/admin/users/${id}/toggle`),
     deleteUser: (id) => api.delete(`/admin/users/${id}`),

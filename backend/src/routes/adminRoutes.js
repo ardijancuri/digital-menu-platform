@@ -5,6 +5,7 @@ import {
     getApplications,
     approveApplication,
     rejectApplication,
+    updateApplicationPayment,
     getUsers,
     toggleUserStatus,
     deleteUser
@@ -26,6 +27,7 @@ router.use(authMiddleware, adminMiddleware);
 router.get('/applications', getApplications);
 router.post('/applications/:id/approve', approveApplication);
 router.post('/applications/:id/reject', rejectApplication);
+router.put('/applications/:id/payment', updateApplicationPayment);
 
 // User management
 router.get('/users', getUsers);
