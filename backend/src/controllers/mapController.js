@@ -1,4 +1,5 @@
 import { query } from '../db/database.js';
+import { normalizeBusinessType } from '../utils/businessTypes.js';
 
 // ==========================================
 // PUBLIC ENDPOINTS
@@ -84,8 +85,9 @@ export const createMapListing = async (req, res) => {
             latitude, longitude, phone, email, website_url,
             menu_slug, opening_hours, is_featured, is_active
         } = req.body;
+        const normalizedBusinessType = normalizeBusinessType(business_type);
 
-        if (!business_name || !business_type) {
+        if (!business_name || !normalizedBusinessType) {
             return res.status(400).json({
                 success: false,
                 message: 'Business name and type are required'
@@ -100,9 +102,9 @@ export const createMapListing = async (req, res) => {
                  latitude, longitude, phone, email, website_url,
                  menu_slug, opening_hours, is_featured, is_active)
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-             RETURNING *`,
+            RETURNING *`,
             [
-                user_id || null, source, business_name, business_type,
+                user_id || null, source, business_name, normalizedBusinessType,
                 address || null, latitude || null, longitude || null,
                 phone || null, email || null, website_url || null,
                 menu_slug || null,
@@ -129,8 +131,9 @@ export const updateMapListing = async (req, res) => {
             latitude, longitude, phone, email, website_url,
             menu_slug, opening_hours, is_featured, is_active
         } = req.body;
+        const normalizedBusinessType = normalizeBusinessType(business_type);
 
-        if (!business_name || !business_type) {
+        if (!business_name || !normalizedBusinessType) {
             return res.status(400).json({
                 success: false,
                 message: 'Business name and type are required'
@@ -144,9 +147,9 @@ export const updateMapListing = async (req, res) => {
                 website_url = $8, menu_slug = $9, opening_hours = $10,
                 is_featured = $11, is_active = $12, updated_at = NOW()
              WHERE id = $13
-             RETURNING *`,
+            RETURNING *`,
             [
-                business_name, business_type, address || null,
+                business_name, normalizedBusinessType, address || null,
                 latitude || null, longitude || null,
                 phone || null, email || null, website_url || null,
                 menu_slug || null,

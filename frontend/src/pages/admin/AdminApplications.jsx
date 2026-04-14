@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { getTypeConfig } from '../../utils/mapHelpers';
 import Button from '../../components/Button';
 
 const AdminApplications = () => {
@@ -97,39 +98,43 @@ const AdminApplications = () => {
                     </div>
                 ) : (
                     <div className="grid gap-4">
-                        {applications.map((app) => (
-                            <div key={app.id} className="card">
-                                <div className="flex justify-between items-start">
-                                    <div className="flex-1">
-                                        <h3 className="text-lg font-semibold">{app.business_name}</h3>
-                                        <p className="text-sm text-gray-600">{app.business_type}</p>
-                                        <div className="mt-2 space-y-1 text-sm">
-                                            <p><strong>Owner:</strong> {app.owner_name}</p>
-                                            <p><strong>Email:</strong> {app.email}</p>
-                                            <p><strong>Phone:</strong> {app.phone}</p>
-                                            <p><strong>Slug:</strong> /menu/{app.slug}</p>
-                                            <p><strong>Applied:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
+                        {applications.map((app) => {
+                            const typeConfig = getTypeConfig(app.business_type);
+
+                            return (
+                                <div key={app.id} className="card">
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                            <h3 className="text-lg font-semibold">{app.business_name}</h3>
+                                            <p className="text-sm text-gray-600">{typeConfig.label}</p>
+                                            <div className="mt-2 space-y-1 text-sm">
+                                                <p><strong>Owner:</strong> {app.owner_name}</p>
+                                                <p><strong>Email:</strong> {app.email}</p>
+                                                <p><strong>Phone:</strong> {app.phone}</p>
+                                                <p><strong>Slug:</strong> /menu/{app.slug}</p>
+                                                <p><strong>Applied:</strong> {new Date(app.created_at).toLocaleDateString()}</p>
+                                            </div>
                                         </div>
+                                        {app.status === 'pending' && (
+                                            <div className="flex space-x-2">
+                                                <Button onClick={() => handleApprove(app.id)} variant="primary">
+                                                    Approve
+                                                </Button>
+                                                <Button onClick={() => handleReject(app.id)} variant="danger">
+                                                    Reject
+                                                </Button>
+                                            </div>
+                                        )}
+                                        {app.status !== 'pending' && (
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${app.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                {app.status}
+                                            </span>
+                                        )}
                                     </div>
-                                    {app.status === 'pending' && (
-                                        <div className="flex space-x-2">
-                                            <Button onClick={() => handleApprove(app.id)} variant="primary">
-                                                Approve
-                                            </Button>
-                                            <Button onClick={() => handleReject(app.id)} variant="danger">
-                                                Reject
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {app.status !== 'pending' && (
-                                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${app.status === 'approved' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                            {app.status}
-                                        </span>
-                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
             </div>

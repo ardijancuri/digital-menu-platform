@@ -76,6 +76,48 @@ export const businessTypes = [
     { value: 'other', label: 'Other', color: '#7f8c8d', icon: 'fa-store' },
 ];
 
+const businessTypeAliases = new Map([
+    ['restaurant', 'restaurant'],
+    ['cafe', 'cafe'],
+    ['caf', 'cafe'],
+    ['café', 'cafe'],
+    ['cafã©', 'cafe'],
+    ['bar', 'bar'],
+    ['bakery', 'bakery'],
+    ['fast_food', 'fast_food'],
+    ['fast food', 'fast_food'],
+    ['fast-food', 'fast_food'],
+    ['pizzeria', 'pizzeria'],
+    ['pizza', 'pizzeria'],
+    ['pub', 'pub'],
+    ['other', 'other'],
+]);
+
+export const normalizeBusinessType = (value) => {
+    if (typeof value !== 'string') {
+        return 'other';
+    }
+
+    const trimmedValue = value.trim();
+    if (!trimmedValue) {
+        return 'other';
+    }
+
+    const lowerValue = trimmedValue.toLowerCase();
+    if (businessTypeAliases.has(lowerValue)) {
+        return businessTypeAliases.get(lowerValue);
+    }
+
+    const normalizedKey = lowerValue
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
+    return businessTypeAliases.get(normalizedKey) || normalizedKey || 'other';
+};
+
 export const getTypeConfig = (type) => {
-    return businessTypes.find(t => t.value === type) || businessTypes[businessTypes.length - 1];
+    const normalizedType = normalizeBusinessType(type);
+    return businessTypes.find(t => t.value === normalizedType) || businessTypes[businessTypes.length - 1];
 };

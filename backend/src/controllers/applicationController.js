@@ -1,5 +1,6 @@
 import { query } from '../db/database.js';
 import { hashPassword } from '../utils/passwordHelper.js';
+import { normalizeBusinessType } from '../utils/businessTypes.js';
 
 /**
  * Submit application
@@ -15,6 +16,14 @@ export const submitApplication = async (req, res) => {
             slug,
             password
         } = req.body;
+        const normalizedBusinessType = normalizeBusinessType(business_type);
+
+        if (!normalizedBusinessType) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid business type'
+            });
+        }
 
         // Check if email already exists in applications or users
         const emailCheck = await query(
@@ -51,7 +60,7 @@ export const submitApplication = async (req, res) => {
        (business_name, business_type, owner_name, email, phone, slug, password_hash, status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending') 
        RETURNING id, business_name, email, slug, status, created_at`,
-            [business_name, business_type, owner_name, email, phone, slug, password_hash]
+            [business_name, normalizedBusinessType, owner_name, email, phone, slug, password_hash]
         );
 
         res.status(201).json({

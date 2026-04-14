@@ -1,4 +1,5 @@
 import { query, getClient } from '../db/database.js';
+import { coerceBusinessType } from '../utils/businessTypes.js';
 
 /**
  * Get all applications
@@ -56,6 +57,7 @@ export const approveApplication = async (req, res) => {
         }
 
         const application = appResult.rows[0];
+        const normalizedBusinessType = coerceBusinessType(application.business_type);
 
         if (application.status === 'approved') {
             await client.query('ROLLBACK');
@@ -105,13 +107,13 @@ export const approveApplication = async (req, res) => {
         await client.query(
             `INSERT INTO map_listings (user_id, source, business_name, business_type, phone, email, menu_slug, is_active)
              VALUES ($1, 'platform', $2, $3, $4, $5, $6, false)`,
-            [userId, application.business_name, application.business_type || 'restaurant', application.phone, application.email, application.slug]
+            [userId, application.business_name, normalizedBusinessType, application.phone, application.email, application.slug]
         );
 
         // Update application status
         await client.query(
-            'UPDATE applications SET status = $1 WHERE id = $2',
-            ['approved', id]
+            'UPDATE applications SET status = $1, business_type = $2 WHERE id = $3',
+            ['approved', normalizedBusinessType, id]
         );
 
         await client.query('COMMIT');

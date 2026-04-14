@@ -1,4 +1,5 @@
 import { body, validationResult } from 'express-validator';
+import { BUSINESS_TYPE_VALUES, normalizeBusinessType } from './businessTypes.js';
 
 /**
  * Validate email format
@@ -51,7 +52,10 @@ export const checkValidation = (req, res, next) => {
  */
 export const applicationValidation = [
     body('business_name').notEmpty().trim().withMessage('Business name is required'),
-    body('business_type').isIn(['Restaurant', 'Café']).withMessage('Invalid business type'),
+    body('business_type')
+        .customSanitizer((value) => normalizeBusinessType(value) || value)
+        .isIn(BUSINESS_TYPE_VALUES)
+        .withMessage('Invalid business type'),
     body('owner_name').notEmpty().trim().withMessage('Owner name is required'),
     validateEmail,
     body('phone').notEmpty().trim().withMessage('Phone number is required'),
@@ -82,11 +86,11 @@ export const loginValidation = [
         const username = req.body.username;
         const hasEmail = email !== undefined && email !== null && email !== '';
         const hasUsername = username !== undefined && username !== null && username !== '';
-        
+
         if (!hasEmail && !hasUsername) {
             throw new Error('Either email or username is required');
         }
-        
+
         return true;
     }),
     checkValidation

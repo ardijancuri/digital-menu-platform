@@ -1,18 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { applicationAPI } from '../services/api';
 import Input from '../components/Input';
 import Button from '../components/Button';
 
 const ApplyPage = () => {
-    const navigate = useNavigate();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
 
     const [formData, setFormData] = useState({
         business_name: '',
-        business_type: 'Restaurant',
+        business_type: 'restaurant',
         owner_name: '',
         email: '',
         phone: '',
@@ -137,8 +136,8 @@ const ApplyPage = () => {
                                         className="input"
                                         required
                                     >
-                                        <option value="Restaurant">Restaurant</option>
-                                        <option value="Café">Café</option>
+                                        <option value="restaurant">Restaurant</option>
+                                        <option value="cafe">Cafe</option>
                                     </select>
                                 </div>
 
