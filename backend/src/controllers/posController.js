@@ -876,7 +876,7 @@ export const resetStaffRevenue = async (req, res) => {
         doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
         doc.moveDown(0.5);
 
-        // Staff Revenue Breakdown
+        // Staff revenue breakdown for the generated receipt report
         doc.fontSize(10).font('Helvetica-Bold').text('STAFF REVENUE', leftMargin, doc.y);
         doc.moveDown(0.3);
 
