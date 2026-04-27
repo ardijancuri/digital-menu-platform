@@ -7,6 +7,34 @@ const getEffectiveUserId = (user) => {
     return user.role === 'manager' && user.owner_id ? user.owner_id : user.id;
 };
 
+const renderProductSalesSection = (doc, productSales, { leftMargin, pageWidth, receiptWidth }) => {
+    doc.fontSize(10).font('Helvetica-Bold').text('PRODUCTS SOLD', leftMargin, doc.y);
+    doc.moveDown(0.3);
+
+    if (productSales.length > 0) {
+        doc.fontSize(8).font('Helvetica');
+        productSales.forEach((product) => {
+            if (doc.y > 950) {
+                doc.addPage({ size: [receiptWidth, 1000], margin: 16 });
+            }
+
+            const currentY = doc.y;
+            const productName = product.product_name || 'Unknown Product';
+            const productDisplay = productName.length > 25 ? productName.substring(0, 25) + '...' : productName;
+
+            doc.text(productDisplay, leftMargin, currentY);
+            doc.text(String(product.quantity_sold), leftMargin, currentY, { align: 'right', width: pageWidth });
+            doc.moveDown(0.3);
+        });
+    } else {
+        doc.fontSize(8).font('Helvetica').text('No products sold', leftMargin, doc.y);
+    }
+
+    doc.moveDown(0.5);
+    doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
+    doc.moveDown(0.5);
+};
+
 // --- Tables Management ---
 
 export const getTables = async (req, res) => {
@@ -676,6 +704,19 @@ export const resetStaffRevenue = async (req, res) => {
 
         const allOrdersForRevenue = ordersResult.rows;
 
+        const productSalesResult = await client.query(
+            `SELECT COALESCE(m.name, 'Unknown Product') as product_name,
+                    COALESCE(SUM(oi.quantity), 0)::int as quantity_sold
+             FROM orders o
+             JOIN order_items oi ON o.id = oi.order_id
+             LEFT JOIN menu_items m ON oi.menu_item_id = m.id
+             WHERE o.user_id = $1 AND o.status != 'cancelled'
+             GROUP BY COALESCE(m.name, 'Unknown Product')
+             ORDER BY quantity_sold DESC, product_name ASC`,
+            [userId]
+        );
+        const productSales = productSalesResult.rows;
+
         // Calculate total revenue from all orders
         const totalRevenue = allOrdersForRevenue.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
 
@@ -870,6 +911,8 @@ export const resetStaffRevenue = async (req, res) => {
         doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
         doc.moveDown(0.5);
 
+        renderProductSalesSection(doc, productSales, { leftMargin, pageWidth, receiptWidth });
+
         // Orders Table - Only Staff and Amount columns
         doc.fontSize(10).font('Helvetica-Bold').text('ORDERS', leftMargin, doc.y);
         doc.moveDown(0.3);
@@ -940,6 +983,19 @@ export const getStaffReport = async (req, res) => {
 
         const staffOrders = ordersResult.rows;
 
+        const productSalesResult = await pool.query(
+            `SELECT COALESCE(m.name, 'Unknown Product') as product_name,
+                    COALESCE(SUM(oi.quantity), 0)::int as quantity_sold
+             FROM orders o
+             JOIN order_items oi ON o.id = oi.order_id
+             LEFT JOIN menu_items m ON oi.menu_item_id = m.id
+             WHERE o.user_id = $1 AND o.staff_id = $2 AND o.status != 'cancelled'
+             GROUP BY COALESCE(m.name, 'Unknown Product')
+             ORDER BY quantity_sold DESC, product_name ASC`,
+            [userId, staffId]
+        );
+        const productSales = productSalesResult.rows;
+
         // Calculate total revenue and order count for this staff member
         const totalRevenue = staffOrders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
         const orderCount = staffOrders.length;
@@ -1002,6 +1058,8 @@ export const getStaffReport = async (req, res) => {
         doc.moveDown(0.5);
         doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
         doc.moveDown(0.5);
+
+        renderProductSalesSection(doc, productSales, { leftMargin, pageWidth, receiptWidth });
 
         // Orders Table - Only Staff and Amount columns
         doc.fontSize(10).font('Helvetica-Bold').text('ORDERS', leftMargin, doc.y);
