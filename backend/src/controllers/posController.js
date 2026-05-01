@@ -673,6 +673,9 @@ export const resetStaffRevenue = async (req, res) => {
         await client.query('BEGIN');
         const userId = getEffectiveUserId(req.user);
 
+        // Prevent two report resets for the same restaurant from counting the same orders.
+        await client.query('SELECT pg_advisory_xact_lock($1::bigint)', [userId]);
+
         // Get today's date for daily_revenue table storage
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -760,7 +763,7 @@ export const resetStaffRevenue = async (req, res) => {
         );
         const businessName = userResult.rows[0]?.business_name || 'Restaurant';
 
-        // Get existing daily_revenue if it exists (before generating PDF so we can include merged data)
+        // Get existing daily_revenue if it exists so stored daily totals can accumulate across resets.
         const existingRevenueResult = await client.query(
             'SELECT total_revenue, order_count, staff_revenue FROM daily_revenue WHERE user_id = $1 AND date = $2',
             [userId, todayDateStr]
@@ -870,8 +873,8 @@ export const resetStaffRevenue = async (req, res) => {
         // Summary
         doc.fontSize(10).font('Helvetica-Bold').text('SUMMARY', leftMargin, doc.y);
         doc.fontSize(9).font('Helvetica');
-        doc.text(`Total Orders: ${finalOrderCount}`, leftMargin, doc.y + 2);
-        doc.text(`Total Revenue: ${Math.round(finalTotalRevenue).toLocaleString()} MKD`, leftMargin, doc.y + 2);
+        doc.text(`Total Orders: ${allOrdersForRevenue.length}`, leftMargin, doc.y + 2);
+        doc.text(`Total Revenue: ${Math.round(totalRevenue).toLocaleString()} MKD`, leftMargin, doc.y + 2);
         doc.moveDown(0.5);
         doc.moveTo(leftMargin, doc.y).lineTo(pageWidth + leftMargin, doc.y).stroke();
         doc.moveDown(0.5);
@@ -881,11 +884,11 @@ export const resetStaffRevenue = async (req, res) => {
         doc.moveDown(0.3);
 
         // Get staff members with revenue > 0 and sort by revenue descending
-        const staffWithRevenue = Object.keys(finalStaffRevenue)
+        const staffWithRevenue = Object.keys(staffRevenueJson)
             .map(staffId => ({
                 id: staffId,
-                name: finalStaffRevenue[staffId].name || 'Unknown',
-                revenue: parseFloat(finalStaffRevenue[staffId].revenue || 0)
+                name: staffRevenueJson[staffId].name || 'Unknown',
+                revenue: parseFloat(staffRevenueJson[staffId].revenue || 0)
             }))
             .filter(staff => staff.revenue > 0)
             .sort((a, b) => b.revenue - a.revenue);
