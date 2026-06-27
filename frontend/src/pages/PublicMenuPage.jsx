@@ -4,6 +4,15 @@ import { publicAPI } from '../services/api';
 import Modal from '../components/Modal';
 import RightUpArrowIcon from '../assets/right up arrow.svg';
 
+const MIN_BANNER_SWIPE_DISTANCE = 50;
+const BANNER_AXIS_LOCK_RATIO = 1.1;
+const LANGUAGES = [
+    { code: 'en', label: 'English (UK)', flagUrl: 'https://flagcdn.com/gb.svg' },
+    { code: 'mk', label: 'Macedonian', flagUrl: 'https://flagcdn.com/mk.svg' },
+    { code: 'sq', label: 'Albanian', flagUrl: 'https://flagcdn.com/al.svg' },
+    { code: 'tr', label: 'Turkish', flagUrl: 'https://flagcdn.com/tr.svg' }
+];
+
 const PublicMenuPage = ({ subdomainSlug }) => {
     const { slug: routeSlug } = useParams();
     // Use subdomain slug if provided, otherwise use route slug
@@ -14,17 +23,13 @@ const PublicMenuPage = ({ subdomainSlug }) => {
     const [expandedCategories, setExpandedCategories] = useState(new Set());
     const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
     const [isBannerPaused, setIsBannerPaused] = useState(false);
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
+    const touchStart = useRef(null);
+    const touchEnd = useRef(null);
+    const touchStartY = useRef(null);
+    const touchEndY = useRef(null);
     const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const [language, setLanguage] = useState('en');
-    const languages = [
-        { code: 'en', label: 'English (UK)', flagUrl: 'https://flagcdn.com/gb.svg' },
-        { code: 'mk', label: 'Macedonian', flagUrl: 'https://flagcdn.com/mk.svg' },
-        { code: 'sq', label: 'Albanian', flagUrl: 'https://flagcdn.com/al.svg' },
-        { code: 'tr', label: 'Turkish', flagUrl: 'https://flagcdn.com/tr.svg' }
-    ];
-    const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+    const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
     const languageMenuRef = useRef(null);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -38,7 +43,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                 // Default to first category open if it exists
                 const firstCategoryId = fetchedMenu?.categories?.[0]?.id;
                 setExpandedCategories(firstCategoryId ? new Set([firstCategoryId]) : new Set());
-            } catch (err) {
+            } catch {
                 setError('Menu not found');
             } finally {
                 setLoading(false);
@@ -98,7 +103,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
         
         // If language is specified in URL, use it
         if (langParam) {
-            const found = languages.find(l => l.code === langParam);
+            const found = LANGUAGES.find(l => l.code === langParam);
             if (found) {
                 setSelectedLanguage(found);
                 setLanguage(found.code);
@@ -109,7 +114,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
         // Otherwise, wait for menu to load to get default language
         if (menu) {
             const defaultLang = menu.default_language || 'en';
-            const found = languages.find(l => l.code === defaultLang) || languages[0];
+            const found = LANGUAGES.find(l => l.code === defaultLang) || LANGUAGES[0];
             setSelectedLanguage(found);
             setLanguage(found.code);
         }
@@ -156,10 +161,21 @@ const PublicMenuPage = ({ subdomainSlug }) => {
     }, [menu?.theme?.banner_images, isBannerPaused]);
 
     const handleBannerSwipe = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
+        if (
+            touchStart.current === null ||
+            touchEnd.current === null ||
+            touchStartY.current === null ||
+            touchEndY.current === null
+        ) return;
+
+        const distance = touchStart.current - touchEnd.current;
+        const verticalDistance = touchStartY.current - touchEndY.current;
+        const isHorizontalSwipe = Math.abs(distance) > Math.abs(verticalDistance) * BANNER_AXIS_LOCK_RATIO;
+
+        if (!isHorizontalSwipe || Math.abs(distance) < MIN_BANNER_SWIPE_DISTANCE) return;
+
+        const isLeftSwipe = distance > 0;
+        const isRightSwipe = distance < 0;
         const length = menu.theme.banner_images.length;
 
         if (isLeftSwipe) {
@@ -368,7 +384,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                                 }}
                                 aria-hidden={!isLanguageMenuOpen}
                             >
-                                {languages
+                                {LANGUAGES
                                     .filter(lang => lang.code !== selectedLanguage.code)
                                     .map(lang => (
                                     <button
@@ -398,16 +414,27 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                         onMouseEnter={() => setIsBannerPaused(true)}
                         onMouseLeave={() => setIsBannerPaused(false)}
                         onTouchStart={(e) => {
+                            const touch = e.targetTouches[0];
                             setIsBannerPaused(true);
-                            setTouchStart(e.targetTouches[0].clientX);
+                            touchStart.current = touch.clientX;
+                            touchEnd.current = touch.clientX;
+                            touchStartY.current = touch.clientY;
+                            touchEndY.current = touch.clientY;
                         }}
-                        onTouchMove={(e) => setTouchEnd(e.targetTouches[0].clientX)}
-                        onTouchEnd={() => {
+                        onTouchEnd={(e) => {
+                            const touch = e.changedTouches[0];
+                            if (touch) {
+                                touchEnd.current = touch.clientX;
+                                touchEndY.current = touch.clientY;
+                            }
                             setIsBannerPaused(false);
                             handleBannerSwipe();
-                            setTouchStart(null);
-                            setTouchEnd(null);
+                            touchStart.current = null;
+                            touchEnd.current = null;
+                            touchStartY.current = null;
+                            touchEndY.current = null;
                         }}
+                        style={{ touchAction: 'pan-y pinch-zoom' }}
                     >
                         <div className="relative rounded-[30px] overflow-hidden aspect-[2/1]">
                             {bannerImages.map((img, index) => (
