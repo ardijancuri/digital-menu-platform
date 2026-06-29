@@ -198,6 +198,20 @@ const PublicMenuPage = ({ subdomainSlug }) => {
         });
     };
 
+    const openProductDetails = (product) => {
+        setSelectedProduct(product);
+        setIsProductModalOpen(true);
+    };
+
+    const handleProductCardKeyDown = (event, product) => {
+        if (event.target !== event.currentTarget) return;
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            openProductDetails(product);
+        }
+    };
+
     const handleLanguageChange = (lang) => {
         setSelectedLanguage(lang);
         setLanguage(lang.code);
@@ -504,8 +518,13 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                                         {category.items?.map((item) => (
                                             <div
                                                 key={item.id}
-                                                className="rounded-3xl overflow-hidden transition-shadow flex flex-col h-full"
+                                                onClick={() => openProductDetails(item)}
+                                                onKeyDown={(event) => handleProductCardKeyDown(event, item)}
+                                                role="button"
+                                                tabIndex={0}
+                                                className="rounded-3xl overflow-hidden transition-shadow flex flex-col h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2"
                                                 style={{ backgroundColor: theme.accent_color || '#f3f4f6' }}
+                                                aria-label={`View details for ${getLocalizedText(item, 'name')}`}
                                             >
                                                 {/* Image */}
                                                 <div className="p-2 pb-0">
@@ -553,8 +572,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                                                         <button
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                setSelectedProduct(item);
-                                                                setIsProductModalOpen(true);
+                                                                openProductDetails(item);
                                                             }}
                                                             className="w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 focus:outline-none"
                                                             style={{
