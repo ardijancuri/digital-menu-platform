@@ -164,7 +164,7 @@ app.use((err, req, res, next) => {
         if (err.code === 'LIMIT_FILE_SIZE') {
             return res.status(400).json({
                 success: false,
-                message: 'File too large. Maximum size is 2MB.'
+                message: 'File too large. Maximum size is 2 MiB.'
             });
         }
         return res.status(400).json({
@@ -173,7 +173,7 @@ app.use((err, req, res, next) => {
         });
     }
 
-    res.status(500).json({
+    res.status(err.status === 400 ? 400 : 500).json({
         success: false,
         message: err.message || 'Internal server error'
     });

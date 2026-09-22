@@ -1,23 +1,19 @@
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { MAX_UPLOAD_BYTES } from '../utils/imageOptimizer.js';
 
 // Configure storage
 const storage = multer.memoryStorage();
 
 // File filter - only allow images
 const fileFilter = (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|gif|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
+    const extname = /^\.(jpeg|jpg|png|gif|webp)$/.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = /^image\/(jpeg|png|gif|webp)$/.test(file.mimetype);
 
     if (extname && mimetype) {
         cb(null, true);
     } else {
-        cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
+        cb(Object.assign(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'), { status: 400 }));
     }
 };
 
@@ -25,7 +21,8 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: parseInt(process.env.MAX_FILE_SIZE) || 2 * 1024 * 1024 // 2MB default
+        // Busboy emits its limit event at equality; allow the inclusive 2 MiB boundary.
+        fileSize: MAX_UPLOAD_BYTES + 1
     },
     fileFilter: fileFilter
 });

@@ -231,7 +231,7 @@ const ProductsPage = () => {
                                         <div key={item.id} className="border border-gray-200 rounded-xl p-3 bg-white shadow-sm flex gap-3 flex-col sm:flex-row">
                                             <div className="w-full sm:w-32 aspect-[16/10] bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
                                                 {item.images && item.images.length > 0 ? (
-                                                    <img src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
+                                                    <img loading="lazy" decoding="async" src={item.images[0]} alt={item.name} className="w-full h-full object-cover" />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center text-gray-400">
                                                         <i className="fas fa-image text-xl"></i>
@@ -376,7 +376,7 @@ const ProductsPage = () => {
                                 {/* Existing Image Preview */}
                                 {(imagePreview || editingItem?.images?.[0]) && (
                                     <div className="relative group flex-shrink-0">
-                                        <img 
+                                        <img loading="lazy" decoding="async"
                                             src={imagePreview || editingItem.images[0]} 
                                             alt="Product" 
                                             className="w-32 h-32 object-cover rounded-lg border" 

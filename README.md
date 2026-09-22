@@ -63,7 +63,7 @@ DB_PASSWORD=your_password
 JWT_SECRET=your_super_secret_jwt_key
 JWT_EXPIRES_IN=7d
 
-MAX_FILE_SIZE=5242880
+# Image uploads have a fixed inclusive 2 MiB limit.
 ```
 
 ### 3. Database Setup
@@ -233,3 +233,5 @@ MIT
 ## 👥 Support
 
 For issues or questions, please open an issue on GitHub.
+
+See [Image egress rollout](IMAGE_EGRESS_ROLLOUT.md) for image optimization, migration, rollback and verification.

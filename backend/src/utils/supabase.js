@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
+import { randomUUID } from 'node:crypto';
+import { optimizeImage, IMAGE_CACHE_CONTROL } from './imageOptimizer.js';
 dotenv.config();
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -71,20 +73,19 @@ const ensureBucketExists = async (bucketName) => {
     return bucketReadyPromise;
 };
 
-export const uploadFile = async (file, bucket = supabaseBucket) => {
+export const uploadFile = async (file, bucket = supabaseBucket, { purpose = 'product' } = {}) => {
     try {
+        const image = await optimizeImage(file.buffer, { purpose });
         if (!supabase) throw new Error('Supabase is not configured. Set SUPABASE_URL and SUPABASE_KEY in your .env file.');
         await ensureBucketExists(bucket);
 
-        const timestamp = Date.now();
-        // Sanitize filename
-        const cleanFileName = file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
-        const filePath = `${timestamp}-${cleanFileName}`;
+        const filePath = `optimized/v1/${purpose}/${randomUUID()}.${image.extension}`;
 
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
             .from(bucket)
-            .upload(filePath, file.buffer, {
-                contentType: file.mimetype,
+            .upload(filePath, image.buffer, {
+                contentType: image.contentType,
+                cacheControl: IMAGE_CACHE_CONTROL,
                 upsert: false
             });
 
@@ -98,6 +99,7 @@ export const uploadFile = async (file, bucket = supabaseBucket) => {
 
         return publicUrl;
     } catch (error) {
+        if (error.status === 400) throw error;
         console.error('Supabase upload error:', error);
         const bucketInfo = bucket === supabaseBucket ? bucket : `${bucket} (configured)`;
         if (isBucketMissingError(error)) {

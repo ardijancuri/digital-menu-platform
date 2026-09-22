@@ -20,7 +20,7 @@ const ImageUpload = ({ onUpload, currentImage, label = 'Upload Image' }) => {
         // Check file size (2MB max)
         const maxSize = 2 * 1024 * 1024; // 2MB in bytes
         if (file.size > maxSize) {
-            alert('Image size must be less than 2MB. Please choose a smaller image.');
+            alert('Image size must be 2 MiB or smaller. Please choose a smaller image.');
             return;
         }
 
@@ -93,7 +93,7 @@ const ImageUpload = ({ onUpload, currentImage, label = 'Upload Image' }) => {
                         <p className="text-sm text-gray-600">
                             <span className="font-medium text-blue-600">Click to upload</span> or drag and drop
                         </p>
-                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2MB</p>
+                        <p className="text-xs text-gray-500">PNG, JPG, GIF up to 2 MiB</p>
                     </div>
                 )}
                 <input
