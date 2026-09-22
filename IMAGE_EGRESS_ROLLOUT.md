@@ -21,10 +21,10 @@ categories can be checked without DevTools disabling the cache.
 
 ## Production prerequisites
 
-Confirm the actual Vercel Git repository, branch, frontend project and backend
-project. This workspace's origin is `ardijancuri/divina-pos-menu`; the inspected
-Vercel production deployments were attached to `ardijancuri/digital-menu-platform`.
-Do not assume pushing the fork updates onipos.com.
+Production uses the `main` branch of `ardijancuri/digital-menu-platform`.
+The Vercel backend project is `digital-menu-platform`; the frontend project is
+`digital-menu-platform-k2s4`, serving `https://www.onipos.com/`.
+The separate `ardijancuri/divina-pos-menu` repository does not deploy this site.
 
 Configure `backend/.env` locally (never commit or paste credentials into chat):
 
@@ -102,6 +102,31 @@ confirm originals are still available before rollback. New objects are retained
 too. Redeploy the previous application commit separately if necessary.
 
 ## Monitoring
+
+### Production rollout completed 23 September 2026 (Europe/Skopje)
+
+PR #1 deployed commit `f5af07f2df2c15a09ef4cfd496cc20ce7047004d` to both
+Vercel production projects. The Papilon pilot migrated successfully before the
+remaining references. All 97 assets passed GET hash, MIME and 30-day cache
+verification. Their total size fell from 26,419,520 to 2,805,067 bytes (89.4%).
+There were no animated assets in this inventory. All original objects and the
+35 initially unreferenced objects were retained.
+
+Read-back verification matched all 141 database fields: 93 changed and 48 stayed
+unchanged, with zero conflicts. All six public menu APIs returned HTTP 200.
+Backend tests passed (13), the frontend production build passed, and browser
+checks covered mobile layout, product modal, banner loading, collapsed categories,
+offscreen loading and repeat-visit caching. Full-project lint still reports
+pre-existing issues; the new carousel passes its targeted lint check.
+
+The resumable private manifest is
+`backend/image-migrations/production-prioritized.json`; the final read-back report
+is `backend/image-migrations/rollout-verification.json`. Both are ignored by Git.
+Use this manifest filename for any resume or rollback command above.
+
+File-size savings do not establish billed egress savings. The first complete
+24-hour observation is due on 24 September 2026; continue daily through
+30 September. No recurring monitoring job is installed.
 
 Baseline (23 Aug–23 Sep 2026): organization cached egress 5.796 GB; Menu POS
 5.51 GB; allowance 5 GB. Grace period displayed: 22 Oct 2026.
