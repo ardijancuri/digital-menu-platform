@@ -166,7 +166,7 @@ export const uploadBannerImage = async (req, res) => {
             });
         }
 
-        const imageUrl = await uploadFile(req.file);
+        const imageUrl = await uploadFile(req.file, undefined, { purpose: 'banner' });
 
         // Append to banner_images array
         const result = await query(
@@ -186,9 +186,9 @@ export const uploadBannerImage = async (req, res) => {
         });
     } catch (error) {
         console.error('Upload banner image error:', error);
-        res.status(500).json({
+        res.status(error.status === 400 ? 400 : 500).json({
             success: false,
-            message: 'Server error while uploading banner image'
+            message: error.status === 400 ? error.message : 'Server error while uploading banner image'
         });
     }
 };
@@ -249,7 +249,7 @@ export const uploadLogo = async (req, res) => {
             });
         }
 
-        const logoUrl = await uploadFile(req.file);
+        const logoUrl = await uploadFile(req.file, undefined, { purpose: 'logo' });
 
         const result = await query(
             'UPDATE menu_settings SET logo_url = $1, updated_at = NOW() WHERE user_id = $2 RETURNING *',
@@ -264,9 +264,9 @@ export const uploadLogo = async (req, res) => {
         });
     } catch (error) {
         console.error('Upload logo error:', error);
-        res.status(500).json({
+        res.status(error.status === 400 ? 400 : 500).json({
             success: false,
-            message: 'Server error while uploading logo'
+            message: error.status === 400 ? error.message : 'Server error while uploading logo'
         });
     }
 };
@@ -653,7 +653,7 @@ export const uploadItemImage = async (req, res) => {
             });
         }
 
-        const imageUrl = await uploadFile(req.file);
+        const imageUrl = await uploadFile(req.file, undefined, { purpose: 'product' });
 
         // Verify item belongs to user
         const result = await query(
@@ -680,9 +680,9 @@ export const uploadItemImage = async (req, res) => {
         });
     } catch (error) {
         console.error('Upload item image error:', error);
-        res.status(500).json({
+        res.status(error.status === 400 ? 400 : 500).json({
             success: false,
-            message: 'Server error while uploading image'
+            message: error.status === 400 ? error.message : 'Server error while uploading image'
         });
     }
 };

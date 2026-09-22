@@ -2,10 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { publicAPI } from '../services/api';
 import Modal from '../components/Modal';
+import BannerCarousel from '../components/BannerCarousel';
 import RightUpArrowIcon from '../assets/right up arrow.svg';
 
-const MIN_BANNER_SWIPE_DISTANCE = 50;
-const BANNER_AXIS_LOCK_RATIO = 1.1;
 const LANGUAGES = [
     { code: 'en', label: 'English (UK)', flagUrl: 'https://flagcdn.com/gb.svg' },
     { code: 'mk', label: 'Macedonian', flagUrl: 'https://flagcdn.com/mk.svg' },
@@ -21,12 +20,6 @@ const PublicMenuPage = ({ subdomainSlug }) => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [expandedCategories, setExpandedCategories] = useState(new Set());
-    const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
-    const [isBannerPaused, setIsBannerPaused] = useState(false);
-    const touchStart = useRef(null);
-    const touchEnd = useRef(null);
-    const touchStartY = useRef(null);
-    const touchEndY = useRef(null);
     const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
     const [language, setLanguage] = useState('en');
     const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
@@ -77,7 +70,7 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                     document.head.appendChild(favicon);
                 }
                 favicon.href = menu.logo_url;
-                favicon.type = 'image/png';
+                favicon.removeAttribute('type');
             }
         }
         
@@ -149,42 +142,6 @@ const PublicMenuPage = ({ subdomainSlug }) => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
-
-    // Carousel Autoplay
-    useEffect(() => {
-        if (menu?.theme?.banner_images?.length > 1 && !isBannerPaused) {
-            const timer = setInterval(() => {
-                setCurrentBannerIndex(prev => (prev + 1) % menu.theme.banner_images.length);
-            }, 5000);
-            return () => clearInterval(timer);
-        }
-    }, [menu?.theme?.banner_images, isBannerPaused]);
-
-    const handleBannerSwipe = () => {
-        if (
-            touchStart.current === null ||
-            touchEnd.current === null ||
-            touchStartY.current === null ||
-            touchEndY.current === null
-        ) return;
-
-        const distance = touchStart.current - touchEnd.current;
-        const verticalDistance = touchStartY.current - touchEndY.current;
-        const isHorizontalSwipe = Math.abs(distance) > Math.abs(verticalDistance) * BANNER_AXIS_LOCK_RATIO;
-
-        if (!isHorizontalSwipe || Math.abs(distance) < MIN_BANNER_SWIPE_DISTANCE) return;
-
-        const isLeftSwipe = distance > 0;
-        const isRightSwipe = distance < 0;
-        const length = menu.theme.banner_images.length;
-
-        if (isLeftSwipe) {
-            setCurrentBannerIndex(prev => (prev + 1) % length);
-        }
-        if (isRightSwipe) {
-            setCurrentBannerIndex(prev => (prev - 1 + length) % length);
-        }
-    };
 
     const toggleCategory = (categoryId) => {
         setExpandedCategories(prev => {
@@ -311,6 +268,8 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                             {menu.logo_url && (
                                 <img
                                     src={menu.logo_url}
+                                    loading="eager"
+                                    decoding="async"
                                     alt="Logo"
                                     className="w-16 h-16 rounded-full object-cover shadow-sm"
                                 />
@@ -421,60 +380,9 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                     </div>
                 </header>
 
-                {/* Banner Carousel */}
+                {/* A changed image list resets the carousel without cache-busting URLs. */}
                 {bannerImages.length > 0 && (
-                    <div
-                        className="px-5 mb-10"
-                        onMouseEnter={() => setIsBannerPaused(true)}
-                        onMouseLeave={() => setIsBannerPaused(false)}
-                        onTouchStart={(e) => {
-                            const touch = e.targetTouches[0];
-                            setIsBannerPaused(true);
-                            touchStart.current = touch.clientX;
-                            touchEnd.current = touch.clientX;
-                            touchStartY.current = touch.clientY;
-                            touchEndY.current = touch.clientY;
-                        }}
-                        onTouchEnd={(e) => {
-                            const touch = e.changedTouches[0];
-                            if (touch) {
-                                touchEnd.current = touch.clientX;
-                                touchEndY.current = touch.clientY;
-                            }
-                            setIsBannerPaused(false);
-                            handleBannerSwipe();
-                            touchStart.current = null;
-                            touchEnd.current = null;
-                            touchStartY.current = null;
-                            touchEndY.current = null;
-                        }}
-                        style={{ touchAction: 'pan-y pinch-zoom' }}
-                    >
-                        <div className="relative rounded-[30px] overflow-hidden aspect-[2/1]">
-                            {bannerImages.map((img, index) => (
-                                <div
-                                    key={index}
-                                    className={`absolute inset-0 transition-opacity duration-1000 ${index === currentBannerIndex ? 'opacity-100' : 'opacity-0'
-                                        }`}
-                                >
-                                    <img src={img} alt="Banner" className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0"></div>
-                                </div>
-                            ))}
-
-                            {/* Dots */}
-                            <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2">
-                                {bannerImages.map((_, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setCurrentBannerIndex(idx)}
-                                        className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentBannerIndex ? 'bg-white w-6' : 'bg-white/50'
-                                            }`}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    <BannerCarousel key={JSON.stringify(bannerImages)} images={bannerImages} />
                 )}
 
                 {/* Menu Categories */}
@@ -532,6 +440,8 @@ const PublicMenuPage = ({ subdomainSlug }) => {
                                                         {item.images && item.images.length > 0 ? (
                                                             <img
                                                                 src={item.images[0]}
+                                                                loading="lazy"
+                                                                decoding="async"
                                                                 alt={getLocalizedText(item, 'name')}
                                                                 className="w-full h-full object-cover"
                                                             />

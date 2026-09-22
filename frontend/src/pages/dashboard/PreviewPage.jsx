@@ -318,7 +318,7 @@ const PreviewPage = () => {
                                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mb-4">
                                         {settings?.banner_images?.map((url, index) => (
                                             <div key={index} className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-[4/3] bg-gray-50">
-                                                <img
+                                                <img loading="lazy" decoding="async"
                                                     src={url}
                                                     alt={`Banner ${index + 1}`}
                                                     className="w-full h-full object-cover"
@@ -369,7 +369,7 @@ const PreviewPage = () => {
                                                     // Check file size (2MB max)
                                                     const maxSize = 2 * 1024 * 1024; // 2MB in bytes
                                                     if (file.size > maxSize) {
-                                                        alert('Image size must be less than 2MB. Please choose a smaller image.');
+                                                        alert('Image size must be 2 MiB or smaller. Please choose a smaller image.');
                                                         e.target.value = ''; // Reset input
                                                         return;
                                                     }

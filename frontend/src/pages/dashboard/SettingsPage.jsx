@@ -617,7 +617,7 @@ const SettingsPage = () => {
                                             QR code points to your subdomain URL
                                         </p>
                                         <div className="bg-white p-4 rounded-lg border-2 border-gray-200">
-                                            <img
+                                            <img loading="lazy" decoding="async"
                                                 src={qrCodeUrl}
                                                 alt="Menu QR Code"
                                                 className="w-48 h-48"

@@ -34,3 +34,8 @@ Thumbs.db
 # Testing
 coverage/
 .nyc_output/
+
+# Private asset inventory and rollback manifests
+backend/image-migrations/
+.vercel
+.env*
