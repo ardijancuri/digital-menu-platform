@@ -39,6 +39,7 @@ CREATE TABLE users (
     role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user', 'manager')),
     username TEXT UNIQUE,
     owner_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    can_generate_staff_reports BOOLEAN NOT NULL DEFAULT true,
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT NOW(),
     CONSTRAINT users_manager_constraints 

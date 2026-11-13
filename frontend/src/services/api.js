@@ -110,6 +110,9 @@ export const userAPI = {
     deleteBannerImage: (imageUrl) => api.post('/user/delete-banner', { imageUrl }),
     createManager: (data) => api.post('/user/managers', data),
     getManagers: () => api.get('/user/managers'),
+    updateManagerStaffReportPermission: (id, canGenerateReports) => api.patch(`/user/managers/${id}/staff-report-permission`, {
+        can_generate_staff_reports: canGenerateReports,
+    }),
     deleteManager: (id) => api.delete(`/user/managers/${id}`),
 };
 

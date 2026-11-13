@@ -19,6 +19,7 @@ import {
     deleteItemImage,
     createManager,
     getManagers,
+    updateManagerStaffReportPermission,
     deleteManager
 } from '../controllers/userController.js';
 
@@ -51,6 +52,7 @@ router.post('/delete-item-image', deleteItemImage);
 // Manager routes
 router.post('/managers', createManager);
 router.get('/managers', getManagers);
+router.patch('/managers/:id/staff-report-permission', updateManagerStaffReportPermission);
 router.delete('/managers/:id', deleteManager);
 
 export default router;

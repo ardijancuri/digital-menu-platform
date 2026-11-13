@@ -120,9 +120,21 @@ export const deleteTable = async (req, res) => {
 
 // --- Staff Management ---
 
+const canGenerateStaffReports = async (user) => {
+    if (user.role !== 'manager') return true;
+
+    const result = await pool.query(
+        `SELECT can_generate_staff_reports FROM users
+         WHERE id = $1 AND owner_id = $2 AND role = 'manager' AND is_active = true`,
+        [user.id, user.owner_id]
+    );
+    return result.rows[0]?.can_generate_staff_reports === true;
+};
+
 export const getStaff = async (req, res) => {
     try {
         const userId = getEffectiveUserId(req.user);
+        const canGenerateReports = await canGenerateStaffReports(req.user);
         const result = await pool.query(
             'SELECT id, name, role, created_at FROM staff WHERE user_id = $1 ORDER BY name ASC',
             [userId]
@@ -144,7 +156,7 @@ export const getStaff = async (req, res) => {
             })
         );
 
-        res.json({ success: true, staff: staffWithRevenue });
+        res.json({ success: true, staff: staffWithRevenue, can_generate_staff_reports: canGenerateReports });
     } catch (error) {
         console.error('Error fetching staff:', error);
         res.status(500).json({ success: false, message: 'Server error' });
@@ -668,6 +680,10 @@ export const getStaffRevenue = async (req, res) => {
  * Generates PDF report of all today's orders
  */
 export const resetStaffRevenue = async (req, res) => {
+    if (req.user.role === 'manager') {
+        return res.status(403).json({ success: false, message: 'Only owners can generate the end-of-day report' });
+    }
+
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
@@ -953,6 +969,10 @@ export const resetStaffRevenue = async (req, res) => {
  */
 export const getStaffReport = async (req, res) => {
     try {
+        if (!(await canGenerateStaffReports(req.user))) {
+            return res.status(403).json({ success: false, message: 'Staff report generation is disabled for your account' });
+        }
+
         const userId = getEffectiveUserId(req.user);
         const staffId = parseInt(req.params.id);
 

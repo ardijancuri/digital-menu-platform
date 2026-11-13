@@ -822,7 +822,7 @@ export const createManager = async (req, res) => {
         const result = await query(
             `INSERT INTO users (business_name, username, password_hash, role, owner_id, slug) 
              VALUES ($1, $2, $3, 'manager', $4, $5) 
-             RETURNING id, username, role, created_at`,
+             RETURNING id, username, role, created_at, can_generate_staff_reports`,
             [ownerResult.rows[0].business_name, username.trim(), password_hash, ownerId, `manager-${Date.now()}`]
         );
 
@@ -856,7 +856,8 @@ export const getManagers = async (req, res) => {
         }
 
         const result = await query(
-            'SELECT id, username, role, created_at FROM users WHERE owner_id = $1 AND role = $2 ORDER BY created_at DESC',
+            `SELECT id, username, role, created_at, can_generate_staff_reports
+             FROM users WHERE owner_id = $1 AND role = $2 ORDER BY created_at DESC`,
             [ownerId, 'manager']
         );
 
@@ -870,6 +871,40 @@ export const getManagers = async (req, res) => {
             success: false,
             message: 'Server error while fetching managers'
         });
+    }
+};
+
+export const updateManagerStaffReportPermission = async (req, res) => {
+    if (req.user.role !== 'user') {
+        return res.status(403).json({
+            success: false,
+            message: 'Only restaurant owners can change manager permissions'
+        });
+    }
+
+    const managerId = Number(req.params.id);
+    const { can_generate_staff_reports } = req.body || {};
+    if (!Number.isInteger(managerId) || managerId < 1 || managerId > 2147483647 ||
+        typeof can_generate_staff_reports !== 'boolean') {
+        return res.status(400).json({ success: false, message: 'Invalid manager ID or staff report permission' });
+    }
+
+    try {
+        const result = await query(
+            `UPDATE users SET can_generate_staff_reports = $1
+             WHERE id = $2 AND owner_id = $3 AND role = 'manager'
+             RETURNING id, can_generate_staff_reports`,
+            [can_generate_staff_reports, managerId, req.user.id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ success: false, message: 'Manager not found' });
+        }
+
+        res.json({ success: true, manager: result.rows[0] });
+    } catch (error) {
+        console.error('Update manager staff report permission error:', error);
+        res.status(500).json({ success: false, message: 'Failed to update staff report permission' });
     }
 };
 

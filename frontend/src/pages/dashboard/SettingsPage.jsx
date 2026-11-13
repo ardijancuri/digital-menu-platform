@@ -24,6 +24,7 @@ const SettingsPage = () => {
     const [showManagerForm, setShowManagerForm] = useState(false);
     const [newManager, setNewManager] = useState({ username: '', password: '' });
     const [creatingManager, setCreatingManager] = useState(false);
+    const [savingReportPermissions, setSavingReportPermissions] = useState({});
     const [testingFiscalPrinter, setTestingFiscalPrinter] = useState(false);
     const [fiscalPrinterStatus, setFiscalPrinterStatus] = useState(null);
     
@@ -183,6 +184,18 @@ const SettingsPage = () => {
             alert(err.response?.data?.message || 'Failed to create manager');
         } finally {
             setCreatingManager(false);
+        }
+    };
+
+    const handleStaffReportPermissionChange = async (id, canGenerateReports) => {
+        setSavingReportPermissions(prev => ({ ...prev, [id]: true }));
+        try {
+            const { data } = await userAPI.updateManagerStaffReportPermission(id, canGenerateReports);
+            setManagers(prev => prev.map(manager => manager.id === id ? { ...manager, ...data.manager } : manager));
+        } catch (err) {
+            alert(err.response?.data?.message || 'Failed to update staff report permission');
+        } finally {
+            setSavingReportPermissions(prev => ({ ...prev, [id]: false }));
         }
     };
 
@@ -385,13 +398,23 @@ const SettingsPage = () => {
                                 {managers.map((manager) => (
                                     <div
                                         key={manager.id}
-                                        className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200"
+                                        className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200"
                                     >
                                         <div>
                                             <p className="font-semibold text-gray-900">{manager.username}</p>
                                             <p className="text-sm text-gray-500">
                                                 Created: {new Date(manager.created_at).toLocaleDateString()}
                                             </p>
+                                            <label className="mt-3 flex items-center gap-2 text-sm text-gray-700">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={manager.can_generate_staff_reports}
+                                                    disabled={savingReportPermissions[manager.id]}
+                                                    onChange={(e) => handleStaffReportPermissionChange(manager.id, e.target.checked)}
+                                                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                                />
+                                                Allow staff report generation
+                                            </label>
                                         </div>
                                         <button
                                             onClick={() => handleDeleteManager(manager.id)}

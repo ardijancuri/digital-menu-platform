@@ -8,6 +8,8 @@ const StaffManagement = () => {
     const { isManager } = useAuth();
     const canViewRevenue = !isManager();
     const [staffList, setStaffList] = useState([]);
+    const [managerCanGenerateReports, setManagerCanGenerateReports] = useState(false);
+    const canGenerateReports = !isManager() || managerCanGenerateReports;
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
     const [newStaff, setNewStaff] = useState({ name: '', pin_code: '', role: 'server' });
@@ -34,6 +36,7 @@ const StaffManagement = () => {
         try {
             const response = await posAPI.getStaff();
             setStaffList(response.data.staff);
+            setManagerCanGenerateReports(response.data.can_generate_staff_reports === true);
         } catch (error) {
             console.error('Error fetching staff:', error);
         } finally {
@@ -180,7 +183,12 @@ const StaffManagement = () => {
             };
         } catch (error) {
             console.error('Error generating staff report:', error);
-            alert(error.response?.data?.message || 'Failed to generate staff report');
+            if (error.response?.status === 403 && isManager()) {
+                setManagerCanGenerateReports(false);
+                alert('Staff report generation is disabled for your account.');
+            } else {
+                alert(error.response?.data?.message || 'Failed to generate staff report');
+            }
         } finally {
             setGeneratingReportFor(null);
         }
@@ -230,7 +238,9 @@ const StaffManagement = () => {
                             {canViewRevenue && (
                                 <th className="px-6 py-4 font-semibold text-gray-600">Revenue</th>
                             )}
-                            <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
+                            {canGenerateReports && (
+                                <th className="px-6 py-4 font-semibold text-gray-600 text-right">Actions</th>
+                            )}
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
@@ -250,28 +260,30 @@ const StaffManagement = () => {
                                         {Math.round(staff.revenue || 0).toLocaleString()} MKD
                                     </td>
                                 )}
-                                <td className="px-6 py-4 text-right">
-                                    <div className="flex items-center justify-end gap-3">
-                                        <button
-                                            onClick={() => handleGenerateStaffReport(staff.id)}
-                                            disabled={generatingReportFor === staff.id}
-                                            className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                            title="Generate Report"
-                                        >
-                                            <i className="fas fa-file-pdf"></i>
-                                            {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
-                                        </button>
-                                        {!isManager() && (
-                                        <button
-                                            onClick={() => handleDeleteStaff(staff.id)}
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                            title="Delete Staff"
-                                        >
-                                            <i className="fas fa-trash"></i>
-                                        </button>
-                                        )}
-                                    </div>
-                                </td>
+                                {canGenerateReports && (
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-3">
+                                            <button
+                                                onClick={() => handleGenerateStaffReport(staff.id)}
+                                                disabled={generatingReportFor === staff.id}
+                                                className="bg-orange-600 text-white px-3 py-1.5 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="Generate Report"
+                                            >
+                                                <i className="fas fa-file-pdf"></i>
+                                                {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
+                                            </button>
+                                            {!isManager() && (
+                                                <button
+                                                    onClick={() => handleDeleteStaff(staff.id)}
+                                                    className="text-gray-400 hover:text-red-500 transition-colors"
+                                                    title="Delete Staff"
+                                                >
+                                                    <i className="fas fa-trash"></i>
+                                                </button>
+                                            )}
+                                        </div>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                         {staffList.length > 0 && canViewRevenue && (
@@ -287,7 +299,7 @@ const StaffManagement = () => {
                         )}
                         {staffList.length === 0 && (
                             <tr>
-                                <td colSpan={canViewRevenue ? 4 : 3} className="px-6 py-8 text-center text-gray-500">
+                                <td colSpan={2 + Number(canViewRevenue) + Number(canGenerateReports)} className="px-6 py-8 text-center text-gray-500">
                                     No staff members found. Add your first employee!
                                 </td>
                             </tr>
@@ -325,26 +337,28 @@ const StaffManagement = () => {
                                         </p>
                                     </div>
                                 )}
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={() => handleGenerateStaffReport(staff.id)}
-                                        disabled={generatingReportFor === staff.id}
-                                        className="flex-1 bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        title="Generate Report"
-                                    >
-                                        <i className="fas fa-file-pdf"></i>
-                                        {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
-                                    </button>
-                                    {!isManager() && (
+                                {canGenerateReports && (
+                                    <div className="flex items-center gap-3">
                                         <button
-                                            onClick={() => handleDeleteStaff(staff.id)}
-                                            className="px-4 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                            title="Delete Staff"
+                                            onClick={() => handleGenerateStaffReport(staff.id)}
+                                            disabled={generatingReportFor === staff.id}
+                                            className="flex-1 bg-orange-600 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="Generate Report"
                                         >
-                                            <i className="fas fa-trash"></i>
+                                            <i className="fas fa-file-pdf"></i>
+                                            {generatingReportFor === staff.id ? 'Generating...' : 'Report'}
                                         </button>
-                                    )}
-                                </div>
+                                        {!isManager() && (
+                                            <button
+                                                onClick={() => handleDeleteStaff(staff.id)}
+                                                className="px-4 py-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Staff"
+                                            >
+                                                <i className="fas fa-trash"></i>
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         ))}
                         {canViewRevenue && (
